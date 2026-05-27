@@ -16,9 +16,14 @@ symphony:
   setup_command: ./.vibeRig/bin/symphony-setup
   planning_command: ./.vibeRig/bin/symphony-planning
   implementation_command: ./.vibeRig/bin/symphony-implementation
-  dashboard_ports:
+  runner_ports:
     planning_start: 49170
     implementation_start: 49180
+viberig:
+  service_url: http://127.0.0.1:49160
+  service_port: 49160
+  autostart: true
+  user_entry: panel
 ports:
   preview_start: 49200
   strategy: find-next-free

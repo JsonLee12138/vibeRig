@@ -108,6 +108,7 @@ python3 plugins/vibe-rig/scripts/init_project.py . \
 .vibeRig/
   config.yaml
   bin/
+    viberig
     symphony-setup
     symphony-planning
     symphony-implementation
@@ -120,17 +121,18 @@ worktrees/
 .gitignore
 ```
 
-默认 worktree 目录是 `./worktrees`。VibeRig 默认使用较少冲突的高位端口，并在启动 Symphony dashboard 前查找下一个空闲端口：
+默认 worktree 目录是 `./worktrees`。VibeRig 还会确保全局本地面板可用，固定地址是：
 
-- planning dashboard 从 `49170` 开始
-- implementation dashboard 从 `49180` 开始
-- 业务预览端口约定从 `49200` 开始
+```text
+http://127.0.0.1:49160
+```
+
+项目初始化会在需要时启动全局 VibeRig daemon，在支持的 macOS 环境中安装登录自启动 LaunchAgent，并把当前项目注册到全局面板。Symphony runner 端口属于内部细节；用户日常只需要通过 VibeRig 面板操作，不需要管理 runner 命令或端口。
 
 ## 设置 Symphony
 
 Symphony 应该只存在于 VibeRig 插件中，不需要在每个业务项目里单独
-vendor 或 submodule 一份。初始化项目时，VibeRig 会在 `.vibeRig/bin/`
-下创建项目侧运行命令；这些命令会调用插件里的 Symphony runtime，并把当前业务项目作为运行目标。
+vendor 或 submodule 一份。全局 VibeRig daemon 会在面板触发 planning 或 implementation 时，为对应项目启动独立的 Symphony runner。
 
 如果使用推荐的 local-source 安装，VibeRig 期望插件位于 `plugins/vibe-rig/`，Symphony 位于 `plugins/vibe-rig/vendor/symphony`。由于该目录是 submodule，先确认递归 submodule 已初始化：
 
@@ -156,25 +158,31 @@ python3 plugins/vibe-rig/scripts/init_project.py . --setup-symphony
 
 ## 运行 Planning 和 Implementation
 
-Symphony 需要 Linear API Key：
+使用全局 VibeRig 面板：
 
-```sh
-export LINEAR_API_KEY="<你的-linear-api-key>"
+```text
+http://127.0.0.1:49160
 ```
 
-启动 planning workflow：
+在面板中选择项目并启动 planning 或 implementation。`.vibeRig/bin/symphony-planning` 和 `.vibeRig/bin/symphony-implementation` 这类直接命令只保留为调试 fallback，不是日常用户入口。
 
-```sh
-.vibeRig/bin/symphony-planning
+如果全局 daemon 是登录自启动的，shell 里临时 export 的环境变量不会自动进入 runner 进程。`LINEAR_API_KEY` 这类 runner secret 应放到 `~/.viberig/secrets.env`，或者等面板提供配置入口后从面板配置。
+
+## 全局状态
+
+VibeRig 会把本机服务状态放在项目仓库之外：
+
+```text
+~/.viberig/
+  projects.json
+  secrets.env
+  runtime/
+    daemon.json
+    runners/
+  logs/
 ```
 
-启动 implementation workflow：
-
-```sh
-.vibeRig/bin/symphony-implementation
-```
-
-实际选中的 dashboard 端口会写入 `.vibeRig/runtime.json`。
+`runtime/runners/` 是 daemon 管理项目级 Symphony runner 进程的运行账本，记录 pid、workflow、project id、日志路径和状态。它不存放业务代码；真正的实现和验收仍然发生在各项目自己的 `worktrees/` 目录下。
 
 ## 推荐工作流
 

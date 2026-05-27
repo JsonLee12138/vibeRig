@@ -24,9 +24,14 @@ symphony:
   setup_command: ./.vibeRig/bin/symphony-setup
   planning_command: ./.vibeRig/bin/symphony-planning
   implementation_command: ./.vibeRig/bin/symphony-implementation
-  dashboard_ports:
+  runner_ports:
     planning_start: 49170
     implementation_start: 49180
+viberig:
+  service_url: http://127.0.0.1:49160
+  service_port: 49160
+  autostart: true
+  user_entry: panel
 ports:
   preview_start: 49200
   strategy: find-next-free
@@ -134,6 +139,14 @@ Status: not checked
 """
 
 
+VIBERIG_CONFIG_SNIPPET = """viberig:
+  service_url: http://127.0.0.1:49160
+  service_port: 49160
+  autostart: true
+  user_entry: panel
+"""
+
+
 def detect_plugin_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -142,6 +155,23 @@ def write_if_missing(path: Path, content: str) -> bool:
     if path.exists():
         return False
     path.write_text(content, encoding="utf-8")
+    return True
+
+
+def ensure_config(path: Path, content: str) -> bool:
+    if not path.exists():
+        path.write_text(content, encoding="utf-8")
+        return True
+    existing = path.read_text(encoding="utf-8")
+    updated = existing
+    if "dashboard_ports:" in updated and "runner_ports:" not in updated:
+        updated = updated.replace("dashboard_ports:", "runner_ports:", 1)
+    if "\nviberig:" not in f"\n{updated}":
+        prefix = "" if updated.endswith("\n") else "\n"
+        updated = updated + prefix + VIBERIG_CONFIG_SNIPPET
+    if updated == existing:
+        return False
+    path.write_text(updated, encoding="utf-8")
     return True
 
 
@@ -154,12 +184,15 @@ def write_executable(path: Path, content: str) -> bool:
 
 def project_command(command_name: str, plugin_root: Path) -> str:
     script_name = {
+        "viberig": "viberig_service.py",
         "symphony-setup": "symphony_setup.sh",
         "symphony-planning": "symphony_run_planning.sh",
         "symphony-implementation": "symphony_run_implementation.sh",
     }[command_name]
     embedded_plugin_root = shlex.quote(str(plugin_root))
-    if command_name == "symphony-setup":
+    if command_name == "viberig":
+        exec_line = 'exec python3 "${PLUGIN_ROOT}/scripts/viberig_service.py" "$@"'
+    elif command_name == "symphony-setup":
         exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_setup.sh" "$@"'
     elif command_name == "symphony-planning":
         exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_run_planning.sh" "${PROJECT_ROOT}" "$@"'
@@ -213,6 +246,8 @@ def main() -> int:
     parser.add_argument("--dev-command", default="")
     parser.add_argument("--test-command", default="")
     parser.add_argument("--setup-symphony", action="store_true")
+    parser.add_argument("--skip-global-service", action="store_true")
+    parser.add_argument("--no-autostart", action="store_true")
     args = parser.parse_args()
 
     root = Path(args.project_root).expanduser().resolve()
@@ -239,7 +274,7 @@ def main() -> int:
         dev_command=args.dev_command,
         test_command=args.test_command,
     )
-    if write_if_missing(root / ".vibeRig" / "config.yaml", config):
+    if ensure_config(root / ".vibeRig" / "config.yaml", config):
         created.append(str(root / ".vibeRig" / "config.yaml"))
     if write_if_missing(root / ".vibeRig" / "insights" / "candidates.md", CANDIDATES_TEMPLATE):
         created.append(str(root / ".vibeRig" / "insights" / "candidates.md"))
@@ -251,7 +286,7 @@ def main() -> int:
         created.append(str(root / "WORKFLOW.planning.md"))
     if write_if_missing(root / "WORKFLOW.implementation.md", IMPLEMENTATION_WORKFLOW):
         created.append(str(root / "WORKFLOW.implementation.md"))
-    for command_name in ["symphony-setup", "symphony-planning", "symphony-implementation"]:
+    for command_name in ["viberig", "symphony-setup", "symphony-planning", "symphony-implementation"]:
         command_path = root / ".vibeRig" / "bin" / command_name
         if write_executable(command_path, project_command(command_name, plugin_root)):
             created.append(str(command_path))
@@ -265,6 +300,26 @@ def main() -> int:
         print(f"- {item}")
     if args.setup_symphony:
         subprocess.run([str(root / ".vibeRig" / "bin" / "symphony-setup")], check=True)
+    if not args.skip_global_service:
+        service_script = plugin_root / "scripts" / "viberig_service.py"
+        ensure_cmd = ["python3", str(service_script), "ensure"]
+        if not args.no_autostart:
+            ensure_cmd.append("--install-autostart")
+        subprocess.run(ensure_cmd, check=True)
+        subprocess.run(
+            [
+                "python3",
+                str(service_script),
+                "register",
+                str(root),
+                "--project-name",
+                project_name,
+                "--plugin-root",
+                str(plugin_root),
+            ],
+            check=True,
+        )
+        print("VibeRig panel: http://127.0.0.1:49160")
     return 0
 
 

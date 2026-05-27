@@ -27,4 +27,7 @@ fi
 mkdir -p "${PROJECT_ROOT}/.vibeRig"
 python3 "${ROOT_DIR}/scripts/record_runtime_port.py" "${PROJECT_ROOT}" implementation_port "${PORT}"
 cd "${ROOT_DIR}/vendor/symphony/elixir"
-exec mise exec -- ./bin/symphony "${WORKFLOW}" --port "${PORT}"
+exec mise exec -- ./bin/symphony \
+  --i-understand-that-this-will-be-running-without-the-usual-guardrails \
+  --port "${PORT}" \
+  "${WORKFLOW}"

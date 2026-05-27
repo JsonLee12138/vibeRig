@@ -127,6 +127,7 @@ This creates or ensures:
 .vibeRig/
   config.yaml
   bin/
+    viberig
     symphony-setup
     symphony-planning
     symphony-implementation
@@ -139,19 +140,23 @@ worktrees/
 .gitignore
 ```
 
-The default worktree root is `./worktrees`. VibeRig uses high, less common
-ports and checks for the next free one before starting Symphony dashboards:
+The default worktree root is `./worktrees`. VibeRig also ensures the global
+local panel is available at a fixed URL:
 
-- planning dashboard starts at `49170`
-- implementation dashboard starts at `49180`
-- app preview convention starts at `49200`
+```text
+http://127.0.0.1:49160
+```
+
+Project initialization starts the global VibeRig daemon if needed, installs a
+macOS LaunchAgent for login autostart when supported, and registers the current
+project. Symphony runner ports are internal; users should work from the VibeRig
+panel rather than managing runner commands or ports directly.
 
 ## Set Up Symphony
 
 Symphony should live inside the VibeRig plugin, not inside each business
-project. During project initialization, VibeRig creates project-local command
-wrappers under `.vibeRig/bin/`; those wrappers call the plugin runtime and pass
-the current project as the target.
+project. The global VibeRig daemon starts project-specific Symphony runners
+when the panel asks it to run planning or implementation.
 
 If you use the recommended local-source install, VibeRig expects the plugin at
 `plugins/vibe-rig/` and Symphony at `plugins/vibe-rig/vendor/symphony`. Because
@@ -183,25 +188,39 @@ install when you want to run the helper scripts by path in your shell.
 
 ## Run Planning And Implementation
 
-Symphony requires Linear access:
+Use the global VibeRig panel:
 
-```sh
-export LINEAR_API_KEY="<your-linear-api-key>"
+```text
+http://127.0.0.1:49160
 ```
 
-Start the planning workflow:
+From there, select a project and start planning or implementation. Direct
+commands such as `.vibeRig/bin/symphony-planning` and
+`.vibeRig/bin/symphony-implementation` exist only as debugging fallbacks.
 
-```sh
-.vibeRig/bin/symphony-planning
+If the global daemon is started at login, shell-only environment variables are
+not available to runner processes. Put runner secrets such as `LINEAR_API_KEY`
+in `~/.viberig/secrets.env` or configure them through the panel once that UI is
+available.
+
+## Global State
+
+VibeRig stores local service state outside project repositories:
+
+```text
+~/.viberig/
+  projects.json
+  secrets.env
+  runtime/
+    daemon.json
+    runners/
+  logs/
 ```
 
-Start the implementation workflow:
-
-```sh
-.vibeRig/bin/symphony-implementation
-```
-
-The selected dashboard ports are written to `.vibeRig/runtime.json`.
+`runtime/runners/` is the daemon's process ledger for project-specific Symphony
+runners. It records runner pid, workflow, project id, log file, and status. It
+does not contain business code; implementation work still happens under each
+project's `worktrees/` directory.
 
 ## Typical Workflow
 
