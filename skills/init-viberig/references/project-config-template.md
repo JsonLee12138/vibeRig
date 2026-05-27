@@ -9,9 +9,13 @@ worktrees:
   default_base: origin/main
   sync_before_pr: merge
 symphony:
-  runtime: plugin-submodule
+  runtime: plugin
+  plugin_root: ./plugins/vibe-rig
   workflow_planning: ./WORKFLOW.planning.md
   workflow_implementation: ./WORKFLOW.implementation.md
+  setup_command: ./.vibeRig/bin/symphony-setup
+  planning_command: ./.vibeRig/bin/symphony-planning
+  implementation_command: ./.vibeRig/bin/symphony-implementation
   dashboard_ports:
     planning_start: 49170
     implementation_start: 49180

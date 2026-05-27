@@ -24,6 +24,10 @@ Create or update this target-project structure:
 ├── .vibeRig/
 │   ├── config.yaml
 │   ├── context-mode.md
+│   ├── bin/
+│   │   ├── symphony-setup
+│   │   ├── symphony-planning
+│   │   └── symphony-implementation
 │   ├── insights/
 │   │   ├── candidates.md
 │   │   └── confirmed.md
@@ -40,10 +44,15 @@ Create or update this target-project structure:
 
 1. Locate the target project root. Prefer the current workspace or git root unless the user gives a path.
 2. Run `scripts/init_project.py <project-root>` from this plugin when available. Pass command options only when known.
+   - Use `--setup-symphony` only when the user explicitly asks init to build the bundled Symphony runtime.
 3. Ensure `.vibeRig/config.yaml` uses:
    - `worktrees.root: ./worktrees`
    - `worktrees.default_base: origin/main`
    - `worktrees.sync_before_pr: merge`
+   - `symphony.runtime: plugin`
+   - `symphony.setup_command: ./.vibeRig/bin/symphony-setup`
+   - `symphony.planning_command: ./.vibeRig/bin/symphony-planning`
+   - `symphony.implementation_command: ./.vibeRig/bin/symphony-implementation`
    - dashboard ports starting at planning `49170`, implementation `49180`
    - preview port starting at `49200`
 4. Ensure `worktrees/` is ignored in the target project `.gitignore`.
@@ -57,15 +66,18 @@ Create or update this target-project structure:
    - `integrator`
 7. If recommended agents are missing, ask the user whether to create them. If they agree, use the `agent-creator` skill.
 8. Check Symphony runtime:
-   - If `vendor/symphony/elixir/bin/symphony` exists, report it as available.
-   - If `vendor/symphony` is empty or uninitialized, tell the user to initialize the submodule before running the daemon.
+   - Symphony must live in the VibeRig plugin, not in the target business project.
+   - Ensure project commands exist at `.vibeRig/bin/symphony-setup`, `.vibeRig/bin/symphony-planning`, and `.vibeRig/bin/symphony-implementation`.
+   - If `vendor/symphony/elixir/bin/symphony` exists under the plugin root, report it as available.
+   - If plugin `vendor/symphony` is empty or uninitialized, tell the user to initialize the VibeRig plugin submodule before running the daemon.
+   - Do not add `openai/symphony` as a target-project submodule.
 9. Check optional context-mode support:
    - Prefer this Codex plugin marketplace install path:
      `codex plugin marketplace add mksglu/context-mode`
    - Do not default to `npm install -g context-mode`.
    - If Codex reports another required install/enable step, report that step.
    - If context-mode is unavailable, keep VibeRig initialized and record the degraded state in `.vibeRig/context-mode.md`.
-10. Do not start Symphony automatically unless the user asks.
+10. Do not start Symphony dashboards automatically unless the user asks. Running `.vibeRig/bin/symphony-setup` is allowed during explicit full initialization because it builds the plugin runtime but does not start the daemon.
 
 ## Port Rules
 

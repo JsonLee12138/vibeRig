@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 import argparse
-import os
+import shlex
+import subprocess
 from pathlib import Path
 
 
@@ -16,9 +17,13 @@ worktrees:
   default_base: origin/main
   sync_before_pr: merge
 symphony:
-  runtime: plugin-submodule
+  runtime: plugin
+  plugin_root: "{plugin_root}"
   workflow_planning: ./WORKFLOW.planning.md
   workflow_implementation: ./WORKFLOW.implementation.md
+  setup_command: ./.vibeRig/bin/symphony-setup
+  planning_command: ./.vibeRig/bin/symphony-planning
+  implementation_command: ./.vibeRig/bin/symphony-implementation
   dashboard_ports:
     planning_start: 49170
     implementation_start: 49180
@@ -129,11 +134,61 @@ Status: not checked
 """
 
 
+def detect_plugin_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
 def write_if_missing(path: Path, content: str) -> bool:
     if path.exists():
         return False
     path.write_text(content, encoding="utf-8")
     return True
+
+
+def write_executable(path: Path, content: str) -> bool:
+    previous = path.read_text(encoding="utf-8") if path.exists() else None
+    path.write_text(content, encoding="utf-8")
+    path.chmod(0o755)
+    return previous != content
+
+
+def project_command(command_name: str, plugin_root: Path) -> str:
+    script_name = {
+        "symphony-setup": "symphony_setup.sh",
+        "symphony-planning": "symphony_run_planning.sh",
+        "symphony-implementation": "symphony_run_implementation.sh",
+    }[command_name]
+    embedded_plugin_root = shlex.quote(str(plugin_root))
+    if command_name == "symphony-setup":
+        exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_setup.sh" "$@"'
+    elif command_name == "symphony-planning":
+        exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_run_planning.sh" "${PROJECT_ROOT}" "$@"'
+    else:
+        exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_run_implementation.sh" "${PROJECT_ROOT}" "$@"'
+    return f"""#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_ROOT="$(cd "$(dirname "${{BASH_SOURCE[0]}}")/../.." && pwd)"
+DEFAULT_PLUGIN_ROOT="${{PROJECT_ROOT}}/plugins/vibe-rig"
+EMBEDDED_PLUGIN_ROOT={embedded_plugin_root}
+PLUGIN_ROOT="${{VIBERIG_PLUGIN_ROOT:-}}"
+
+if [[ -z "${{PLUGIN_ROOT}}" ]]; then
+  if [[ -x "${{DEFAULT_PLUGIN_ROOT}}/scripts/{script_name}" ]]; then
+    PLUGIN_ROOT="${{DEFAULT_PLUGIN_ROOT}}"
+  else
+    PLUGIN_ROOT="${{EMBEDDED_PLUGIN_ROOT}}"
+  fi
+fi
+
+if [[ ! -x "${{PLUGIN_ROOT}}/scripts/{script_name}" ]]; then
+  echo "VibeRig plugin command not found: ${{PLUGIN_ROOT}}/scripts/{script_name}"
+  echo "Set VIBERIG_PLUGIN_ROOT or install VibeRig at ./plugins/vibe-rig."
+  exit 1
+fi
+
+{exec_line}
+"""
 
 
 def append_gitignore(path: Path) -> bool:
@@ -157,16 +212,19 @@ def main() -> int:
     parser.add_argument("--install-command", default="")
     parser.add_argument("--dev-command", default="")
     parser.add_argument("--test-command", default="")
+    parser.add_argument("--setup-symphony", action="store_true")
     args = parser.parse_args()
 
     root = Path(args.project_root).expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     project_name = args.project_name or root.name
+    plugin_root = detect_plugin_root()
 
     created: list[str] = []
     for directory in [
         root / ".vibeRig" / "requirements",
         root / ".vibeRig" / "insights",
+        root / ".vibeRig" / "bin",
         root / ".codex" / "agents",
         root / "worktrees",
     ]:
@@ -175,6 +233,7 @@ def main() -> int:
 
     config = CONFIG_TEMPLATE.format(
         project_name=project_name,
+        plugin_root=plugin_root,
         linear_project_slug=args.linear_project_slug,
         install_command=args.install_command,
         dev_command=args.dev_command,
@@ -192,6 +251,10 @@ def main() -> int:
         created.append(str(root / "WORKFLOW.planning.md"))
     if write_if_missing(root / "WORKFLOW.implementation.md", IMPLEMENTATION_WORKFLOW):
         created.append(str(root / "WORKFLOW.implementation.md"))
+    for command_name in ["symphony-setup", "symphony-planning", "symphony-implementation"]:
+        command_path = root / ".vibeRig" / "bin" / command_name
+        if write_executable(command_path, project_command(command_name, plugin_root)):
+            created.append(str(command_path))
     if append_gitignore(root / ".gitignore"):
         created.append(str(root / ".gitignore"))
 
@@ -200,6 +263,8 @@ def main() -> int:
     print("Created or ensured:")
     for item in created:
         print(f"- {item}")
+    if args.setup_symphony:
+        subprocess.run([str(root / ".vibeRig" / "bin" / "symphony-setup")], check=True)
     return 0
 
 

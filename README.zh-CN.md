@@ -107,6 +107,10 @@ python3 plugins/vibe-rig/scripts/init_project.py . \
 ```text
 .vibeRig/
   config.yaml
+  bin/
+    symphony-setup
+    symphony-planning
+    symphony-implementation
   requirements/
   insights/
 .codex/agents/
@@ -124,7 +128,11 @@ worktrees/
 
 ## 设置 Symphony
 
-如果使用 local-source 安装，VibeRig 期望 Symphony 位于 `plugins/vibe-rig/vendor/symphony`。由于该目录是 submodule，先确认递归 submodule 已初始化：
+Symphony 应该只存在于 VibeRig 插件中，不需要在每个业务项目里单独
+vendor 或 submodule 一份。初始化项目时，VibeRig 会在 `.vibeRig/bin/`
+下创建项目侧运行命令；这些命令会调用插件里的 Symphony runtime，并把当前业务项目作为运行目标。
+
+如果使用推荐的 local-source 安装，VibeRig 期望插件位于 `plugins/vibe-rig/`，Symphony 位于 `plugins/vibe-rig/vendor/symphony`。由于该目录是 submodule，先确认递归 submodule 已初始化：
 
 ```sh
 git submodule update --init --recursive plugins/vibe-rig
@@ -133,7 +141,13 @@ git submodule update --init --recursive plugins/vibe-rig
 然后构建 Symphony runtime：
 
 ```sh
-plugins/vibe-rig/scripts/symphony_setup.sh
+.vibeRig/bin/symphony-setup
+```
+
+如果希望项目初始化时就构建插件内置的 Symphony runtime，可以运行：
+
+```sh
+python3 plugins/vibe-rig/scripts/init_project.py . --setup-symphony
 ```
 
 该脚本会进入 `vendor/symphony/elixir` 并使用 `mise`，所以本机需要先安装 `mise`。
@@ -151,13 +165,13 @@ export LINEAR_API_KEY="<你的-linear-api-key>"
 启动 planning workflow：
 
 ```sh
-plugins/vibe-rig/scripts/symphony_run_planning.sh .
+.vibeRig/bin/symphony-planning
 ```
 
 启动 implementation workflow：
 
 ```sh
-plugins/vibe-rig/scripts/symphony_run_implementation.sh .
+.vibeRig/bin/symphony-implementation
 ```
 
 实际选中的 dashboard 端口会写入 `.vibeRig/runtime.json`。

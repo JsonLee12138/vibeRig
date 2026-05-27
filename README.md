@@ -126,6 +126,10 @@ This creates or ensures:
 ```text
 .vibeRig/
   config.yaml
+  bin/
+    symphony-setup
+    symphony-planning
+    symphony-implementation
   requirements/
   insights/
 .codex/agents/
@@ -144,9 +148,15 @@ ports and checks for the next free one before starting Symphony dashboards:
 
 ## Set Up Symphony
 
-If you use the local-source install, VibeRig expects Symphony at
-`plugins/vibe-rig/vendor/symphony`. Because this repository vendors Symphony as
-a submodule, make sure recursive submodules are initialized:
+Symphony should live inside the VibeRig plugin, not inside each business
+project. During project initialization, VibeRig creates project-local command
+wrappers under `.vibeRig/bin/`; those wrappers call the plugin runtime and pass
+the current project as the target.
+
+If you use the recommended local-source install, VibeRig expects the plugin at
+`plugins/vibe-rig/` and Symphony at `plugins/vibe-rig/vendor/symphony`. Because
+this repository vendors Symphony as a submodule, make sure recursive submodules
+are initialized:
 
 ```sh
 git submodule update --init --recursive plugins/vibe-rig
@@ -155,7 +165,13 @@ git submodule update --init --recursive plugins/vibe-rig
 Then build the Symphony runtime:
 
 ```sh
-plugins/vibe-rig/scripts/symphony_setup.sh
+.vibeRig/bin/symphony-setup
+```
+
+To build the bundled Symphony runtime during project initialization, run:
+
+```sh
+python3 plugins/vibe-rig/scripts/init_project.py . --setup-symphony
 ```
 
 The setup script uses `mise` inside `vendor/symphony/elixir`, so `mise` must be
@@ -176,13 +192,13 @@ export LINEAR_API_KEY="<your-linear-api-key>"
 Start the planning workflow:
 
 ```sh
-plugins/vibe-rig/scripts/symphony_run_planning.sh .
+.vibeRig/bin/symphony-planning
 ```
 
 Start the implementation workflow:
 
 ```sh
-plugins/vibe-rig/scripts/symphony_run_implementation.sh .
+.vibeRig/bin/symphony-implementation
 ```
 
 The selected dashboard ports are written to `.vibeRig/runtime.json`.
