@@ -1,0 +1,36 @@
+{
+  "name": "vibe-rig",
+  "version": "0.1.0",
+  "description": "Requirement planning and Symphony execution prep for VibeRig workflows.",
+  "author": {
+    "name": "jsonlee"
+  },
+  "license": "MIT",
+  "keywords": [
+    "requirements",
+    "planning",
+    "symphony",
+    "linear",
+    "insights",
+    "accepted-learning",
+    "worktree"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "VibeRig",
+    "shortDescription": "Turn requirements into Symphony-ready execution plans.",
+    "longDescription": "VibeRig helps Codex turn ambiguous requirements into reviewable requirement docs, acceptance criteria, task graphs, Linear child issues, worktree execution plans for Symphony, and post-acceptance retrospectives with conservative learning candidates.",
+    "developerName": "jsonlee",
+    "category": "Productivity",
+    "capabilities": [
+      "Write",
+      "Planning"
+    ],
+    "defaultPrompt": [
+      "Brainstorm a VibeRig requirement",
+      "Write a VibeRig implementation plan",
+      "Split this spec into child tasks",
+      "Generate accepted-work insights"
+    ]
+  }
+}

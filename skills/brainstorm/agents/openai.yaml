@@ -1,0 +1,4 @@
+interface:
+  display_name: "Brainstorm"
+  short_description: "Generate VibeRig requirement result documents"
+  default_prompt: "Brainstorm a VibeRig requirement by name. Resolve or create its .vibeRig requirement directory, then produce requirement, research, acceptance, roadmap, and spec result documents as needed."

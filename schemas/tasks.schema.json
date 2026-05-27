@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VibeRig Tasks",
+  "type": "object",
+  "required": [
+    "requirement_id",
+    "title",
+    "source_docs",
+    "base_policy",
+    "agents",
+    "tasks"
+  ],
+  "properties": {
+    "requirement_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_docs": {
+      "type": "object",
+      "required": [
+        "requirement",
+        "research",
+        "acceptance",
+        "roadmap",
+        "spec",
+        "plan"
+      ],
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "base_policy": {
+      "type": "object",
+      "required": [
+        "default_base",
+        "worktree_root",
+        "require_fetch_before_worktree",
+        "require_base_sha_record",
+        "require_sync_before_pr"
+      ],
+      "properties": {
+        "default_base": {
+          "type": "string",
+          "const": "origin/main"
+        },
+        "worktree_root": {
+          "type": "string",
+          "const": "./worktrees"
+        },
+        "require_fetch_before_worktree": {
+          "type": "boolean",
+          "const": true
+        },
+        "require_base_sha_record": {
+          "type": "boolean",
+          "const": true
+        },
+        "require_sync_before_pr": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "required": [
+        "task_splitter",
+        "implementation_default",
+        "acceptance_default",
+        "code_review_default"
+      ],
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "type",
+          "suggested_agent",
+          "acceptance_agent",
+          "review_agent",
+          "priority",
+          "depends_on",
+          "parallelizable",
+          "branch",
+          "worktree_hint",
+          "scope",
+          "acceptance_refs",
+          "validation",
+          "review",
+          "linear"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "suggested_agent": {
+            "type": "string",
+            "minLength": 1
+          },
+          "acceptance_agent": {
+            "type": "string",
+            "minLength": 1
+          },
+          "review_agent": {
+            "type": "string",
+            "minLength": 1
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parallelizable": {
+            "type": "boolean"
+          },
+          "branch": {
+            "type": "string",
+            "pattern": "^symphony/.+"
+          },
+          "worktree_hint": {
+            "type": "string",
+            "pattern": "^\\./worktrees/.+"
+          },
+          "scope": {
+            "type": "object",
+            "required": [
+              "include",
+              "exclude"
+            ],
+            "properties": {
+              "include": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "exclude": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "acceptance_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "validation": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "review": {
+            "type": "object",
+            "required": [
+              "ai_review_required",
+              "human_runtime_check"
+            ],
+            "properties": {
+              "ai_review_required": {
+                "type": "boolean"
+              },
+              "human_runtime_check": {
+                "type": "string"
+              }
+            }
+          },
+          "linear": {
+            "type": "object",
+            "required": [
+              "parent",
+              "labels"
+            ],
+            "properties": {
+              "parent": {
+                "type": "string",
+                "minLength": 1
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
