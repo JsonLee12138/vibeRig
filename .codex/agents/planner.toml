@@ -33,8 +33,7 @@ Hand back missing acceptance criteria, unclear task ownership, schema uncertaint
 
 ## Skill Dependencies
 Preferred skills for this agent:
-- vibe-rig@write-plan: Use when the task needs to compile VibeRig brainstorm outputs into plan.md, tasks.yaml, child issue content, validation commands, or subagent assignments.
-- workflow: Use when the task needs project-local delivery workflow templates or orchestration guidance.
+- JsonLee12138/vibeRig@write-plan: Use when the task needs to compile VibeRig brainstorm outputs into plan.md, tasks.yaml, child issue content, validation commands, or subagent assignments.
 - akillness/oh-my-skills@task-planning: Use when the task needs a dedicated external task planning workflow.
 
 Skill resolution policy:

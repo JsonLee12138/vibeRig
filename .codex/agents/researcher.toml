@@ -33,11 +33,8 @@ Hand back missing credentials, inaccessible sources, high-impact architectural u
 
 ## Skill Dependencies
 Preferred skills for this agent:
-- deep-research: Use for comprehensive multi-source technical research, comparisons, trend analysis, or source-backed reports.
-- smart-search: Use when the task needs routed CLI/API search across technical, news, social, shopping, job, finance, or Chinese-language sources.
-- ghrepo: Use when the task needs to inspect GitHub repository files without cloning.
-- browser-use: Use when the task needs browser navigation, page inspection, form interaction, screenshots, or data extraction.
-- bmad-code-org/bmad-method@bmad-technical-research: Use when the task needs a dedicated external technical research workflow.
+- aahl/skills@mcp-deepwiki: Use when the task needs DeepWiki-backed research for GitHub repositories, architecture, code structure, or repository documentation.
+- jackwener/opencli@smart-search: Use when the task needs OpenCLI smart search across web, technical, social, marketplace, finance, jobs, travel, or Chinese-language sources.
 
 Skill resolution policy:
 - Treat listed skills as preferred capabilities, not mandatory startup dependencies.

@@ -33,7 +33,7 @@ Hand back unclear product ownership, conflicting goals, missing compliance or bu
 
 ## Skill Dependencies
 Preferred skills for this agent:
-- vibe-rig@brainstorm: Use when the task needs VibeRig requirement documents, requirement refinement, acceptance criteria, roadmap, or spec context.
+- JsonLee12138/vibeRig@brainstorm: Use when the task needs VibeRig requirement documents, requirement refinement, acceptance criteria, roadmap, or spec context.
 - cexll/myclaude@product-requirements: Use when the task needs dedicated product requirement or PRD structure beyond the local VibeRig workflow.
 
 Skill resolution policy:

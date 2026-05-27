@@ -33,12 +33,10 @@ Hand back failed validation, unclear acceptance criteria, missing test evidence,
 
 ## Skill Dependencies
 Preferred skills for this agent:
-- qa-expert: Use when the task needs QA strategy, test cases, acceptance testing, bug classification, quality metrics, or third-party QA handoff material.
-- vitest: Use when the task involves Vitest configuration, unit tests, mocking, coverage, fixtures, or test filtering.
-- playwright: Use when the task needs browser-based validation, screenshots, UI-flow testing, or local web app verification from the terminal.
-- browser-use: Use when the task needs browser navigation, page inspection, form interaction, screenshots, or data extraction.
-- inkeep/team-skills@qa: Use when the task needs a dedicated external QA workflow.
-- terraphim/terraphim-skills@acceptance-testing: Use when the task needs a dedicated external acceptance testing workflow.
+- daymade/claude-code-skills@qa-expert: Use when the task needs QA strategy, test cases, acceptance testing, bug classification, quality metrics, or third-party QA handoff material.
+- antfu/skills@vitest: Use when the task involves Vitest configuration, unit tests, mocking, coverage, fixtures, or test filtering.
+- microsoft/playwright-cli@playwright-cli: Use when the task needs browser-based validation, screenshots, UI-flow testing, or local web app verification from the terminal.
+- github/awesome-copilot@chrome-devtools: Use when the task needs Chrome DevTools-based inspection, debugging, console/network analysis, or front-end acceptance evidence.
 
 Skill resolution policy:
 - Treat listed skills as preferred capabilities, not mandatory startup dependencies.

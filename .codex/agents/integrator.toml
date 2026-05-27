@@ -33,13 +33,7 @@ Hand back merge conflicts, failed gates, unclear ownership, missing task state, 
 
 ## Skill Dependencies
 Preferred skills for this agent:
-- workflow: Use when the task needs delivery workflow templates, workflow execution context, or orchestration guidance.
-- git-commit: Use when the task needs commit grouping, conventional commit analysis, or commit-message guidance after the parent approves mutation.
-- gh-fix-ci: Use when the task needs to inspect or debug failing GitHub PR checks before proposing fixes.
-- creating-changesets: Use when the task needs release notes, semantic versioning, or changeset preparation.
-- paperclipai/paperclip@release: Use when the task needs a dedicated external release workflow.
-- different-ai/openwork@release: Use when the task needs an alternate external release workflow.
-- nahisaho/musubi@release-coordinator: Use when the task needs dedicated release coordination.
+- github/awesome-copilot@git-commit: Use when the task needs commit grouping, conventional commit analysis, or commit-message guidance after the parent approves mutation.
 
 Skill resolution policy:
 - Treat listed skills as preferred capabilities, not mandatory startup dependencies.
