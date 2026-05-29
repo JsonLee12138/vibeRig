@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, GripVertical, Play, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, GripVertical, Play, SlidersHorizontal } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import type { Task, TaskStatus } from "../app/types";
 import { StatusBadge } from "../shared/StatusBadge";
@@ -9,12 +9,13 @@ interface TaskCardProps {
   task: Task;
   dependencyCount: number;
   onOpen: (taskId: string) => void;
+  onOpenRun?: (runId: string) => void;
   onMoveStatus: (taskId: string, status: TaskStatus) => void;
   onRun: (taskId: string) => void;
   onReorder: (taskId: string, direction: "up" | "down") => void;
 }
 
-export function TaskCard({ task, dependencyCount, onOpen, onMoveStatus, onRun, onReorder }: TaskCardProps) {
+export function TaskCard({ task, dependencyCount, onOpen, onOpenRun, onMoveStatus, onRun, onReorder }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.task_id,
     data: { status: task.status },
@@ -61,6 +62,12 @@ export function TaskCard({ task, dependencyCount, onOpen, onMoveStatus, onRun, o
           <button className="card-start-button primary" title="Start task" onClick={() => onRun(task.task_id)}>
             <Play size={15} />
             <span>Start</span>
+          </button>
+        ) : null}
+        {onOpenRun && task.latest_run?.id && ["running", "blocked", "failed"].includes(task.status) ? (
+          <button title="Open run log" onClick={() => onOpenRun(task.latest_run?.id || "")}>
+            <FileText size={15} />
+            <span>Logs</span>
           </button>
         ) : null}
         <button title="Move up" onClick={() => onReorder(task.task_id, "up")}>

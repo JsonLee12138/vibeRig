@@ -7,6 +7,7 @@ interface TaskColumnProps {
   column: BoardColumn;
   dependencyCount: (taskDbId: string) => number;
   onOpenTask: (taskId: string) => void;
+  onOpenRun?: (runId: string) => void;
   onMoveStatus: (taskId: string, status: TaskStatus) => void;
   onRunTask: (taskId: string) => void;
   onReorder: (taskId: string, direction: "up" | "down") => void;
@@ -16,6 +17,7 @@ export function TaskColumn({
   column,
   dependencyCount,
   onOpenTask,
+  onOpenRun,
   onMoveStatus,
   onRunTask,
   onReorder,
@@ -35,6 +37,7 @@ export function TaskColumn({
             task={task}
             dependencyCount={dependencyCount(task.id)}
             onOpen={onOpenTask}
+            onOpenRun={onOpenRun}
             onMoveStatus={onMoveStatus}
             onRun={onRunTask}
             onReorder={onReorder}

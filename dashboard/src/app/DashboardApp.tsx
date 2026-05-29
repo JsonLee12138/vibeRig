@@ -215,6 +215,20 @@ export function DashboardApp() {
     });
   };
 
+  const openBoardRun = (runId: string) => {
+    const taskId = board?.tasks.find((task) => task.latest_run?.id === runId)?.task_id || selectedTaskId || taskDetail?.task.task_id;
+    if (taskId) {
+      setSelectedTaskId(taskId);
+    }
+    setSelectedRunId(runId);
+    switchView("runs", {
+      project: selectedProjectId,
+      requirement: selectedRequirementId,
+      task: taskId,
+      run: runId,
+    });
+  };
+
   const moveStatus = async (taskId: string, status: TaskStatus) => {
     setError("");
     const reason = status === "ready" || status === "canceled" ? window.prompt("Reason, if required") || undefined : undefined;
@@ -347,6 +361,7 @@ export function DashboardApp() {
           <TaskBoard
             board={board}
             onOpenTask={openTask}
+            onOpenRun={openBoardRun}
             onMoveStatus={moveStatus}
             onRunTask={runTask}
             onReorder={reorderTask}

@@ -96,10 +96,6 @@ function toRunLogLine(line: string, index: number) {
   } as const;
 }
 
-function shellQuote(value: string) {
-  return `'${value.replaceAll("'", "'\"'\"'")}'`;
-}
-
 function selectedProjectId(data: DashboardSnapshot | null) {
   if (typeof window !== "undefined") {
     const project = new URLSearchParams(window.location.search).get("project");
@@ -605,7 +601,7 @@ function TaskCard({ task, onStartTask }: { task: TaskSummary; onStartTask: (task
           </button>
         ) : null}
         <Link className="vr-button" to="/tasks/$taskId" params={{ taskId: task.id }}>{t("actions.open")}</Link>
-        {task.state === "Running" ? <Link className="vr-button" to="/runs/$taskId/log" params={{ taskId: task.id }}>{t("actions.logs")}</Link> : null}
+        {["Running", "Blocked"].includes(task.state) ? <Link className="vr-button" to="/runs/$taskId/log" params={{ taskId: task.id }}>{t("actions.logs")}</Link> : null}
       </div>
     </article>
   );
@@ -776,6 +772,36 @@ export function TaskDetailPage({ taskId = "AUTH-101", mode = "ready" }: { taskId
     }
   };
 
+  const resumeTask = async () => {
+    if (!projectId || !requirementId || !task?.id || working) return;
+    setWorking(true);
+    setMutationError("");
+    try {
+      await api.resumeTask(projectId, requirementId, task.id, "resume blocked run from dashboard");
+      await invalidateDashboard();
+      void navigate({ to: "/runs/$taskId/log", params: { taskId: task.id } });
+    } catch (error) {
+      setMutationError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const rerunTask = async () => {
+    if (!projectId || !requirementId || !task?.id || working) return;
+    setWorking(true);
+    setMutationError("");
+    try {
+      await api.rerunTask(projectId, requirementId, task.id, "rerun blocked task from dashboard");
+      await invalidateDashboard();
+      void navigate({ to: "/runs/$taskId/log", params: { taskId: task.id } });
+    } catch (error) {
+      setMutationError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setWorking(false);
+    }
+  };
+
   const stopTask = async () => {
     if (!projectId || !requirementId || !task?.id || working) return;
     setWorking(true);
@@ -811,7 +837,15 @@ export function TaskDetailPage({ taskId = "AUTH-101", mode = "ready" }: { taskId
         title={task.title}
         actions={(
           <>
-            <button className={task.state === "Running" ? "vr-button" : "vr-button-primary"} type="button" disabled={working} onClick={() => void (task.state === "Running" ? stopTask() : runTask())}>{task.state === "Running" ? <CircleStop size={16} /> : <Play size={16} />}{task.state === "Running" ? t("actions.stopTask") : t("actions.runTask")}</button>
+            {task.state === "Blocked" ? (
+              <>
+                <button className="vr-button-primary" type="button" disabled={working} onClick={() => void resumeTask()}><Play size={16} />{t("actions.resumeTask")}</button>
+                <button className="vr-button" type="button" disabled={working} onClick={() => void rerunTask()}><RefreshCw size={16} />{t("actions.rerunTask")}</button>
+                <Link className="vr-button" to="/runs/$taskId/log" params={{ taskId: task.id }}><ExternalLink size={16} />{t("actions.logs")}</Link>
+              </>
+            ) : (
+              <button className={task.state === "Running" ? "vr-button" : "vr-button-primary"} type="button" disabled={working} onClick={() => void (task.state === "Running" ? stopTask() : runTask())}>{task.state === "Running" ? <CircleStop size={16} /> : <Play size={16} />}{task.state === "Running" ? t("actions.stopTask") : t("actions.runTask")}</button>
+            )}
             <Link className="vr-button" to="/board"><X size={16} />{t("actions.close")}</Link>
           </>
         )}
@@ -909,10 +943,6 @@ export function RunLogPage({ taskId = "AUTH-105" }: { taskId?: string }) {
   const codexThreadId = run?.codex_thread_id || codexSession?.thread_id || "";
   const sessionId = codexThreadId || t("run.noCodexThread");
   const nativeSessionId = run?.codex_session_id || codexSession?.id || "";
-  const apiServer = "/Users/jsonlee/Projects/vb-plugin/api/server.py";
-  const runCommand = run?.id ? `python3 ${shellQuote(apiServer)} run-log ${shellQuote(run.id)}` : "";
-  const sessionCommand = codexThreadId ? `codex resume --include-non-interactive --all ${shellQuote(codexThreadId)}` : "";
-  const nativeSessionCommand = nativeSessionId ? `python3 ${shellQuote(apiServer)} codex-session ${shellQuote(nativeSessionId)}` : "";
   const logLines = runLog.length ? runLog : data.runLog;
   const isRunning = Boolean(run && !["success", "failed", "blocked", "canceled"].includes(run.status));
   const stopRun = async () => {
@@ -949,9 +979,9 @@ export function RunLogPage({ taskId = "AUTH-105" }: { taskId?: string }) {
             <InfoBox
               title={t("run.metadata")}
               lines={[
-                <CopyableMetaLine key="run-id" label={t("run.runId")} value={run?.id || "pending"} command={runCommand} />,
-                <CopyableMetaLine key="session-id" label={t("run.sessionId")} value={sessionId || "pending"} command={sessionCommand} />,
-                <CopyableMetaLine key="native-session-id" label={t("run.nativeSessionId")} value={nativeSessionId || "pending"} command={nativeSessionCommand} />,
+                <CopyableMetaLine key="run-id" label={t("run.runId")} value={run?.id || "pending"} />,
+                <CopyableMetaLine key="session-id" label={t("run.sessionId")} value={sessionId || "pending"} disabled={!codexThreadId} />,
+                <CopyableMetaLine key="native-session-id" label={t("run.nativeSessionId")} value={nativeSessionId || "pending"} disabled={!nativeSessionId} />,
                 `${t("run.worker")}: ${run?.codex_adapter || "codex"}`,
                 `${t("run.branch")}: ${taskBranch || run?.base_ref || "none"}`,
                 `${t("run.status")}: ${run?.implementation_status || run?.status || taskStatus || "pending"}`,
@@ -1048,16 +1078,16 @@ function TagList({ values }: { values: string[] }) {
   return <div className="flex flex-wrap gap-2">{values.map((value) => <span key={value} className="rounded-full border border-[#e4e2e4] bg-[#f6f3f5] px-3 py-1 text-xs">{value}</span>)}</div>;
 }
 
-function CopyableMetaLine({ command, label, value }: { command?: string; label: string; value: string }) {
+function CopyableMetaLine({ disabled = false, label, value }: { disabled?: boolean; label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   const { t } = useTranslation();
-  const copyCommand = async () => {
-    if (!command) return;
+  const copyId = async () => {
+    if (disabled) return;
     if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(command);
+      await navigator.clipboard.writeText(value);
     } else {
       const textarea = document.createElement("textarea");
-      textarea.value = command;
+      textarea.value = value;
       textarea.setAttribute("readonly", "true");
       textarea.style.position = "fixed";
       textarea.style.left = "-9999px";
@@ -1074,13 +1104,13 @@ function CopyableMetaLine({ command, label, value }: { command?: string; label: 
     <button
       className="grid w-full gap-1 rounded-2 border border-[#e4e2e4] bg-white px-3 py-2 text-left text-[#1d1d1f] hover:border-[#aac7ff] hover:bg-[#f8fbff] disabled:cursor-default disabled:opacity-60"
       type="button"
-      disabled={!command}
-      title={command || undefined}
-      onClick={() => void copyCommand()}
+      disabled={disabled}
+      title={disabled ? undefined : value}
+      onClick={() => void copyId()}
     >
       <span className="flex items-center justify-between gap-2 text-xs font-semibold uppercase text-[#67686a]">
         <span>{label}</span>
-        {command ? <span className="inline-flex items-center gap-1 normal-case text-[#0066cc]">{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("actions.copied") : t("actions.copyCommand")}</span> : null}
+        {!disabled ? <span className="inline-flex items-center gap-1 normal-case text-[#0066cc]">{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? t("actions.copied") : t("actions.copyId")}</span> : null}
       </span>
       <code className="whitespace-normal break-all font-mono text-xs leading-5 text-[#1d1d1f]">{value}</code>
     </button>

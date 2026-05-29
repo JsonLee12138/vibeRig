@@ -157,6 +157,37 @@ tasks:
         self.assertNotIn("validation_started", [event["event_type"] for event in events])
         self.assertIn("input required", result["run"]["summary"])
 
+    def test_blocked_task_resume_reuses_existing_codex_session(self) -> None:
+        os.environ["VIBERIG_FAKE_CODEX_STATUS"] = "input_required"
+        self.ready_task()
+
+        blocked = viberig_service.execute_ready_task(self.home, self.project["id"], "REQ-CODEX", "T1")
+        blocked_session_id = blocked["codex"]["session_id"]
+        os.environ["VIBERIG_FAKE_CODEX_STATUS"] = "success"
+
+        result = viberig_service.execute_blocked_task_resume(
+            self.home,
+            self.project["id"],
+            "REQ-CODEX",
+            "T1",
+            "credentials are now available",
+        )
+        detail = viberig_service.get_task(self.home, self.project["id"], "REQ-CODEX", "T1")
+        events = viberig_service.list_run_events(self.home, blocked["run"]["id"])
+        event_types = [event["event_type"] for event in events]
+        resumed_session = viberig_service.get_codex_session(self.home, blocked_session_id)
+
+        self.assertEqual(result["run"]["status"], "success")
+        self.assertEqual(detail["task"]["status"], "human_review")
+        self.assertEqual(result["codex"]["session_id"], blocked_session_id)
+        self.assertIn("resume_started", event_types)
+        self.assertIn("codex_session_resumed", event_types)
+        self.assertIn("codex-resume-prompt.md", resumed_session["prompt_path"])
+        self.assertIn(
+            "credentials are now available",
+            Path(resumed_session["prompt_path"]).read_text(encoding="utf-8"),
+        )
+
     def test_manual_validation_moves_task_to_human_review_not_failed(self) -> None:
         task_file = self.requirement_root / "tasks.yaml"
         task_file.write_text(

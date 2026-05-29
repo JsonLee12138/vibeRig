@@ -1,0 +1,1 @@
+import{d as s,m as t}from"./index-DUYA_fP4.js";import{T as e}from"./StaticDashboard-D6w309yq.js";function r(){const{taskId:o}=s.useParams();return t.jsx(e,{taskId:o,mode:"blocked"})}export{r as component};

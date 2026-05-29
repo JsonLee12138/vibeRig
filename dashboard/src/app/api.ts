@@ -140,6 +140,24 @@ export const api = {
       })
     ).run;
   },
+  async resumeTask(projectId: string, requirementId: string, taskId: string, comment?: string): Promise<Run> {
+    return (
+      await post<{ run: Run }>(`/api/tasks/${encodeURIComponent(taskId)}/runs/resume`, {
+        project_id: projectId,
+        requirement_id: requirementId,
+        comment,
+      })
+    ).run;
+  },
+  async rerunTask(projectId: string, requirementId: string, taskId: string, reason?: string): Promise<Run> {
+    return (
+      await post<{ run: Run }>(`/api/tasks/${encodeURIComponent(taskId)}/runs/rerun`, {
+        project_id: projectId,
+        requirement_id: requirementId,
+        reason,
+      })
+    ).run;
+  },
   async run(runId: string): Promise<RunDetail> {
     return request<RunDetail>(`/api/runs/${encodeURIComponent(runId)}`);
   },

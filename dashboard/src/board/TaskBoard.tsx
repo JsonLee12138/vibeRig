@@ -6,12 +6,13 @@ import { TaskColumn } from "./TaskColumn";
 interface TaskBoardProps {
   board?: Board | null;
   onOpenTask: (taskId: string) => void;
+  onOpenRun?: (runId: string) => void;
   onMoveStatus: (taskId: string, status: TaskStatus) => void;
   onRunTask: (taskId: string) => void;
   onReorder: (taskId: string, direction: "up" | "down") => void;
 }
 
-export function TaskBoard({ board, onOpenTask, onMoveStatus, onRunTask, onReorder }: TaskBoardProps) {
+export function TaskBoard({ board, onOpenTask, onOpenRun, onMoveStatus, onRunTask, onReorder }: TaskBoardProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor));
 
   if (!board) {
@@ -37,6 +38,7 @@ export function TaskBoard({ board, onOpenTask, onMoveStatus, onRunTask, onReorde
             column={column}
             dependencyCount={dependencyCount}
             onOpenTask={onOpenTask}
+            onOpenRun={onOpenRun}
             onMoveStatus={onMoveStatus}
             onRunTask={onRunTask}
             onReorder={onReorder}

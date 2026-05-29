@@ -1670,7 +1670,7 @@ def validate_task_transition(
         "running": {"self_accepted", "human_review", "blocked", "failed", "canceled"},
         "self_accepted": {"ready", "human_review", "accepted", "blocked", "failed", "canceled"},
         "human_review": {"ready", "accepted", "blocked", "canceled"},
-        "blocked": {"ready", "canceled"},
+        "blocked": {"ready", "running", "canceled"},
         "failed": {"ready", "canceled"},
         "accepted": set(),
         "canceled": {"ready"},
@@ -2661,6 +2661,65 @@ def build_codex_prompt(context: CodexRunContext) -> str:
     ).strip() + "\n"
 
 
+def tail_text(text: str, max_lines: int = 120) -> str:
+    lines = text.splitlines()
+    if len(lines) <= max_lines:
+        return text
+    return "\n".join(lines[-max_lines:])
+
+
+def build_blocked_resume_prompt(context: CodexRunContext, comment: str | None = None) -> str:
+    run_log = ""
+    if context.run_log_path.exists():
+        run_log = tail_text(context.run_log_path.read_text(encoding="utf-8", errors="replace"))
+    latest_session = get_run_codex_session(context.home, context.run["id"])
+    final_message = ""
+    final_path = latest_session.get("final_message_path")
+    if final_path and Path(final_path).exists():
+        final_message = tail_text(Path(final_path).read_text(encoding="utf-8", errors="replace"), 80)
+    status_reason = context.task.get("status_reason") or context.run.get("error_summary") or context.run.get("summary") or "blocked"
+    return "\n".join(
+        [
+            "# VibeRig Blocked Run Resume Prompt",
+            "",
+            render_prompt_section(
+                "Objective",
+                "Continue the blocked implementation session. Analyze the blocker, apply the smallest required fix in the existing worktree, and finish with a concise summary and residual risks.",
+            ),
+            render_prompt_section(
+                "Context",
+                "\n".join(
+                    [
+                        f"- project_id: {context.project['id']}",
+                        f"- requirement_id: {context.task['requirement_id']}",
+                        f"- task_id: {context.task['task_id']}",
+                        f"- run_id: {context.run['id']}",
+                        f"- worktree_path: {context.worktree_path}",
+                        f"- blocked_reason: {status_reason}",
+                        f"- resume_session_id: {latest_session['id']}",
+                    ]
+                ),
+            ),
+            render_prompt_section("User Comment", comment or "No additional comment was provided."),
+            render_prompt_section("Previous Final Message", final_message or "No final message was recorded."),
+            render_prompt_section("Recent Run Log", run_log or "No run log was recorded."),
+            render_prompt_section(
+                "Resume Rules",
+                "\n".join(
+                    [
+                        "- Continue from the current worktree state; do not restart the task from scratch.",
+                        "- Use VibeRig MCP reads to inspect task, run, log, diff, and evidence when available.",
+                        "- You may append run events or record new evidence through VibeRig MCP.",
+                        "- Do not mutate task status, acceptance status, or final review status.",
+                        "- Do not edit `.vibeRig/` files, SQLite files, or markdown source files to update task state.",
+                    ]
+                ),
+            ),
+            render_prompt_section("VibeRig MCP Contract", render_mcp_operating_contract(context)),
+        ]
+    ).strip() + "\n"
+
+
 def build_test_authoring_prompt(context: CodexRunContext, implementation_result: CodexAdapterResult, diff_artifacts: dict[str, Any]) -> str:
     return "\n".join(
         [
@@ -2832,6 +2891,40 @@ def create_codex_session_record(
         {"codex_session_id": session_id, "adapter": adapter, "prompt_path": str(prompt_path)},
     )
     return normalize_codex_session(row)
+
+
+def reopen_codex_session_record(context: CodexRunContext, session_id: str, prompt_path: Path, stage: str) -> dict[str, Any]:
+    now = utc_now()
+    with connect_db(context.home) as connection:
+        row = connection.execute("SELECT * FROM codex_sessions WHERE id = ? AND run_id = ?", (session_id, context.run["id"])).fetchone()
+        if not row:
+            raise ValueError(f"Run {context.run['id']} has no Codex session {session_id}")
+        connection.execute(
+            """
+            UPDATE codex_sessions
+            SET status = 'starting', finished_at = NULL, prompt_path = ?, error_summary = NULL
+            WHERE id = ?
+            """,
+            (str(prompt_path), session_id),
+        )
+        connection.commit()
+        updated = connection.execute("SELECT * FROM codex_sessions WHERE id = ?", (session_id,)).fetchone()
+    update_run_progress(
+        context.home,
+        context.run["id"],
+        "codex_resuming",
+        "codex_resuming",
+        codex_adapter=row["adapter"],
+        codex_session_id=session_id,
+    )
+    append_run_event(
+        context.home,
+        context.run["id"],
+        "codex_session_resumed",
+        "codex session resume turn started",
+        {"codex_session_id": session_id, "adapter": row["adapter"], "prompt_path": str(prompt_path), "stage": stage, "resumed_at": now},
+    )
+    return normalize_codex_session(updated)
 
 
 def update_codex_session_record(home: Path, result: CodexAdapterResult) -> dict[str, Any]:
@@ -3361,7 +3454,13 @@ def appserver_codex_adapter(context: CodexRunContext, session_id: str, prompt_pa
     )
 
 
-def run_codex_stage(context: CodexRunContext, prompt_path: Path, stage: str, status_label: str) -> CodexAdapterResult:
+def run_codex_stage(
+    context: CodexRunContext,
+    prompt_path: Path,
+    stage: str,
+    status_label: str,
+    resume_session_id: str | None = None,
+) -> CodexAdapterResult:
     adapter = str(context.config.get("adapter") or "fake")
     if adapter == "cli":
         raise ValueError("Codex CLI adapter is disabled for real VibeRig task runs; use runner.codex.adapter: codex-cli-mcp.")
@@ -3369,7 +3468,11 @@ def run_codex_stage(context: CodexRunContext, prompt_path: Path, stage: str, sta
         raise ValueError("Codex appserver adapter is disabled for real VibeRig task runs; use runner.codex.adapter: codex-cli-mcp.")
     effective_adapter = "codex-cli-mcp" if adapter == "mcp" else adapter
     events_path, transcript_path, final_path = codex_artifact_paths(context, stage)
-    session = create_codex_session_record(context, effective_adapter, prompt_path, events_path, transcript_path, final_path)
+    if resume_session_id:
+        session = reopen_codex_session_record(context, resume_session_id, prompt_path, stage)
+        effective_adapter = session.get("adapter") or effective_adapter
+    else:
+        session = create_codex_session_record(context, effective_adapter, prompt_path, events_path, transcript_path, final_path)
     session_id = session["id"]
     update_run_progress(context.home, context.run["id"], status_label, status_label)
     append_run_event(
@@ -3581,7 +3684,12 @@ def write_self_acceptance_evidence(
     }
 
 
-def execute_run_context(context: CodexRunContext, mark_running: bool = True) -> dict[str, Any]:
+def execute_run_context(
+    context: CodexRunContext,
+    mark_running: bool = True,
+    resume_session_id: str | None = None,
+    resume_comment: str | None = None,
+) -> dict[str, Any]:
     project_root = Path(context.project["project_root"])
     run_id = context.run["id"]
     project_id_value = context.project["id"]
@@ -3596,9 +3704,21 @@ def execute_run_context(context: CodexRunContext, mark_running: bool = True) -> 
     acceptance_result: CodexAdapterResult | None = None
     validation_results: list[dict[str, Any]] = []
     try:
-        prepare_task_worktree(context)
-        prompt_path = write_codex_prompt(context)
-        codex_result = run_codex_implementation(context, prompt_path)
+        if resume_session_id:
+            update_run_progress(home, run_id, "resuming", "resuming", error_summary=None)
+            append_run_event(
+                home,
+                run_id,
+                "resume_started",
+                "blocked run resume started",
+                {"codex_session_id": resume_session_id, "comment": resume_comment or ""},
+            )
+            prompt_path = write_codex_stage_prompt(context, "resume", build_blocked_resume_prompt(context, resume_comment))
+            codex_result = run_codex_stage(context, prompt_path, "resume", "development", resume_session_id=resume_session_id)
+        else:
+            prepare_task_worktree(context)
+            prompt_path = write_codex_prompt(context)
+            codex_result = run_codex_implementation(context, prompt_path)
         if codex_result.status == "blocked":
             update_task_status(home, project_id_value, requirement_id_value, task_id_value, "blocked")
             finished = finish_run(home, run_id, "blocked", codex_result.error or "Codex input required")
@@ -3737,7 +3857,13 @@ def execute_run_context(context: CodexRunContext, mark_running: bool = True) -> 
     }
 
 
-def execute_existing_run(home: Path, run_id: str, mark_running: bool = False) -> dict[str, Any]:
+def execute_existing_run(
+    home: Path,
+    run_id: str,
+    mark_running: bool = False,
+    resume_session_id: str | None = None,
+    resume_comment: str | None = None,
+) -> dict[str, Any]:
     with connect_db(home) as connection:
         run_row = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
         if not run_row:
@@ -3748,12 +3874,174 @@ def execute_existing_run(home: Path, run_id: str, mark_running: bool = False) ->
     run = normalize_run(run_row)
     task = normalize_task(task_row)
     context = create_run_context(home, run["project_id"], run["requirement_id"], task["task_id"], run=run)
-    return execute_run_context(context, mark_running=mark_running)
+    return execute_run_context(context, mark_running=mark_running, resume_session_id=resume_session_id, resume_comment=resume_comment)
 
 
 def execute_ready_task(home: Path, project_id_value: str, requirement_id_value: str, task_id_value: str) -> dict[str, Any]:
     context = create_run_context(home, project_id_value, requirement_id_value, task_id_value)
     return execute_run_context(context)
+
+
+def latest_blocked_run_for_task(home: Path, project_id_value: str, requirement_id_value: str, task_id_value: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    key = task_key(project_id_value, requirement_id_value, task_id_value)
+    with connect_db(home) as connection:
+        run_row = connection.execute(
+            """
+            SELECT * FROM runs
+            WHERE project_id = ? AND requirement_id = ? AND task_id = ? AND status = 'blocked'
+            ORDER BY started_at DESC
+            LIMIT 1
+            """,
+            (project_id_value, requirement_id_value, key),
+        ).fetchone()
+        if not run_row:
+            raise ValueError(f"Task has no blocked run to resume: {task_id_value}")
+        session_row = connection.execute(
+            """
+            SELECT * FROM codex_sessions
+            WHERE run_id = ?
+            ORDER BY started_at DESC
+            LIMIT 1
+            """,
+            (run_row["id"],),
+        ).fetchone()
+        if not session_row:
+            raise ValueError(f"Blocked run has no Codex session to resume: {run_row['id']}")
+    return normalize_run(run_row), normalize_codex_session(session_row)
+
+
+def reopen_run_for_resume(home: Path, run_id: str, comment: str | None = None) -> dict[str, Any]:
+    now = utc_now()
+    with connect_db(home) as connection:
+        run = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+        if not run:
+            raise ValueError(f"Unknown run: {run_id}")
+        if run["status"] != "blocked":
+            raise ValueError("Only blocked runs can be resumed.")
+        connection.execute(
+            """
+            UPDATE runs
+            SET status = 'resuming', implementation_status = 'resuming', finished_at = NULL,
+                error_summary = NULL
+            WHERE id = ?
+            """,
+            (run_id,),
+        )
+        add_activity_event(
+            connection,
+            "run.resume_requested",
+            run["project_id"],
+            run["requirement_id"],
+            run["task_id"],
+            {"run_id": run_id, "comment": comment or ""},
+        )
+        connection.commit()
+        row = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+    append_run_event(home, run_id, "resume_requested", comment or "resume requested")
+    resumed = normalize_run(row)
+    publish_server_event("run.updated", {"run_id": run_id, "run": resumed})
+    return resumed
+
+
+def execute_blocked_task_resume(
+    home: Path,
+    project_id_value: str,
+    requirement_id_value: str,
+    task_id_value: str,
+    comment: str | None = None,
+) -> dict[str, Any]:
+    task_detail = get_task(home, project_id_value, requirement_id_value, task_id_value)
+    if task_detail["task"]["status"] != "blocked":
+        raise ValueError("Only blocked tasks can be resumed.")
+    run, session = latest_blocked_run_for_task(home, project_id_value, requirement_id_value, task_id_value)
+    update_task_status(home, project_id_value, requirement_id_value, task_id_value, "running")
+    reopen_run_for_resume(home, run["id"], comment)
+    return execute_existing_run(
+        home,
+        run["id"],
+        mark_running=False,
+        resume_session_id=session["id"],
+        resume_comment=comment,
+    )
+
+
+def start_blocked_task_resume(
+    home: Path,
+    project_id_value: str,
+    requirement_id_value: str,
+    task_id_value: str,
+    comment: str | None = None,
+) -> dict[str, Any]:
+    task_detail = get_task(home, project_id_value, requirement_id_value, task_id_value)
+    if task_detail["task"]["status"] != "blocked":
+        raise ValueError("Only blocked tasks can be resumed.")
+    run, session = latest_blocked_run_for_task(home, project_id_value, requirement_id_value, task_id_value)
+    update_task_status(home, project_id_value, requirement_id_value, task_id_value, "running")
+    reopened = reopen_run_for_resume(home, run["id"], comment)
+
+    def worker() -> None:
+        execute_existing_run(
+            home,
+            run["id"],
+            mark_running=False,
+            resume_session_id=session["id"],
+            resume_comment=comment,
+        )
+
+    thread = threading.Thread(target=worker, name=f"viberig-resume-{run['id']}", daemon=True)
+    thread.start()
+    return get_run(home, reopened["id"])["run"]
+
+
+def start_run_resume(home: Path, run_id: str, comment: str | None = None) -> dict[str, Any]:
+    with connect_db(home) as connection:
+        run_row = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+        if not run_row:
+            raise ValueError(f"Unknown run: {run_id}")
+        task_row = connection.execute("SELECT * FROM tasks WHERE id = ?", (run_row["task_id"],)).fetchone()
+        if not task_row:
+            raise ValueError(f"Unknown task for run: {run_id}")
+        session_row = connection.execute(
+            "SELECT * FROM codex_sessions WHERE run_id = ? ORDER BY started_at DESC LIMIT 1",
+            (run_id,),
+        ).fetchone()
+        if not session_row:
+            raise ValueError(f"Run has no Codex session to resume: {run_id}")
+    run = normalize_run(run_row)
+    task = normalize_task(task_row)
+    if run["status"] != "blocked":
+        raise ValueError("Only blocked runs can be resumed.")
+    if task["status"] != "blocked":
+        raise ValueError("Only blocked tasks can be resumed.")
+    update_task_status(home, run["project_id"], run["requirement_id"], task["task_id"], "running")
+    reopened = reopen_run_for_resume(home, run_id, comment)
+
+    def worker() -> None:
+        execute_existing_run(
+            home,
+            run_id,
+            mark_running=False,
+            resume_session_id=session_row["id"],
+            resume_comment=comment,
+        )
+
+    thread = threading.Thread(target=worker, name=f"viberig-resume-{run_id}", daemon=True)
+    thread.start()
+    return get_run(home, reopened["id"])["run"]
+
+
+def rerun_task(home: Path, project_id_value: str, requirement_id_value: str, task_id_value: str, reason: str | None = None) -> dict[str, Any]:
+    detail = get_task(home, project_id_value, requirement_id_value, task_id_value)
+    if detail["task"]["status"] != "ready":
+        update_task_status(
+            home,
+            project_id_value,
+            requirement_id_value,
+            task_id_value,
+            "ready",
+            reason=reason or "rerun requested",
+        )
+    return start_task_run(home, project_id_value, requirement_id_value, task_id_value)
 
 
 def start_task_run(home: Path, project_id_value: str, requirement_id_value: str, task_id_value: str) -> dict[str, Any]:
@@ -3891,6 +4179,9 @@ def mcp_tool_descriptions() -> list[dict[str, Any]]:
             ["project_id", "requirement_id", "acceptance_id", "status"],
         ),
         "viberig.runs.create": schema({"project_id": string, "requirement_id": string, "task_id": string, "worktree_path": string}, ["project_id", "requirement_id", "task_id"]),
+        "viberig.tasks.resume_blocked": schema({"project_id": string, "requirement_id": string, "task_id": string, "comment": string}, ["project_id", "requirement_id", "task_id"]),
+        "viberig.tasks.rerun": schema({"project_id": string, "requirement_id": string, "task_id": string, "reason": string}, ["project_id", "requirement_id", "task_id"]),
+        "viberig.runs.resume": schema({"run_id": string, "comment": string}, ["run_id"]),
         "viberig.runs.append_event": schema({"run_id": string, "event_type": string, "message": string, "payload": object_value}, ["run_id", "event_type"]),
         "viberig.runs.finish": schema({"run_id": string, "status": string, "summary": string}, ["run_id", "status"]),
         "viberig.runs.get_log": schema({"run_id": string}, ["run_id"]),
@@ -3999,6 +4290,12 @@ def call_mcp_tool(home: Path, name: str, args: dict[str, Any]) -> Any:
         return {"acceptance": update_acceptance_status(home, args["project_id"], args["requirement_id"], args["acceptance_id"], args["status"])}
     if name == "viberig.runs.create":
         return {"run": create_run(home, args["project_id"], args["requirement_id"], args["task_id"], args.get("worktree_path"))}
+    if name == "viberig.tasks.resume_blocked":
+        return {"run": start_blocked_task_resume(home, args["project_id"], args["requirement_id"], args["task_id"], args.get("comment") or "")}
+    if name == "viberig.tasks.rerun":
+        return {"run": rerun_task(home, args["project_id"], args["requirement_id"], args["task_id"], args.get("reason") or "rerun requested")}
+    if name == "viberig.runs.resume":
+        return {"run": start_run_resume(home, args["run_id"], args.get("comment") or "")}
     if name == "viberig.runs.append_event":
         return {"event": append_run_event(home, args["run_id"], args["event_type"], args.get("message") or "", args.get("payload") or {})}
     if name == "viberig.runs.finish":
@@ -4854,6 +5151,37 @@ class Handler(BaseHTTPRequestHandler):
                         )
                     }
                 )
+                return
+            task_run_action_match = re.fullmatch(r"/api/tasks/([^/]+)/runs/(resume|rerun)", parsed.path)
+            if task_run_action_match:
+                task_id_value = urllib.parse.unquote(task_run_action_match.group(1))
+                action = task_run_action_match.group(2)
+                if action == "resume":
+                    run = start_blocked_task_resume(
+                        self.home,
+                        payload["project_id"],
+                        payload["requirement_id"],
+                        task_id_value,
+                        payload.get("comment") or "",
+                    )
+                else:
+                    run = rerun_task(
+                        self.home,
+                        payload["project_id"],
+                        payload["requirement_id"],
+                        task_id_value,
+                        payload.get("reason") or "rerun requested from dashboard",
+                    )
+                self.send_json({"run": run, "result": {"run": run}})
+                return
+            run_resume_match = re.fullmatch(r"/api/runs/([^/]+)/resume", parsed.path)
+            if run_resume_match:
+                run = start_run_resume(
+                    self.home,
+                    urllib.parse.unquote(run_resume_match.group(1)),
+                    payload.get("comment") or "",
+                )
+                self.send_json({"run": run, "result": {"run": run}})
                 return
             task_run_match = re.fullmatch(r"/api/tasks/([^/]+)/runs", parsed.path)
             if task_run_match:
