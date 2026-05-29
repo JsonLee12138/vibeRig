@@ -1,7 +1,7 @@
 {
   "name": "vibe-rig",
   "version": "0.1.0",
-  "description": "Requirement planning and Symphony execution prep for VibeRig workflows.",
+  "description": "Requirement planning, local task control, and accepted-work insights for VibeRig workflows.",
   "author": {
     "name": "jsonlee"
   },
@@ -9,17 +9,17 @@
   "keywords": [
     "requirements",
     "planning",
-    "symphony",
     "linear",
     "insights",
     "accepted-learning",
     "worktree"
   ],
+  "mcpServers": "./.mcp.json",
   "skills": "./skills/",
   "interface": {
     "displayName": "VibeRig",
-    "shortDescription": "Turn requirements into Symphony-ready execution plans.",
-    "longDescription": "VibeRig helps Codex turn ambiguous requirements into reviewable requirement docs, acceptance criteria, task graphs, Linear child issues, worktree execution plans for Symphony, and post-acceptance retrospectives with conservative learning candidates.",
+    "shortDescription": "Turn requirements into local execution plans.",
+    "longDescription": "VibeRig helps Codex turn ambiguous requirements into reviewable requirement docs, acceptance criteria, task graphs, Linear child issue drafts, worktree execution plans, and post-acceptance retrospectives with conservative learning candidates.",
     "developerName": "jsonlee",
     "category": "Productivity",
     "capabilities": [

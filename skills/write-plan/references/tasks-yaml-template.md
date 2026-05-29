@@ -31,7 +31,7 @@ tasks:
     priority: 1
     depends_on: []
     parallelizable: true
-    branch: symphony/VB-123-T1
+    branch: viberig/VB-123-T1
     worktree_hint: ./worktrees/VB-123-T1
     scope:
       include:
@@ -39,17 +39,18 @@ tasks:
       exclude:
         - web/**
     acceptance_refs:
-      - AC-1
-      - AC-3
+      - AC-A1
+      - AC-M1
     validation:
       - go test ./...
+      - "[AC-M1] Manual: verify the new API behavior in the target environment and record the observed response."
     review:
       ai_review_required: true
       human_runtime_check: optional
     linear:
       parent: VB-123
       labels:
-        - symphony
+        - viberig
         - generated
         - backend
 ```

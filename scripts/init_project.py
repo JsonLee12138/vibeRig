@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shlex
 import subprocess
 from pathlib import Path
@@ -16,22 +17,12 @@ worktrees:
   root: ./worktrees
   default_base: origin/main
   sync_before_pr: merge
-symphony:
-  runtime: plugin
-  plugin_root: "{plugin_root}"
-  workflow_planning: ./WORKFLOW.planning.md
-  workflow_implementation: ./WORKFLOW.implementation.md
-  setup_command: ./.vibeRig/bin/symphony-setup
-  planning_command: ./.vibeRig/bin/symphony-planning
-  implementation_command: ./.vibeRig/bin/symphony-implementation
-  runner_ports:
-    planning_start: 49170
-    implementation_start: 49180
 viberig:
   service_url: http://127.0.0.1:49160
   service_port: 49160
   autostart: true
   user_entry: panel
+  task_engine: local
 ports:
   preview_start: 49200
   strategy: find-next-free
@@ -40,6 +31,18 @@ context_mode:
   install_method: codex-plugin-marketplace
   marketplace: mksglu/context-mode
   status_file: ./.vibeRig/context-mode.md
+runner:
+  codex:
+    adapter: codex-cli-mcp
+    mcp_command: npx -y codex-mcp-server
+    mcp_tool: codex
+    enable_features:
+      - hooks
+    sandbox: workspace-write
+    full_auto: false
+    mcp_initialize_timeout_ms: 60000
+    mcp_tool_timeout_ms: 600000
+    turn_timeout_ms: 600000
 insights:
   enabled: true
   trigger: post_acceptance
@@ -59,45 +62,6 @@ commands:
   install: "{install_command}"
   dev: "{dev_command}"
   test: "{test_command}"
-"""
-
-
-PLANNING_WORKFLOW = """# VibeRig Planning Workflow
-
-Process parent issues in the Planning state.
-
-1. Run VibeRig brainstorm for the requirement.
-2. Run VibeRig write-plan.
-3. Validate .vibeRig/requirements/<requirement>/tasks.yaml.
-4. Render Linear child issues from tasks.yaml.
-5. Move the parent issue to Planned or Human Review.
-6. After the review gate passes, run the VibeRig insights planning retrospective.
-
-Constraints:
-- Do not implement business code.
-- Use .vibeRig/requirements/<requirement>/ for planning artifacts.
-- Child issue contracts must be self-contained enough to run without an unmerged planning worktree.
-- Learning candidates must come only from accepted planning outcomes.
-"""
-
-
-IMPLEMENTATION_WORKFLOW = """# VibeRig Implementation Workflow
-
-Process child issues in implementation states.
-
-1. Read the task contract.
-2. Confirm dependencies are complete.
-3. Fetch origin/main.
-4. Create a branch and worktree under ./worktrees.
-5. Run the implementation subagent for the task scope.
-6. Run validation.
-7. Run acceptance and code review subagents.
-8. Open a PR or write a handoff.
-9. After validation, acceptance review, and code review pass, run the VibeRig insights post-acceptance finalizer.
-
-Stop if the task contract is missing, dependencies are incomplete, base sync fails, scope is exceeded, or validation has no executable or manual fallback.
-
-At task start, read confirmed learnings from .vibeRig/insights/confirmed.md when present, but do not write new learnings during implementation.
 """
 
 
@@ -144,6 +108,22 @@ VIBERIG_CONFIG_SNIPPET = """viberig:
   service_port: 49160
   autostart: true
   user_entry: panel
+  task_engine: local
+"""
+
+
+CODEX_CLI_MCP_CONFIG_SNIPPET = """runner:
+  codex:
+    adapter: codex-cli-mcp
+    mcp_command: npx -y codex-mcp-server
+    mcp_tool: codex
+    enable_features:
+      - hooks
+    sandbox: workspace-write
+    full_auto: false
+    mcp_initialize_timeout_ms: 60000
+    mcp_tool_timeout_ms: 600000
+    turn_timeout_ms: 600000
 """
 
 
@@ -164,11 +144,54 @@ def ensure_config(path: Path, content: str) -> bool:
         return True
     existing = path.read_text(encoding="utf-8")
     updated = existing
-    if "dashboard_ports:" in updated and "runner_ports:" not in updated:
-        updated = updated.replace("dashboard_ports:", "runner_ports:", 1)
     if "\nviberig:" not in f"\n{updated}":
         prefix = "" if updated.endswith("\n") else "\n"
         updated = updated + prefix + VIBERIG_CONFIG_SNIPPET
+    elif "task_engine:" not in updated:
+        updated = updated.replace("  user_entry: panel\n", "  user_entry: panel\n  task_engine: local\n", 1)
+    if "\nrunner:" not in f"\n{updated}":
+        prefix = "" if updated.endswith("\n") else "\n"
+        updated = updated + prefix + CODEX_CLI_MCP_CONFIG_SNIPPET
+    if updated == existing:
+        return False
+    path.write_text(updated, encoding="utf-8")
+    return True
+
+
+def ensure_codex_hooks_config(path: Path) -> bool:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_text("[features]\nhooks = true\n", encoding="utf-8")
+        return True
+
+    existing = path.read_text(encoding="utf-8")
+    lines = existing.splitlines(keepends=True)
+    section_start: int | None = None
+    section_end = len(lines)
+    for index, line in enumerate(lines):
+        if re.match(r"^\s*\[features\]\s*(?:#.*)?$", line):
+            section_start = index
+            continue
+        if section_start is not None and index > section_start and re.match(r"^\s*\[.*\]\s*(?:#.*)?$", line):
+            section_end = index
+            break
+
+    if section_start is None:
+        separator = "\n" if existing and not existing.endswith("\n") else ""
+        updated = existing + separator + ("\n" if existing else "") + "[features]\nhooks = true\n"
+    else:
+        hook_line_index: int | None = None
+        for index in range(section_start + 1, section_end):
+            if re.match(r"^\s*hooks\s*=", lines[index]):
+                hook_line_index = index
+                break
+        if hook_line_index is None:
+            lines.insert(section_start + 1, "hooks = true\n")
+        elif not re.match(r"^\s*hooks\s*=\s*true\s*(?:#.*)?$", lines[hook_line_index]):
+            newline = "\n" if lines[hook_line_index].endswith("\n") else ""
+            lines[hook_line_index] = "hooks = true" + newline
+        updated = "".join(lines)
+
     if updated == existing:
         return False
     path.write_text(updated, encoding="utf-8")
@@ -183,21 +206,11 @@ def write_executable(path: Path, content: str) -> bool:
 
 
 def project_command(command_name: str, plugin_root: Path) -> str:
-    script_name = {
-        "viberig": "viberig_service.py",
-        "symphony-setup": "symphony_setup.sh",
-        "symphony-planning": "symphony_run_planning.sh",
-        "symphony-implementation": "symphony_run_implementation.sh",
+    script_path = {
+        "viberig": "api/server.py",
     }[command_name]
     embedded_plugin_root = shlex.quote(str(plugin_root))
-    if command_name == "viberig":
-        exec_line = 'exec python3 "${PLUGIN_ROOT}/scripts/viberig_service.py" "$@"'
-    elif command_name == "symphony-setup":
-        exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_setup.sh" "$@"'
-    elif command_name == "symphony-planning":
-        exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_run_planning.sh" "${PROJECT_ROOT}" "$@"'
-    else:
-        exec_line = 'exec "${PLUGIN_ROOT}/scripts/symphony_run_implementation.sh" "${PROJECT_ROOT}" "$@"'
+    exec_line = 'exec python3 "${PLUGIN_ROOT}/api/server.py" "$@"'
     return f"""#!/usr/bin/env bash
 set -euo pipefail
 
@@ -207,15 +220,15 @@ EMBEDDED_PLUGIN_ROOT={embedded_plugin_root}
 PLUGIN_ROOT="${{VIBERIG_PLUGIN_ROOT:-}}"
 
 if [[ -z "${{PLUGIN_ROOT}}" ]]; then
-  if [[ -x "${{DEFAULT_PLUGIN_ROOT}}/scripts/{script_name}" ]]; then
+  if [[ -x "${{DEFAULT_PLUGIN_ROOT}}/{script_path}" ]]; then
     PLUGIN_ROOT="${{DEFAULT_PLUGIN_ROOT}}"
   else
     PLUGIN_ROOT="${{EMBEDDED_PLUGIN_ROOT}}"
   fi
 fi
 
-if [[ ! -x "${{PLUGIN_ROOT}}/scripts/{script_name}" ]]; then
-  echo "VibeRig plugin command not found: ${{PLUGIN_ROOT}}/scripts/{script_name}"
+if [[ ! -x "${{PLUGIN_ROOT}}/{script_path}" ]]; then
+  echo "VibeRig plugin command not found: ${{PLUGIN_ROOT}}/{script_path}"
   echo "Set VIBERIG_PLUGIN_ROOT or install VibeRig at ./plugins/vibe-rig."
   exit 1
 fi
@@ -245,7 +258,6 @@ def main() -> int:
     parser.add_argument("--install-command", default="")
     parser.add_argument("--dev-command", default="")
     parser.add_argument("--test-command", default="")
-    parser.add_argument("--setup-symphony", action="store_true")
     parser.add_argument("--skip-global-service", action="store_true")
     parser.add_argument("--no-autostart", action="store_true")
     args = parser.parse_args()
@@ -268,7 +280,6 @@ def main() -> int:
 
     config = CONFIG_TEMPLATE.format(
         project_name=project_name,
-        plugin_root=plugin_root,
         linear_project_slug=args.linear_project_slug,
         install_command=args.install_command,
         dev_command=args.dev_command,
@@ -276,17 +287,15 @@ def main() -> int:
     )
     if ensure_config(root / ".vibeRig" / "config.yaml", config):
         created.append(str(root / ".vibeRig" / "config.yaml"))
+    if ensure_codex_hooks_config(root / ".codex" / "config.toml"):
+        created.append(str(root / ".codex" / "config.toml"))
     if write_if_missing(root / ".vibeRig" / "insights" / "candidates.md", CANDIDATES_TEMPLATE):
         created.append(str(root / ".vibeRig" / "insights" / "candidates.md"))
     if write_if_missing(root / ".vibeRig" / "insights" / "confirmed.md", CONFIRMED_TEMPLATE):
         created.append(str(root / ".vibeRig" / "insights" / "confirmed.md"))
     if write_if_missing(root / ".vibeRig" / "context-mode.md", CONTEXT_MODE_STATUS_TEMPLATE):
         created.append(str(root / ".vibeRig" / "context-mode.md"))
-    if write_if_missing(root / "WORKFLOW.planning.md", PLANNING_WORKFLOW):
-        created.append(str(root / "WORKFLOW.planning.md"))
-    if write_if_missing(root / "WORKFLOW.implementation.md", IMPLEMENTATION_WORKFLOW):
-        created.append(str(root / "WORKFLOW.implementation.md"))
-    for command_name in ["viberig", "symphony-setup", "symphony-planning", "symphony-implementation"]:
+    for command_name in ["viberig"]:
         command_path = root / ".vibeRig" / "bin" / command_name
         if write_executable(command_path, project_command(command_name, plugin_root)):
             created.append(str(command_path))
@@ -298,10 +307,8 @@ def main() -> int:
     print("Created or ensured:")
     for item in created:
         print(f"- {item}")
-    if args.setup_symphony:
-        subprocess.run([str(root / ".vibeRig" / "bin" / "symphony-setup")], check=True)
     if not args.skip_global_service:
-        service_script = plugin_root / "scripts" / "viberig_service.py"
+        service_script = plugin_root / "api" / "server.py"
         ensure_cmd = ["python3", str(service_script), "ensure"]
         if not args.no_autostart:
             ensure_cmd.append("--install-autostart")

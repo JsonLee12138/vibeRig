@@ -9,6 +9,7 @@ Use this checklist before finishing. Fix issues directly in the generated docume
 - No internal reasoning.
 - No "I considered..." process notes.
 - Rejected options appear only as meaningful tradeoffs.
+- Each generated document preserves the relevant `Why`, `What`, `Who`, and `How` information for its phase, even when the final document does not use those labels as headings.
 
 ## Requirement Check
 
@@ -27,6 +28,9 @@ Use this checklist before finishing. Fix issues directly in the generated docume
 
 - Every major requirement has at least one acceptance point.
 - Manual acceptance is separated from automated acceptance.
+- Automated and manual acceptance points use stable IDs that downstream task plans can reference.
+- `acceptance.md` does not invent task IDs before task splitting.
+- Manual acceptance points include why human judgment is required and concrete pass criteria.
 - Boundary, risk, and regression scenarios are represented.
 - Pass criteria are concrete.
 
@@ -48,3 +52,4 @@ Use this checklist before finishing. Fix issues directly in the generated docume
 - `acceptance.md` covers `requirement.md`.
 - `roadmap.md` reflects `research.md` and `acceptance.md`.
 - `spec.md` implements the recommended technical direction.
+- Task-to-acceptance mapping is left for `write-plan` unless `plan.md` or `tasks.yaml` already exists.

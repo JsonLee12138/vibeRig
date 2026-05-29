@@ -71,7 +71,7 @@ def validate(data: Any) -> list[str]:
         require(isinstance(task.get("depends_on"), list), f"{prefix}.depends_on must be a list", errors)
         require(isinstance(task.get("parallelizable"), bool), f"{prefix}.parallelizable must be boolean", errors)
         branch = task.get("branch")
-        require(isinstance(branch, str) and branch.startswith("symphony/"), f"{prefix}.branch must start with symphony/", errors)
+        require(isinstance(branch, str) and branch.startswith("viberig/"), f"{prefix}.branch must start with viberig/", errors)
         worktree_hint = task.get("worktree_hint")
         require(isinstance(worktree_hint, str) and worktree_hint.startswith("./worktrees/"), f"{prefix}.worktree_hint must start with ./worktrees/", errors)
         scope = task.get("scope") or {}

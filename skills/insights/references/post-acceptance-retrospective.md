@@ -33,7 +33,7 @@ sources:
   spec: .vibeRig/requirements/VB-123/spec.md
   plan: .vibeRig/requirements/VB-123/plan.md
 git:
-  branch: symphony/VB-123-T1
+  branch: viberig/VB-123-T1
   base_sha: <sha>
   head_sha: <sha>
   changed_files: []

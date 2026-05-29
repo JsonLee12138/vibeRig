@@ -1,0 +1,1 @@
+import{b as s,m as t}from"./index-BeiP0Ros.js";import{T as a}from"./StaticDashboard-dRq2tWac.js";function r(){const{taskId:o}=s.useParams();return t.jsx(a,{taskId:o,mode:"running"})}export{r as component};

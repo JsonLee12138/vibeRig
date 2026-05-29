@@ -1,6 +1,6 @@
 ---
 name: insights
-description: Generate VibeRig post-acceptance retrospectives and learning candidates. Use after Symphony validation, acceptance review, and code review pass; when asked to summarize accepted VibeRig work; when checking context-mode evidence; or when applying confirmed learning candidates. Do not use during active implementation except to read confirmed project learnings.
+description: Generate VibeRig post-acceptance retrospectives and learning candidates. Use after validation, acceptance review, and code review pass; when asked to summarize accepted VibeRig work; when checking context-mode evidence; or when applying confirmed learning candidates. Do not use during active implementation except to read confirmed project learnings.
 ---
 
 # Insights
@@ -19,8 +19,8 @@ Use this skill to turn accepted VibeRig work into auditable retrospectives and c
 
 Use this skill when one of these is true:
 
-- Symphony planning review passed and child issues were created.
-- Symphony implementation validation, acceptance review, and code review passed.
+- Planning review passed and child tasks were created.
+- Implementation validation, acceptance review, and code review passed.
 - A PR or handoff was accepted for a VibeRig child task.
 - The user asks for a VibeRig retrospective, accepted-work insights, or learning candidates.
 - The user asks to apply reviewed learning candidates.
@@ -58,7 +58,7 @@ If context-mode tools are available, use them as supporting evidence. If not, co
 ## Candidate Types
 
 - `project_note`: Accepted project facts, commands, paths, conventions, and validation entry points.
-- `workflow_rule`: VibeRig or Symphony process improvements proven by accepted work.
+- `workflow_rule`: VibeRig process improvements proven by accepted work.
 - `skill_update`: Proposed changes to `skills/*/SKILL.md`.
 - `user_preference`: Durable user preference, always requiring explicit confirmation.
 
@@ -68,4 +68,4 @@ Follow `references/learning-policy.md`.
 
 When generating reports, follow `references/report-template.md`.
 
-When called by Symphony after an accepted gate, follow `references/post-acceptance-retrospective.md`.
+When called after an accepted gate, follow `references/post-acceptance-retrospective.md`.

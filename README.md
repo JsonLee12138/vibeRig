@@ -1,8 +1,8 @@
 # VibeRig
 
-VibeRig is a project-local Codex plugin for turning rough requirements into
-reviewable planning artifacts, Symphony-ready execution tasks, isolated
-worktrees, and post-acceptance learning notes.
+VibeRig is a Codex plugin for turning rough requirements into reviewable
+planning artifacts, local execution tasks, isolated worktrees, and
+post-acceptance learning notes.
 
 Repository: [JsonLee12138/vibeRig](https://github.com/JsonLee12138/vibeRig)
 
@@ -12,13 +12,14 @@ Repository: [JsonLee12138/vibeRig](https://github.com/JsonLee12138/vibeRig)
 
 - `brainstorm`: turns a requirement into `requirement.md`, `research.md`,
   `acceptance.md`, `roadmap.md`, and `spec.md`.
-- `write-plan`: turns brainstorm output into `plan.md`, `tasks.yaml`, Linear
-  child issue drafts, worktree strategy, and Symphony workflow inputs.
-- `init-viberig`: initializes a target project with `.vibeRig/`, workflow
-  files, local worktree folders, and default runtime config.
+- `write-plan`: turns brainstorm output into `plan.md`, `tasks.yaml`, optional
+  Linear child issue drafts, worktree strategy, validation commands, and
+  subagent assignments.
+- `init-viberig`: initializes a target project with `.vibeRig/`, local
+  worktree folders, global panel registration, and default runtime config.
 - `insights`: records conservative learning candidates after accepted work.
-- `vendor/symphony`: pinned Symphony reference runtime used by the helper
-  scripts.
+- `api/server.py`: runs the local VibeRig backend and panel at
+  `http://127.0.0.1:49160`.
 
 ## Install From The Marketplace
 
@@ -75,7 +76,7 @@ folder:
 ```sh
 mkdir -p .agents/plugins plugins
 git submodule add https://github.com/JsonLee12138/vibeRig plugins/vibe-rig
-git submodule update --init --recursive plugins/vibe-rig
+git submodule update --init plugins/vibe-rig
 ```
 
 Use this local-source marketplace entry instead:
@@ -128,14 +129,9 @@ This creates or ensures:
   config.yaml
   bin/
     viberig
-    symphony-setup
-    symphony-planning
-    symphony-implementation
   requirements/
   insights/
 .codex/agents/
-WORKFLOW.planning.md
-WORKFLOW.implementation.md
 worktrees/
 .gitignore
 ```
@@ -149,42 +145,7 @@ http://127.0.0.1:49160
 
 Project initialization starts the global VibeRig daemon if needed, installs a
 macOS LaunchAgent for login autostart when supported, and registers the current
-project. Symphony runner ports are internal; users should work from the VibeRig
-panel rather than managing runner commands or ports directly.
-
-## Set Up Symphony
-
-Symphony should live inside the VibeRig plugin, not inside each business
-project. The global VibeRig daemon starts project-specific Symphony runners
-when the panel asks it to run planning or implementation.
-
-If you use the recommended local-source install, VibeRig expects the plugin at
-`plugins/vibe-rig/` and Symphony at `plugins/vibe-rig/vendor/symphony`. Because
-this repository vendors Symphony as a submodule, make sure recursive submodules
-are initialized:
-
-```sh
-git submodule update --init --recursive plugins/vibe-rig
-```
-
-Then build the Symphony runtime:
-
-```sh
-.vibeRig/bin/symphony-setup
-```
-
-To build the bundled Symphony runtime during project initialization, run:
-
-```sh
-python3 plugins/vibe-rig/scripts/init_project.py . --setup-symphony
-```
-
-The setup script uses `mise` inside `vendor/symphony/elixir`, so `mise` must be
-installed locally.
-
-If you installed only from a Git-backed marketplace, Codex will run the plugin
-from its cache. Use the plugin skills from Codex, or use the local-source
-install when you want to run the helper scripts by path in your shell.
+project.
 
 ## Run Planning And Implementation
 
@@ -194,14 +155,8 @@ Use the global VibeRig panel:
 http://127.0.0.1:49160
 ```
 
-From there, select a project and start planning or implementation. Direct
-commands such as `.vibeRig/bin/symphony-planning` and
-`.vibeRig/bin/symphony-implementation` exist only as debugging fallbacks.
-
-If the global daemon is started at login, shell-only environment variables are
-not available to runner processes. Put runner secrets such as `LINEAR_API_KEY`
-in `~/.viberig/secrets.env` or configure them through the panel once that UI is
-available.
+From there, select a project, import requirement tasks, review the board, run
+ready local task flows, and record evidence and acceptance.
 
 ## Global State
 
@@ -210,17 +165,15 @@ VibeRig stores local service state outside project repositories:
 ```text
 ~/.viberig/
   projects.json
-  secrets.env
   runtime/
     daemon.json
-    runners/
   logs/
+  runs/
+  exports/
 ```
 
-`runtime/runners/` is the daemon's process ledger for project-specific Symphony
-runners. It records runner pid, workflow, project id, log file, and status. It
-does not contain business code; implementation work still happens under each
-project's `worktrees/` directory.
+Business code and implementation work stay under each project's
+`worktrees/` directory.
 
 ## Typical Workflow
 
@@ -235,16 +188,9 @@ project's `worktrees/` directory.
      .vibeRig/requirements/<requirement-name>/tasks.yaml
    ```
 
-5. Render Linear child issue drafts if needed:
-
-   ```sh
-   python3 plugins/vibe-rig/scripts/render_linear_children.py \
-     .vibeRig/requirements/<requirement-name>/tasks.yaml
-   ```
-
-6. Run Symphony planning or implementation workflows.
-7. Review each task in its own branch and `./worktrees/<task>` directory before
-   merging.
+5. Import the requirement into the VibeRig panel and review the task board.
+6. Run each task in its own branch and `./worktrees/<task>` directory.
+7. Record validation evidence, acceptance review, and code review.
 8. After accepted work, run VibeRig insights to record learning candidates.
 
 ## Notes
@@ -258,4 +204,4 @@ project's `worktrees/` directory.
 - Missing specialized subagents should be created deliberately with the
   `agent-creator` skill instead of overloading one general agent.
 - `worktrees/`, `.vibeRig/runtime.json`, and `.vibeRig/context-mode.md` are
-  local runtime artifacts and should stay out of normal commits.
+  local runtime artifacts and usually should not be committed.

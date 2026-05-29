@@ -1,6 +1,6 @@
 ---
 name: write-plan
-description: Compile VibeRig brainstorm outputs into plan.md and tasks.yaml. Use after brainstorm has produced requirement.md, research.md, acceptance.md, roadmap.md, and spec.md, or when the user asks to split a VibeRig requirement into Symphony-ready child tasks, Linear child issues, worktree branches, validation commands, and subagent assignments.
+description: Compile VibeRig brainstorm outputs into plan.md and tasks.yaml. Use after brainstorm has produced requirement.md, research.md, acceptance.md, roadmap.md, and spec.md, or when the user asks to split a VibeRig requirement into local execution tasks, Linear child issue drafts, worktree branches, validation commands, and subagent assignments.
 ---
 
 # Write Plan
@@ -35,7 +35,7 @@ Write:
 └── tasks.yaml
 ```
 
-`plan.md` is the human-readable execution plan. `tasks.yaml` is the machine contract for Symphony, Linear, and subagents.
+`plan.md` is the human-readable execution plan. `tasks.yaml` is the machine contract for the VibeRig local task engine, optional Linear exports, worktrees, and subagents.
 
 ## Workflow
 
@@ -45,6 +45,7 @@ Write:
    - acceptance criteria that are not represented in spec or roadmap
    - roadmap tasks that are not testable
    - spec changes that exceed stated goals or non-goals
+   - manual acceptance points that cannot be mapped to a task, task group, or final integration check
 4. If contradictions are material, stop and request a brainstorm update.
 5. Draft task boundaries. Each task should map to one child issue, one branch, one worktree, and one PR or handoff.
 6. Prefer different subagents for task splitting, implementation, acceptance, and code review.
@@ -60,17 +61,29 @@ Write:
 - `parallelizable` must be false when tasks are likely to collide on the same files or shared contracts.
 - `scope.include` and `scope.exclude` must be specific enough for an implementation agent to obey.
 - `acceptance_refs` must point to criteria in `acceptance.md`.
-- `validation` must include executable commands or explicit manual acceptance items.
-- `branch` should use `symphony/<requirement-id>-<task-id>`.
+- `acceptance_refs` must include manual acceptance IDs when the task requires human verification.
+- `validation` must include executable commands or explicit manual acceptance items, and manual items must cite the related acceptance ID.
+- `branch` should use `viberig/<requirement-id>-<task-id>`.
 - `worktree_hint` should use `./worktrees/<requirement-id>-<task-id>`.
 - `base_policy.default_base` should default to `origin/main`.
 - `base_policy.require_fetch_before_worktree`, `require_base_sha_record`, and `require_sync_before_pr` should be true.
 
-## Symphony Fit
+## Local Execution Fit
 
-Plan for two Symphony workflows:
+Plan for VibeRig's local task and acceptance flow:
 
-- Planning daemon consumes parent issues in a planning state and produces brainstorm plus write-plan outputs.
-- Implementation daemon consumes child issues and executes one task per worktree.
+- `tasks.yaml` is imported into the global VibeRig panel.
+- Each task maps to a branch, a worktree, validation commands, acceptance checks, manual checks when needed, and review ownership.
+- Optional Linear child issue drafts should mirror the local task contract instead of becoming the source of truth.
 
-Child issue descriptions should include enough task contract content to run even if planning files are not merged yet.
+## Acceptance Mapping
+
+`brainstorm` defines stable automated and manual acceptance IDs in `acceptance.md`; `write-plan` maps them to executable tasks.
+
+For every task:
+
+- Include the relevant automated and manual IDs in `acceptance_refs`.
+- Put runnable checks in `validation` as commands.
+- Put manual checks in `validation` as explicit strings prefixed with the acceptance ID, for example `[AC-M1] Manual: verify keyboard focus order in the browser and capture notes`.
+- Use `plan.md` to show the human-readable Task -> Acceptance -> Manual Check mapping.
+- If a manual check only makes sense after multiple tasks are complete, assign it to the integration task or note the dependency in `plan.md`.

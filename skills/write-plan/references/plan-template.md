@@ -24,5 +24,8 @@
 
 ## Human Acceptance Entry
 
+| Task | Acceptance IDs | Manual Check | Evidence |
+|---|---|---|---|
+
 ## Risks And Fallbacks
 ```

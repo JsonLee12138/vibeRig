@@ -142,7 +142,7 @@
           },
           "branch": {
             "type": "string",
-            "pattern": "^symphony/.+"
+            "pattern": "^viberig/.+"
           },
           "worktree_hint": {
             "type": "string",
