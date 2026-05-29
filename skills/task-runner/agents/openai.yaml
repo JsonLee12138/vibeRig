@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Runner"
+  short_description: "Run VibeRig tasks in-chat with MCP status sync"
+  default_prompt: "Use $task-runner to pick the next VibeRig task for this requirement, execute it in the current Codex session through agent-sop, and keep the dashboard synchronized with VibeRig MCP."
