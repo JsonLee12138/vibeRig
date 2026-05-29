@@ -27,5 +27,5 @@ Exclude:
 
 ## Source Snapshot
 
-Include the minimal spec and acceptance excerpts needed for this task to run without relying on an unmerged planning worktree.
+Include the minimal requirement, spec, and acceptance excerpts needed for this task to run without relying on an unmerged planning worktree. Include research excerpts only when `research.md` exists and materially changes the task decision.
 ```

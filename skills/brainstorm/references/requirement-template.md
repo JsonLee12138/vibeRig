@@ -1,48 +1,43 @@
 # Requirement Template
 
-Write `.vibeRig/requirements/<name>/requirement.md` with this structure. Keep only result content, not the brainstorming process.
+Write `.vibeRig/requirements/<name>/requirement.md` with this human-facing structure. Keep only result content, not the brainstorming process. Use concise numbered points so the user can discuss and approve items as `1`, `2`, `3`.
 
 ```md
 # <需求标题>
 
-## 背景
+## 1. 背景与问题
 
-## 问题陈述
+1. ...
 
-## 目标
+## 2. 目标
 
-## 非目标
+1. ...
+2. ...
+3. ...
 
-## 用户/业务价值
+## 3. 需求清单
 
-## 候选需求
+| 编号 | 需求 | 用户/业务价值 | 优先级 | 验收提示 |
+|---|---|---|---|---|
+| R1 |  |  |  |  |
 
-| ID | 需求 | 价值 | 优先级 | 依据/决策 |
+## 4. 非目标与边界
+
+1. ...
+
+## 5. 业务规则与约束
+
+| 编号 | 规则/约束 | 类型 | 影响范围 | 依据/复查触发条件 |
 |---|---|---|---|---|
 
-## 边界决策
+## 6. 依赖与外部资料
 
-| ID | 决策 | 为什么重要 | 影响 |
+| 编号 | 依赖/资料 | 类型 | 用途/影响 |
 |---|---|---|---|
 
-## 业务规则
+## 7. 已确认决策
 
-| ID | 规则 | 影响范围 | 依据 | 复查触发条件 |
-|---|---|---|---|---|
-
-## 依赖与约束
-
-| ID | 依赖/约束 | 类型 | 影响 |
-|---|---|---|---|
-
-## 外部资料
-
-| 名称 | 地址/位置 | 用途 |
-|---|---|---|
-
-## 已确认决策
-
-| ID | 决策 | 来源 | 影响 |
+| 编号 | 决策 | 来源 | 影响 |
 |---|---|---|---|
 ```
 
@@ -50,7 +45,9 @@ Write `.vibeRig/requirements/<name>/requirement.md` with this structure. Keep on
 
 - If the file already exists, preserve explicit decisions and refine incomplete sections.
 - If creating from only a name, ask a blocking clarification question when the name alone cannot produce an actionable requirement.
-- Keep `候选需求` concrete enough for acceptance and implementation planning.
-- Put source URLs and repository links under `外部资料`.
+- Keep `目标`, `需求清单`, `非目标与边界`, and `已确认决策` concise and numbered.
+- Keep every `需求清单` item concrete enough for acceptance and implementation planning.
+- Use stable requirement IDs such as `R1`, `R2`, and `R3`.
+- Put source URLs and repository links under `依赖与外部资料`.
 - Do not write TBD, 待定, 待确认, open questions, or unresolved blockers. Resolve blockers before writing.
 - Use `已确认决策` only for decisions already approved by the user, existing documents, source evidence, or the reviewed draft.

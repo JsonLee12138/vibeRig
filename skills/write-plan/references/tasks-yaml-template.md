@@ -5,8 +5,9 @@ requirement_id: VB-123
 title: Example requirement
 source_docs:
   requirement: .vibeRig/requirements/VB-123/requirement.md
-  research: .vibeRig/requirements/VB-123/research.md
+  research: null # optional; set to .vibeRig/requirements/VB-123/research.md when present
   acceptance: .vibeRig/requirements/VB-123/acceptance.md
+  acceptance_human: null # optional; set to .vibeRig/requirements/VB-123/acceptance-human.md when present
   roadmap: .vibeRig/requirements/VB-123/roadmap.md
   spec: .vibeRig/requirements/VB-123/spec.md
   plan: .vibeRig/requirements/VB-123/plan.md

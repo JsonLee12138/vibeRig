@@ -5,6 +5,8 @@
 
 ## Source Documents
 
+List required source documents first. Mark `research.md` and `acceptance-human.md` as optional and record whether each was present.
+
 ## Summary
 
 ## Execution Strategy

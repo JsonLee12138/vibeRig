@@ -1,11 +1,11 @@
 ---
 name: write-plan
-description: Compile VibeRig brainstorm outputs into plan.md and tasks.yaml. Use after brainstorm has produced requirement.md, research.md, acceptance.md, roadmap.md, and spec.md, or when the user asks to split a VibeRig requirement into local execution tasks, Linear child issue drafts, worktree branches, validation commands, and subagent assignments.
+description: Compile VibeRig brainstorm outputs into plan.md and tasks.yaml. Use after brainstorm has produced requirement.md, acceptance.md, roadmap.md, and spec.md, with research.md optional, or when the user asks to split a VibeRig requirement into local execution tasks, Linear child issue drafts, worktree branches, validation commands, and subagent assignments.
 ---
 
 # Write Plan
 
-Use this skill after `brainstorm` has produced the five requirement documents.
+Use this skill after `brainstorm` has produced the planning-ready requirement documents. `research.md` is useful context but is not required when `requirement.md`, `acceptance.md`, `roadmap.md`, and `spec.md` are present.
 
 ## Input Contract
 
@@ -18,12 +18,16 @@ Resolve a requirement directory under:
 Required inputs:
 
 - `requirement.md`
-- `research.md`
 - `acceptance.md`
 - `roadmap.md`
 - `spec.md`
 
-Do not generate missing brainstorm documents in this skill. If any required file is missing, stop and tell the user which `brainstorm` phase must run first.
+Optional inputs:
+
+- `research.md`
+- `acceptance-human.md`
+
+Do not generate missing brainstorm documents in this skill. If any required file is missing, stop and tell the user which `brainstorm` phase must run first. If only `research.md` is missing, continue and treat `roadmap.md`, `spec.md`, and `acceptance.md` as the approved technical direction; record any research-gap risk in `plan.md` only when it materially affects task confidence.
 
 ## Output Contract
 
@@ -40,12 +44,14 @@ Write:
 ## Workflow
 
 1. Resolve the VibeRig root and requirement directory.
-2. Read all five required brainstorm files and `.vibeRig/config.yaml` if it exists.
+2. Read all required brainstorm files, optional `research.md` and `acceptance-human.md` when present, and `.vibeRig/config.yaml` if it exists.
 3. Check for contradictions:
+   - requirement points that are not represented in acceptance, roadmap, or spec
    - acceptance criteria that are not represented in spec or roadmap
    - roadmap tasks that are not testable
    - spec changes that exceed stated goals or non-goals
    - manual acceptance points that cannot be mapped to a task, task group, or final integration check
+   - research findings that conflict with roadmap or spec when `research.md` exists
 4. If contradictions are material, stop and request a brainstorm update.
 5. Draft task boundaries. Each task should map to one child issue, one branch, one worktree, and one PR or handoff.
 6. Prefer different subagents for task splitting, implementation, acceptance, and code review.
@@ -61,6 +67,7 @@ Write:
 - `parallelizable` must be false when tasks are likely to collide on the same files or shared contracts.
 - `scope.include` and `scope.exclude` must be specific enough for an implementation agent to obey.
 - `acceptance_refs` must point to criteria in `acceptance.md`.
+- If `acceptance-human.md` exists, referenced IDs must also appear there in the same human-facing order.
 - `acceptance_refs` must include manual acceptance IDs when the task requires human verification.
 - `validation` must include executable commands or explicit manual acceptance items, and manual items must cite the related acceptance ID.
 - `branch` should use `viberig/<requirement-id>-<task-id>`.
