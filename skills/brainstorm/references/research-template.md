@@ -36,15 +36,17 @@ Write `.vibeRig/requirements/<name>/research.md` with this structure. Keep only 
 | ID | 风险/问题 | 影响 | 建议验证方式 | 阻塞程度 |
 |---|---|---|---|---|
 
-## 待确认问题
+## 结论边界与复查触发条件
 
-| ID | 问题 | 类型 | 建议确认对象 |
+| ID | 边界/触发条件 | 当前处理方式 | 影响 |
 |---|---|---|---|
 ```
 
 ## Writing Rules
 
-- Separate facts, inferences, assumptions, and open questions.
+- Separate facts, inferences, and approved working decisions.
 - Include enough evidence for review, but do not write tool logs or browsing steps.
 - Include rejected technical paths only when they explain important tradeoffs.
 - Make the recommended direction usable by `spec.md`.
+- Do not write TBD, 待定, 待确认, open questions, or unresolved blockers. Resolve blockers before writing.
+- Use `结论边界与复查触发条件` for known limits of the recommendation, not for questions still waiting for confirmation.

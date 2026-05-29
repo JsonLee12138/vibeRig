@@ -25,10 +25,10 @@ Write `.vibeRig/requirements/<name>/spec.md` with this structure.
 
 ## 测试策略
 
-## 风险与待确认问题
+## 风险与处理决策
 
-| ID | 风险/问题 | 影响 | 处理方式 |
-|---|---|---|---|
+| ID | 风险 | 影响 | 处理决策 | 复查触发条件 |
+|---|---|---|---|---|
 ```
 
 ## Writing Rules
@@ -38,3 +38,5 @@ Write `.vibeRig/requirements/<name>/spec.md` with this structure.
 - Include APIs, data shapes, state transitions, and error behavior only when relevant.
 - Do not write code unless a small signature or schema snippet is needed to make the design unambiguous.
 - Keep task sequencing in `roadmap.md`; keep engineering design in `spec.md`.
+- Do not write TBD, 待定, 待确认, open questions, or unresolved blockers. Resolve blockers before writing.
+- Use `风险与处理决策` for agreed mitigations and review triggers, not for undecided design questions.

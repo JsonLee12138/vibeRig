@@ -10,19 +10,21 @@ Use this checklist before finishing. Fix issues directly in the generated docume
 - No "I considered..." process notes.
 - Rejected options appear only as meaningful tradeoffs.
 - Each generated document preserves the relevant `Why`, `What`, `Who`, and `How` information for its phase, even when the final document does not use those labels as headings.
+- No TBD, TODO, 待定, 待确认, open questions, unresolved blockers, unknowns, empty placeholder sections, or unresolved template text.
+- Non-blocking uncertainty is written only as an approved working decision with rationale and a review trigger.
 
 ## Requirement Check
 
-- `requirement.md` has goals, non-goals, candidate requirements, assumptions, constraints, and open questions.
-- Business rules are labeled as assumptions unless explicitly sourced.
+- `requirement.md` has goals, non-goals, candidate requirements, boundary decisions, business rules, constraints, and confirmed decisions.
+- Business rules have an explicit source, approved decision, or review trigger.
 - Source links are retained when relevant.
 
 ## Research Check
 
-- `research.md` separates facts, inferences, assumptions, and open questions.
+- `research.md` separates facts, inferences, and approved working decisions.
 - GitHub repository research uses DeepWiki MCP when available.
 - Ordinary URL research uses Browser when available.
-- Technical risks have validation tasks, mitigations, or open questions.
+- Technical risks have validation tasks, mitigations, or review triggers.
 
 ## Acceptance Check
 
@@ -44,7 +46,7 @@ Use this checklist before finishing. Fix issues directly in the generated docume
 
 - Recommended implementation direction is consistent with `research.md`.
 - Design covers relevant modules, interfaces, data, state/process flow, errors, compatibility, and tests.
-- Open questions that block implementation are explicit.
+- No design question that blocks implementation remains in the written file; blocking questions are asked before writing.
 
 ## Cross-Document Check
 

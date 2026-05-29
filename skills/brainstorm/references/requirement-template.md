@@ -17,17 +17,17 @@ Write `.vibeRig/requirements/<name>/requirement.md` with this structure. Keep on
 
 ## 候选需求
 
-| ID | 需求 | 价值 | 优先级 | 依据/假设 |
+| ID | 需求 | 价值 | 优先级 | 依据/决策 |
 |---|---|---|---|---|
 
-## 边界问题
+## 边界决策
 
-| ID | 问题 | 为什么重要 | 不确认的风险 |
+| ID | 决策 | 为什么重要 | 影响 |
 |---|---|---|---|
 
-## 业务规则假设
+## 业务规则
 
-| ID | 假设规则 | 影响范围 | 置信度 | 需要确认对象 |
+| ID | 规则 | 影响范围 | 依据 | 复查触发条件 |
 |---|---|---|---|---|
 
 ## 依赖与约束
@@ -40,15 +40,17 @@ Write `.vibeRig/requirements/<name>/requirement.md` with this structure. Keep on
 | 名称 | 地址/位置 | 用途 |
 |---|---|---|
 
-## 待确认问题
+## 已确认决策
 
-| ID | 问题 | 阻塞程度 | 建议确认对象 |
+| ID | 决策 | 来源 | 影响 |
 |---|---|---|---|
 ```
 
 ## Writing Rules
 
 - If the file already exists, preserve explicit decisions and refine incomplete sections.
-- If creating from only a name, make the document a draft and label assumptions clearly.
+- If creating from only a name, ask a blocking clarification question when the name alone cannot produce an actionable requirement.
 - Keep `候选需求` concrete enough for acceptance and implementation planning.
 - Put source URLs and repository links under `外部资料`.
+- Do not write TBD, 待定, 待确认, open questions, or unresolved blockers. Resolve blockers before writing.
+- Use `已确认决策` only for decisions already approved by the user, existing documents, source evidence, or the reviewed draft.

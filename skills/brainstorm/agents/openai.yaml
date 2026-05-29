@@ -1,4 +1,4 @@
 interface:
   display_name: "Brainstorm"
   short_description: "Clarify VibeRig requirements one approved phase at a time"
-  default_prompt: "Brainstorm a VibeRig requirement from an idea or name. Work one phase at a time: requirement, research, acceptance, roadmap, then spec. For each phase, use a 3W1H lens, inspect context, offer a visual companion when visual judgment is involved, clarify intent one question at a time, present approaches and a phase draft, then write only the approved .vibeRig document. Self-review the written file, ask the user to inspect it, and recommend the next phase."
+  default_prompt: "Brainstorm a VibeRig requirement from an idea or name. Work one phase at a time: requirement, research, acceptance, roadmap, then spec. For each phase, use a 3W1H lens, inspect context, offer a visual companion when visual judgment is involved, clarify intent one question at a time until document-blocking unknowns are resolved, present approaches and a phase draft, then write only the approved .vibeRig document with no TBD, open questions, or unresolved blockers. Self-review the written file, ask the user to inspect it, and recommend the next phase."

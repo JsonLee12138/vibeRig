@@ -308,6 +308,56 @@ button.primary:hover {
   background: rgba(255, 255, 255, 0.9);
 }
 
+.toolbar-button.danger:hover {
+  background: rgba(186, 26, 26, 0.08);
+}
+
+.page-error {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(186, 26, 26, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 218, 214, 0.55);
+  color: var(--error);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.35);
+  backdrop-filter: blur(6px);
+}
+
+.confirm-dialog {
+  width: min(100%, 420px);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 24px;
+  background: rgba(252, 248, 251, 0.98);
+  box-shadow: 0 24px 80px rgba(17, 24, 39, 0.18);
+}
+
+.confirm-dialog h2,
+.confirm-dialog p {
+  margin: 0;
+}
+
+.confirm-dialog p {
+  color: var(--text-soft);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .requirement-list {
   width: 100%;
   display: flex;

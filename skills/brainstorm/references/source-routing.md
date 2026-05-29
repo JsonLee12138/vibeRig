@@ -12,7 +12,7 @@ Build a compact source map from `requirement.md`:
 - API names, package names, or framework names
 - pasted technical notes
 - explicit business constraints
-- open questions
+- unknowns that must be resolved before writing
 
 Use the source map internally to decide what to inspect. Do not write the full exploration log into result documents.
 
@@ -56,9 +56,9 @@ When the requirement points to local code or the current project likely contains
 When there are no external sources:
 
 1. Extract explicit facts.
-2. Separate assumptions from facts.
+2. Separate facts, inferences, and proposed working decisions.
 3. Identify missing technical facts and validation tasks.
-4. Continue if useful output is possible.
+4. Ask before writing if any missing fact would create a blocking unknown in the result document.
 
 ## Evidence Quality
 
@@ -66,5 +66,5 @@ Classify findings as:
 
 - Fact: directly supported by source material.
 - Inference: likely conclusion based on source material.
-- Assumption: plausible but not verified.
-- Open question: needs user, product, QA, or engineering confirmation.
+- Working decision: plausible, non-blocking choice that is explicitly approved in the phase draft.
+- Blocking unknown: needs user, product, QA, or engineering confirmation before writing.

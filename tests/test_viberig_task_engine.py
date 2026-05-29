@@ -251,6 +251,54 @@ tasks:
         board = viberig_service.get_board(self.home, self.project["id"], "REQ-1")
         self.assertEqual(next(item for item in board["tasks"] if item["task_id"] == "T1")["validation"], [])
 
+    def test_project_delete_endpoint_removes_registry_and_project_data(self) -> None:
+        viberig_service.import_requirement(self.home, self.project, self.requirement_root)
+        viberig_service.record_evidence(
+            self.home,
+            self.project["id"],
+            "REQ-1",
+            "T1",
+            "validation",
+            "validated",
+        )
+        viberig_service.record_manual_review(
+            self.home,
+            self.project["id"],
+            "REQ-1",
+            "T1",
+            "tester",
+            "accepted",
+        )
+
+        viberig_service.Handler.home = self.home
+        viberig_service.Handler.port = 0
+        server = ThreadingHTTPServer(("127.0.0.1", 0), viberig_service.Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            request = urllib.request.Request(
+                f"http://127.0.0.1:{server.server_port}/api/projects/delete",
+                data=json.dumps({"project_id": self.project["id"]}).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(request) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        finally:
+            server.shutdown()
+            server.server_close()
+
+        self.assertEqual(payload["project"]["id"], self.project["id"])
+        self.assertEqual(viberig_service.list_projects(self.home), [])
+        self.assertIsNone(viberig_service.find_project(self.home, self.project["id"]))
+        with self.assertRaisesRegex(ValueError, "Unknown requirement"):
+            viberig_service.get_board(self.home, self.project["id"], "REQ-1")
+        with viberig_service.connect_db(self.home) as connection:
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM requirements").fetchone()[0], 0)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM tasks").fetchone()[0], 0)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM evidence").fetchone()[0], 0)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM manual_reviews").fetchone()[0], 0)
+
     def test_task_detail_activity_evidence_discovery_and_exports(self) -> None:
         viberig_service.import_requirement(self.home, self.project, self.requirement_root)
         evidence_dir = self.requirement_root / "evidence" / "T1"

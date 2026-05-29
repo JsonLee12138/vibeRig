@@ -25,6 +25,7 @@ import {
   Play,
   RefreshCw,
   Table2,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -32,6 +33,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "./api";
 import { useDashboardSnapshot } from "./use-dashboard";
+import { ConfirmDialog } from "../shared/ConfirmDialog";
 
 const navItems = [
   { key: "projects", labelKey: "nav.projects", to: "/projects" },
@@ -243,7 +245,11 @@ export function PageFrame({ title, children, actions }: { title: string; childre
 export function ProjectSelectionPage() {
   const data = useSnapshot();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const [deleteTarget, setDeleteTarget] = useState<DashboardSnapshot["projects"][number] | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   if (!data) return <LoadingPage />;
   const selectProject = (projectId: string) => {
     void navigate({
@@ -251,10 +257,25 @@ export function ProjectSelectionPage() {
       search: { project: projectId },
     });
   };
+  const deleteProject = async () => {
+    if (!deleteTarget || deletePending) return;
+    setDeletePending(true);
+    setDeleteError("");
+    try {
+      await api.deleteProject(deleteTarget.id);
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-snapshot"] });
+      setDeleteTarget(null);
+    } catch (reason) {
+      setDeleteError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setDeletePending(false);
+    }
+  };
 
   return (
     <AppShell activeNav="projects" title={t("nav.projects")}>
       <PageFrame title={t("projects.selectTitle")}>
+        {deleteError ? <p className="page-error" role="alert">{deleteError}</p> : null}
         <div className="grid gap-4 md:grid-cols-3">
           {data.projects.map((project) => (
             <article key={project.id} className="vr-panel grid min-h-58 gap-5 rounded-2 p-5">
@@ -272,11 +293,29 @@ export function ProjectSelectionPage() {
               </div>
               <div className="mt-auto flex items-center justify-between border-t border-[#e4e2e4] pt-4 text-sm text-[#67686a]">
                 <span>{project.branch}</span>
-                <button className="vr-button-primary" type="button" onClick={() => selectProject(project.id)}>{t("actions.select")}</button>
+                <div className="flex flex-wrap gap-2">
+                  <button className="vr-button" type="button" onClick={() => setDeleteTarget(project)}>
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                  <button className="vr-button-primary" type="button" onClick={() => selectProject(project.id)}>{t("actions.select")}</button>
+                </div>
               </div>
             </article>
           ))}
         </div>
+        {deleteTarget ? (
+          <ConfirmDialog
+            title={`Remove ${deleteTarget.name}?`}
+            message={`This removes ${deleteTarget.repository} from the dashboard and deletes its imported requirements, tasks, runs, and evidence records.`}
+            onCancel={() => {
+              if (deletePending) return;
+              setDeleteTarget(null);
+              setDeleteError("");
+            }}
+            onConfirm={() => void deleteProject()}
+          />
+        ) : null}
       </PageFrame>
     </AppShell>
   );

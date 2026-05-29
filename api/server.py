@@ -871,6 +871,42 @@ def save_project(home: Path, project_root: Path, name: str, plugin_root: Path) -
     return project
 
 
+def remove_project(home: Path, project_id_value: str) -> dict[str, Any]:
+    data = load_projects(home)
+    project = next((item for item in data["projects"] if item.get("id") == project_id_value), None)
+    if not project:
+        raise ValueError(f"Unknown project: {project_id_value}")
+
+    data["projects"] = [item for item in data["projects"] if item.get("id") != project_id_value]
+    write_json(projects_file(home), data)
+
+    with connect_db(home) as connection:
+        run_ids = [
+            row["id"]
+            for row in connection.execute("SELECT id FROM runs WHERE project_id = ?", (project_id_value,)).fetchall()
+        ]
+        if run_ids:
+            placeholders = ",".join("?" for _ in run_ids)
+            connection.execute(f"DELETE FROM run_events WHERE run_id IN ({placeholders})", run_ids)
+
+        statements = [
+            ("DELETE FROM codex_sessions WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM runs WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM evidence WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM manual_reviews WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM activity_events WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM source_revisions WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM roadmap_items WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM acceptance_items WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM requirements WHERE project_id = ?", (project_id_value,)),
+            ("DELETE FROM projects WHERE id = ?", (project_id_value,)),
+        ]
+        for statement, params in statements:
+            connection.execute(statement, params)
+        connection.commit()
+    return project
+
+
 def find_project(home: Path, project_id_value: str) -> dict[str, Any] | None:
     for project in load_projects(home)["projects"]:
         if project.get("id") == project_id_value:
@@ -4870,6 +4906,9 @@ class Handler(BaseHTTPRequestHandler):
                 plugin_root = Path(payload.get("plugin_root") or PLUGIN_ROOT).expanduser().resolve()
                 name = payload.get("project_name") or project_root.name
                 self.send_json({"project": save_project(self.home, project_root, name, plugin_root)})
+                return
+            if self.path == "/api/projects/delete":
+                self.send_json({"project": remove_project(self.home, payload["project_id"])})
                 return
             if self.path == "/api/projects/refresh":
                 self.send_json({"refresh": refresh_project(self.home, payload["project_id"])})

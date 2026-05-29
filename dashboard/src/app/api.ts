@@ -37,6 +37,9 @@ export const api = {
   async registerProject(projectRoot: string): Promise<Project> {
     return (await post<{ project: Project }>("/api/projects/register", { project_root: projectRoot })).project;
   },
+  async deleteProject(projectId: string): Promise<Project> {
+    return (await post<{ project: Project }>("/api/projects/delete", { project_id: projectId })).project;
+  },
   async refreshProject(projectId: string): Promise<void> {
     await post("/api/projects/refresh", { project_id: projectId });
   },
