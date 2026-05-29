@@ -29,6 +29,19 @@ The main agent owns all VibeRig MCP writes. Subagents may inspect code, implemen
 - Do not move a task to `accepted`; foreground Codex stops at `human_review` unless a human explicitly performs manual acceptance.
 - If VibeRig MCP is unavailable, continue only with explicit user consent and report that dashboard synchronization is degraded.
 
+## Project Registration Preflight
+
+Before resolving project, requirement, or task ids:
+
+1. Determine the intended project root. Prefer the current workspace or git root unless the user provided a project path.
+2. Call `viberig.projects.list`.
+3. Normalize project roots to absolute paths and match the intended project root against registered `project_root` values.
+4. If no registered project matches, call `viberig.projects.register` with the intended `project_root`. Include `project_name` when it can be inferred safely from the directory name or user input.
+5. After registering, call `viberig.projects.refresh` when available so dashboard-visible requirements and tasks are synchronized before task selection.
+6. Use the matched or newly registered project id for the rest of the task-runner flow.
+
+If VibeRig MCP is unavailable, stop before task selection and ask whether to continue without dashboard synchronization. If multiple registered projects plausibly match the workspace, list the ambiguity briefly and ask for the intended project id.
+
 ## Inputs
 
 Resolve these before acting:

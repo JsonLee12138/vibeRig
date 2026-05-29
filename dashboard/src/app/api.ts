@@ -34,8 +34,12 @@ export const api = {
   async projects(): Promise<Project[]> {
     return (await request<{ projects: Project[] }>("/api/projects")).projects;
   },
-  async registerProject(projectRoot: string): Promise<Project> {
-    return (await post<{ project: Project }>("/api/projects/register", { project_root: projectRoot })).project;
+  async registerProject(projectRoot: string, projectName?: string): Promise<Project> {
+    const body: { project_root: string; project_name?: string } = { project_root: projectRoot };
+    if (projectName) {
+      body.project_name = projectName;
+    }
+    return (await post<{ project: Project }>("/api/projects/register", body)).project;
   },
   async deleteProject(projectId: string): Promise<Project> {
     return (await post<{ project: Project }>("/api/projects/delete", { project_id: projectId })).project;

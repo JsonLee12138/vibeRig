@@ -1,5 +1,5 @@
 import type { DragEndEvent } from "@dnd-kit/core";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import type { DashboardSnapshot, TaskState, TaskSummary } from "./dashboard-model";
 import type { Run, TaskDetail, TaskStatus } from "./types";
 import { DndContext, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
@@ -9,13 +9,14 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Check,
   ChevronRight,
   CircleStop,
-  Check,
   Copy,
   Download,
   ExternalLink,
   FileText,
+  FolderPlus,
   Grid2X2,
   GripVertical,
   HeartPulse,
@@ -31,9 +32,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialog } from "../shared/ConfirmDialog";
 import { api } from "./api";
 import { useDashboardSnapshot } from "./use-dashboard";
-import { ConfirmDialog } from "../shared/ConfirmDialog";
 
 const navItems = [
   { key: "projects", labelKey: "nav.projects", to: "/projects" },
@@ -328,33 +329,71 @@ export function EmptyProjectPage() {
 
 export function RegisterProjectPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const initializeProject = () => {
-    void navigate({
-      to: "/requirements",
-      search: { project: "commerce-backend" },
-    });
+  const [projectRoot, setProjectRoot] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [registering, setRegistering] = useState(false);
+  const [error, setError] = useState("");
+
+  const registerProject = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (registering) return;
+
+    const trimmedRoot = projectRoot.trim();
+    const trimmedName = projectName.trim();
+    if (!trimmedRoot) {
+      setError(t("forms.projectRootRequired"));
+      return;
+    }
+
+    setRegistering(true);
+    setError("");
+    try {
+      const project = await api.registerProject(trimmedRoot, trimmedName || undefined);
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-snapshot"] });
+      void navigate({
+        to: "/requirements",
+        search: { project: project.id },
+      });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setRegistering(false);
+    }
   };
 
   return (
     <AppShell activeNav="projects" title={t("nav.projects")}>
       <PageFrame title={t("projects.registerTitle")}>
-        <form className="vr-panel mx-auto grid w-full max-w-2xl gap-5 rounded-2 p-6">
-          {[
-            [t("forms.projectName"), "E-commerce Backend"],
-            [t("forms.repositoryUrl"), "https://github.com/acme/commerce-api"],
-            [t("forms.branch"), "main"],
-            [t("forms.requirementSource"), "Linear"],
-            [t("forms.boardIdPath"), "requirements/authentication"],
-          ].map(([label, value]) => (
-            <label key={label} className="grid gap-2 text-sm font-medium">
-              {label}
-              <input defaultValue={value} className="h-11 rounded-2 border border-[#dcd9dc] bg-[#fcf8fb] px-3 text-sm font-normal outline-none focus:border-[#0066cc]" />
-            </label>
-          ))}
+        <form className="vr-panel mx-auto grid w-full max-w-2xl gap-5 rounded-2 p-6" onSubmit={(event) => void registerProject(event)}>
+          <p className="m-0 text-sm leading-6 text-[#67686a]">{t("projects.registerDetail")}</p>
+          {error ? <p className="page-error" role="alert">{error}</p> : null}
+          <label className="grid gap-2 text-sm font-medium">
+            {t("forms.projectRoot")}
+            <input
+              autoFocus
+              className="h-11 rounded-2 border border-[#dcd9dc] bg-[#fcf8fb] px-3 text-sm font-normal outline-none focus:border-[#0066cc]"
+              placeholder={t("forms.projectRootPlaceholder")}
+              value={projectRoot}
+              onChange={(event) => setProjectRoot(event.target.value)}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium">
+            {t("forms.projectNameOptional")}
+            <input
+              className="h-11 rounded-2 border border-[#dcd9dc] bg-[#fcf8fb] px-3 text-sm font-normal outline-none focus:border-[#0066cc]"
+              placeholder={t("forms.projectNamePlaceholder")}
+              value={projectName}
+              onChange={(event) => setProjectName(event.target.value)}
+            />
+          </label>
           <div className="flex justify-end gap-2 pt-2">
             <Link className="vr-button" to="/projects">{t("actions.cancel")}</Link>
-            <button className="vr-button-primary" type="button" onClick={initializeProject}>{t("actions.initializeProject")}</button>
+            <button className="vr-button-primary" type="submit" disabled={registering}>
+              <FolderPlus size={16} />
+              {registering ? t("actions.registeringProject") : t("actions.registerProject")}
+            </button>
           </div>
         </form>
       </PageFrame>
@@ -1097,7 +1136,7 @@ function CopyableMetaLine({ disabled = false, label, value }: { disabled?: boole
       textarea.remove();
     }
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    window.setTimeout(setCopied, 1200, false);
   };
 
   return (

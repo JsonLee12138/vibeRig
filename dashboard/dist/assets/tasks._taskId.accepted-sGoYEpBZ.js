@@ -1,0 +1,1 @@
+import{e as t,m as o}from"./index-D9WwgETx.js";import{T as s}from"./StaticDashboard-HGUmcNBD.js";function r(){const{taskId:e}=t.useParams();return o.jsx(s,{taskId:e,mode:"accepted"})}export{r as component};

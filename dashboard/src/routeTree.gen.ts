@@ -18,7 +18,7 @@ import { Route as BoardRouteImport } from "./routes/board"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as TasksTaskIdRouteImport } from "./routes/tasks.$taskId"
 import { Route as RequirementsEmptyRouteImport } from "./routes/requirements.empty"
-import { Route as ProjectsRegisterRouteImport } from "./routes/projects.register"
+import { Route as ProjectsRegisterRouteImport } from "./routes/projects_.register"
 import { Route as ProjectsEmptyRouteImport } from "./routes/projects.empty"
 import { Route as BoardInvalidTransitionRouteImport } from "./routes/board.invalid-transition"
 import { Route as TasksTaskIdRunRouteImport } from "./routes/tasks.$taskId.run"
@@ -73,9 +73,9 @@ const RequirementsEmptyRoute = RequirementsEmptyRouteImport.update({
   getParentRoute: () => RequirementsRoute,
 } as any)
 const ProjectsRegisterRoute = ProjectsRegisterRouteImport.update({
-  id: "/register",
-  path: "/register",
-  getParentRoute: () => ProjectsRoute,
+  id: "/projects_/register",
+  path: "/projects/register",
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsEmptyRoute = ProjectsEmptyRouteImport.update({
   id: "/empty",
@@ -162,7 +162,7 @@ export interface FileRoutesById {
   "/requirements": typeof RequirementsRouteWithChildren
   "/board/invalid-transition": typeof BoardInvalidTransitionRoute
   "/projects/empty": typeof ProjectsEmptyRoute
-  "/projects/register": typeof ProjectsRegisterRoute
+  "/projects_/register": typeof ProjectsRegisterRoute
   "/requirements/empty": typeof RequirementsEmptyRoute
   "/tasks/$taskId": typeof TasksTaskIdRouteWithChildren
   "/runs/$taskId/log": typeof RunsTaskIdLogRoute
@@ -221,7 +221,7 @@ export interface FileRouteTypes {
     | "/requirements"
     | "/board/invalid-transition"
     | "/projects/empty"
-    | "/projects/register"
+    | "/projects_/register"
     | "/requirements/empty"
     | "/tasks/$taskId"
     | "/runs/$taskId/log"
@@ -239,6 +239,7 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRouteWithChildren
   RefreshRoute: typeof RefreshRoute
   RequirementsRoute: typeof RequirementsRouteWithChildren
+  ProjectsRegisterRoute: typeof ProjectsRegisterRoute
   TasksTaskIdRoute: typeof TasksTaskIdRouteWithChildren
   RunsTaskIdLogRoute: typeof RunsTaskIdLogRoute
 }
@@ -308,12 +309,12 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof RequirementsEmptyRouteImport
       parentRoute: typeof RequirementsRoute
     }
-    "/projects/register": {
-      id: "/projects/register"
-      path: "/register"
+    "/projects_/register": {
+      id: "/projects_/register"
+      path: "/projects/register"
       fullPath: "/projects/register"
       preLoaderRoute: typeof ProjectsRegisterRouteImport
-      parentRoute: typeof ProjectsRoute
+      parentRoute: typeof rootRouteImport
     }
     "/projects/empty": {
       id: "/projects/empty"
@@ -379,12 +380,10 @@ const BoardRouteWithChildren = BoardRoute._addFileChildren(BoardRouteChildren)
 
 interface ProjectsRouteChildren {
   ProjectsEmptyRoute: typeof ProjectsEmptyRoute
-  ProjectsRegisterRoute: typeof ProjectsRegisterRoute
 }
 
 const ProjectsRouteChildren: ProjectsRouteChildren = {
   ProjectsEmptyRoute: ProjectsEmptyRoute,
-  ProjectsRegisterRoute: ProjectsRegisterRoute,
 }
 
 const ProjectsRouteWithChildren = ProjectsRoute._addFileChildren(
@@ -429,6 +428,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRouteWithChildren,
   RefreshRoute: RefreshRoute,
   RequirementsRoute: RequirementsRouteWithChildren,
+  ProjectsRegisterRoute: ProjectsRegisterRoute,
   TasksTaskIdRoute: TasksTaskIdRouteWithChildren,
   RunsTaskIdLogRoute: RunsTaskIdLogRoute,
 }
