@@ -1,0 +1,1 @@
+import{c as o,m as s}from"./index-FXgWby3H.js";import{T as t}from"./StaticDashboard-C9uJV_iK.js";function m(){const{taskId:e}=o.useParams();return s.jsx(t,{taskId:e,mode:"review"})}export{m as component};

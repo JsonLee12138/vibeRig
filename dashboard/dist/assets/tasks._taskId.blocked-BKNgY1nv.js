@@ -1,0 +1,1 @@
+import{d as s,m as t}from"./index-FXgWby3H.js";import{T as e}from"./StaticDashboard-C9uJV_iK.js";function r(){const{taskId:o}=s.useParams();return t.jsx(e,{taskId:o,mode:"blocked"})}export{r as component};

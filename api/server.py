@@ -1670,7 +1670,7 @@ def validate_task_transition(
         "running": {"self_accepted", "human_review", "blocked", "failed", "canceled"},
         "self_accepted": {"ready", "human_review", "accepted", "blocked", "failed", "canceled"},
         "human_review": {"ready", "accepted", "blocked", "canceled"},
-        "blocked": {"ready", "running", "canceled"},
+        "blocked": {"ready", "canceled"},
         "failed": {"ready", "canceled"},
         "accepted": set(),
         "canceled": {"ready"},
@@ -1735,6 +1735,42 @@ def update_task_status(
             requirement_id_value,
             key,
             {"status": status, "reason": reason, "auto_acceptable": auto_acceptable},
+        )
+        connection.commit()
+        updated = connection.execute("SELECT * FROM tasks WHERE id = ?", (key,)).fetchone()
+        return normalize_task(updated)
+
+
+def mark_task_running_for_resume(
+    home: Path,
+    project_id_value: str,
+    requirement_id_value: str,
+    task_id_value: str,
+    run_id: str,
+) -> dict[str, Any]:
+    now = utc_now()
+    key = task_key(project_id_value, requirement_id_value, task_id_value)
+    with connect_db(home) as connection:
+        task = connection.execute("SELECT * FROM tasks WHERE id = ?", (key,)).fetchone()
+        if not task:
+            raise ValueError(f"Unknown task: {task_id_value}")
+        if task["status"] != "blocked":
+            raise ValueError("Resume can only move a blocked task to running.")
+        connection.execute(
+            """
+            UPDATE tasks
+            SET status = 'running', definition_stale = 0, definition_changed_at = NULL, updated_at = ?
+            WHERE id = ?
+            """,
+            (now, key),
+        )
+        add_activity_event(
+            connection,
+            "task.resume_running",
+            project_id_value,
+            requirement_id_value,
+            key,
+            {"status": "running", "run_id": run_id},
         )
         connection.commit()
         updated = connection.execute("SELECT * FROM tasks WHERE id = ?", (key,)).fetchone()
@@ -2668,11 +2704,11 @@ def tail_text(text: str, max_lines: int = 120) -> str:
     return "\n".join(lines[-max_lines:])
 
 
-def build_blocked_resume_prompt(context: CodexRunContext, comment: str | None = None) -> str:
+def build_blocked_resume_prompt(context: CodexRunContext, comment: str | None = None, resume_session_id: str | None = None) -> str:
     run_log = ""
     if context.run_log_path.exists():
         run_log = tail_text(context.run_log_path.read_text(encoding="utf-8", errors="replace"))
-    latest_session = get_run_codex_session(context.home, context.run["id"])
+    latest_session = get_codex_session(context.home, resume_session_id) if resume_session_id else get_run_codex_session(context.home, context.run["id"])
     final_message = ""
     final_path = latest_session.get("final_message_path")
     if final_path and Path(final_path).exists():
@@ -2718,6 +2754,65 @@ def build_blocked_resume_prompt(context: CodexRunContext, comment: str | None = 
             render_prompt_section("VibeRig MCP Contract", render_mcp_operating_contract(context)),
         ]
     ).strip() + "\n"
+
+
+def build_resume_preflight_prompt(context: CodexRunContext, comment: str | None = None) -> str:
+    run_log = ""
+    if context.run_log_path.exists():
+        run_log = tail_text(context.run_log_path.read_text(encoding="utf-8", errors="replace"))
+    diff = ""
+    diff_path = get_run_artifacts(context.home, context.run["id"]).get("paths", {}).get("diff")
+    if diff_path and Path(diff_path).exists():
+        diff = tail_text(Path(diff_path).read_text(encoding="utf-8", errors="replace"), 160)
+    status_reason = context.task.get("status_reason") or context.run.get("error_summary") or context.run.get("summary") or "blocked"
+    return "\n".join(
+        [
+            "# VibeRig Resume Preflight Prompt",
+            "",
+            render_prompt_section(
+                "Objective",
+                "Inspect the blocked task before it is resumed. Decide whether the original blocker appears resolved and whether the current worktree shows obvious new breakage.",
+            ),
+            render_prompt_section(
+                "Context",
+                "\n".join(
+                    [
+                        f"- project_id: {context.project['id']}",
+                        f"- requirement_id: {context.task['requirement_id']}",
+                        f"- task_id: {context.task['task_id']}",
+                        f"- run_id: {context.run['id']}",
+                        f"- worktree_path: {context.worktree_path}",
+                        f"- blocked_reason: {status_reason}",
+                    ]
+                ),
+            ),
+            render_prompt_section("User Fix Comment", comment or "No fix comment was provided."),
+            render_prompt_section("Recent Run Log", run_log or "No run log was recorded."),
+            render_prompt_section("Current Diff", diff or "No diff was recorded."),
+            render_prompt_section(
+                "Required Output",
+                "\n".join(
+                    [
+                        "Return a concise assessment.",
+                        "Include exactly one machine-readable line: `RESUME_READY: yes` or `RESUME_READY: no`.",
+                        "Use `RESUME_READY: no` if the blocker is still present, the provided fix is insufficient, required information is still missing, or the worktree appears broken in a way unrelated to the original blocker.",
+                        "Do not edit files. Do not mutate task, run, acceptance, evidence, or review status.",
+                    ]
+                ),
+            ),
+            render_prompt_section("VibeRig MCP Contract", render_mcp_operating_contract(context)),
+        ]
+    ).strip() + "\n"
+
+
+def resume_preflight_allows_resume(result: CodexAdapterResult) -> bool:
+    if result.status != "success":
+        return False
+    final = result.final_message or ""
+    match = re.search(r"RESUME_READY\s*:\s*(yes|no|true|false)", final, flags=re.IGNORECASE)
+    if not match:
+        return True
+    return match.group(1).lower() in {"yes", "true"}
 
 
 def build_test_authoring_prompt(context: CodexRunContext, implementation_result: CodexAdapterResult, diff_artifacts: dict[str, Any]) -> str:
@@ -3046,8 +3141,10 @@ def fake_codex_adapter(context: CodexRunContext, session_id: str, prompt_path: P
             path = context.worktree_path / target
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f"Implemented by fake Codex session {session_id}\n", encoding="utf-8")
-        events.append({"type": "codex.completed", "created_at": utc_now(), "stage": stage, "final_message": f"Fake Codex {stage} completed."})
         final = f"Fake Codex {stage} completed.\n"
+        if stage == "resume_preflight":
+            final += f"RESUME_READY: {os.environ.get('VIBERIG_FAKE_RESUME_PREFLIGHT_READY', 'yes')}\n"
+        events.append({"type": "codex.completed", "created_at": utc_now(), "stage": stage, "final_message": final.strip()})
         exit_code = 0
         error = None
     events_path.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events), encoding="utf-8")
@@ -3700,20 +3797,58 @@ def execute_run_context(
         update_task_status(home, project_id_value, requirement_id_value, task_id_value, "running")
     append_run_event(home, run_id, "started", "runner started")
     codex_result: CodexAdapterResult | None = None
+    resume_preflight_result: CodexAdapterResult | None = None
     test_result: CodexAdapterResult | None = None
     acceptance_result: CodexAdapterResult | None = None
     validation_results: list[dict[str, Any]] = []
     try:
         if resume_session_id:
+            update_run_progress(home, run_id, "resume_preflight", "resume_preflight", error_summary=None)
+            append_run_event(
+                home,
+                run_id,
+                "resume_preflight_started",
+                "blocked run resume preflight started",
+                {"codex_session_id": resume_session_id, "comment": resume_comment or ""},
+            )
+            preflight_prompt_path = write_codex_stage_prompt(
+                context,
+                "resume_preflight",
+                build_resume_preflight_prompt(context, resume_comment),
+            )
+            resume_preflight_result = run_codex_stage(
+                context,
+                preflight_prompt_path,
+                "resume_preflight",
+                "resume_preflight",
+            )
+            if not resume_preflight_allows_resume(resume_preflight_result):
+                message = resume_preflight_result.error or resume_preflight_result.final_message or "Resume preflight did not approve continuing."
+                update_run_progress(home, run_id, "resume_preflight_blocked", "resume_preflight_blocked", error_summary=message)
+                append_run_event(
+                    home,
+                    run_id,
+                    "resume_preflight_blocked",
+                    message,
+                    {"codex_session_id": resume_preflight_result.session_id},
+                )
+                finished = finish_run(home, run_id, "blocked", message)
+                return {
+                    "run": finished,
+                    "resume_preflight": resume_preflight_result.__dict__,
+                    "codex": None,
+                    "validation": validation_results,
+                }
+            mark_task_running_for_resume(home, project_id_value, requirement_id_value, task_id_value, run_id)
             update_run_progress(home, run_id, "resuming", "resuming", error_summary=None)
             append_run_event(
                 home,
                 run_id,
                 "resume_started",
-                "blocked run resume started",
-                {"codex_session_id": resume_session_id, "comment": resume_comment or ""},
+                "blocked run resume approved and started",
+                {"codex_session_id": resume_session_id, "preflight_session_id": resume_preflight_result.session_id},
             )
-            prompt_path = write_codex_stage_prompt(context, "resume", build_blocked_resume_prompt(context, resume_comment))
+            prompt_path = write_codex_stage_prompt(context, "resume", build_blocked_resume_prompt(context, resume_comment, resume_session_id))
             codex_result = run_codex_stage(context, prompt_path, "resume", "development", resume_session_id=resume_session_id)
         else:
             prepare_task_worktree(context)
@@ -3850,6 +3985,7 @@ def execute_run_context(
         finished = finish_run(home, run_id, "failed", str(error))
     return {
         "run": finished,
+        "resume_preflight": resume_preflight_result.__dict__ if resume_preflight_result else None,
         "codex": codex_result.__dict__ if codex_result else None,
         "test_authoring": test_result.__dict__ if test_result else None,
         "acceptance": acceptance_result.__dict__ if acceptance_result else None,
@@ -3921,7 +4057,7 @@ def reopen_run_for_resume(home: Path, run_id: str, comment: str | None = None) -
         connection.execute(
             """
             UPDATE runs
-            SET status = 'resuming', implementation_status = 'resuming', finished_at = NULL,
+            SET status = 'resume_preflight', implementation_status = 'resume_preflight', finished_at = NULL,
                 error_summary = NULL
             WHERE id = ?
             """,
@@ -3929,7 +4065,7 @@ def reopen_run_for_resume(home: Path, run_id: str, comment: str | None = None) -
         )
         add_activity_event(
             connection,
-            "run.resume_requested",
+            "run.continue_after_fix_requested",
             run["project_id"],
             run["requirement_id"],
             run["task_id"],
@@ -3937,7 +4073,7 @@ def reopen_run_for_resume(home: Path, run_id: str, comment: str | None = None) -
         )
         connection.commit()
         row = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
-    append_run_event(home, run_id, "resume_requested", comment or "resume requested")
+    append_run_event(home, run_id, "continue_after_fix_requested", comment or "continue after fix requested")
     resumed = normalize_run(row)
     publish_server_event("run.updated", {"run_id": run_id, "run": resumed})
     return resumed
@@ -3954,7 +4090,6 @@ def execute_blocked_task_resume(
     if task_detail["task"]["status"] != "blocked":
         raise ValueError("Only blocked tasks can be resumed.")
     run, session = latest_blocked_run_for_task(home, project_id_value, requirement_id_value, task_id_value)
-    update_task_status(home, project_id_value, requirement_id_value, task_id_value, "running")
     reopen_run_for_resume(home, run["id"], comment)
     return execute_existing_run(
         home,
@@ -3976,7 +4111,6 @@ def start_blocked_task_resume(
     if task_detail["task"]["status"] != "blocked":
         raise ValueError("Only blocked tasks can be resumed.")
     run, session = latest_blocked_run_for_task(home, project_id_value, requirement_id_value, task_id_value)
-    update_task_status(home, project_id_value, requirement_id_value, task_id_value, "running")
     reopened = reopen_run_for_resume(home, run["id"], comment)
 
     def worker() -> None:
@@ -4013,7 +4147,6 @@ def start_run_resume(home: Path, run_id: str, comment: str | None = None) -> dic
         raise ValueError("Only blocked runs can be resumed.")
     if task["status"] != "blocked":
         raise ValueError("Only blocked tasks can be resumed.")
-    update_task_status(home, run["project_id"], run["requirement_id"], task["task_id"], "running")
     reopened = reopen_run_for_resume(home, run_id, comment)
 
     def worker() -> None:
@@ -4179,8 +4312,10 @@ def mcp_tool_descriptions() -> list[dict[str, Any]]:
             ["project_id", "requirement_id", "acceptance_id", "status"],
         ),
         "viberig.runs.create": schema({"project_id": string, "requirement_id": string, "task_id": string, "worktree_path": string}, ["project_id", "requirement_id", "task_id"]),
+        "viberig.tasks.continue_after_fix": schema({"project_id": string, "requirement_id": string, "task_id": string, "comment": string}, ["project_id", "requirement_id", "task_id"]),
         "viberig.tasks.resume_blocked": schema({"project_id": string, "requirement_id": string, "task_id": string, "comment": string}, ["project_id", "requirement_id", "task_id"]),
         "viberig.tasks.rerun": schema({"project_id": string, "requirement_id": string, "task_id": string, "reason": string}, ["project_id", "requirement_id", "task_id"]),
+        "viberig.runs.continue_after_fix": schema({"run_id": string, "comment": string}, ["run_id"]),
         "viberig.runs.resume": schema({"run_id": string, "comment": string}, ["run_id"]),
         "viberig.runs.append_event": schema({"run_id": string, "event_type": string, "message": string, "payload": object_value}, ["run_id", "event_type"]),
         "viberig.runs.finish": schema({"run_id": string, "status": string, "summary": string}, ["run_id", "status"]),
@@ -4290,11 +4425,11 @@ def call_mcp_tool(home: Path, name: str, args: dict[str, Any]) -> Any:
         return {"acceptance": update_acceptance_status(home, args["project_id"], args["requirement_id"], args["acceptance_id"], args["status"])}
     if name == "viberig.runs.create":
         return {"run": create_run(home, args["project_id"], args["requirement_id"], args["task_id"], args.get("worktree_path"))}
-    if name == "viberig.tasks.resume_blocked":
+    if name in {"viberig.tasks.continue_after_fix", "viberig.tasks.resume_blocked"}:
         return {"run": start_blocked_task_resume(home, args["project_id"], args["requirement_id"], args["task_id"], args.get("comment") or "")}
     if name == "viberig.tasks.rerun":
         return {"run": rerun_task(home, args["project_id"], args["requirement_id"], args["task_id"], args.get("reason") or "rerun requested")}
-    if name == "viberig.runs.resume":
+    if name in {"viberig.runs.continue_after_fix", "viberig.runs.resume"}:
         return {"run": start_run_resume(home, args["run_id"], args.get("comment") or "")}
     if name == "viberig.runs.append_event":
         return {"event": append_run_event(home, args["run_id"], args["event_type"], args.get("message") or "", args.get("payload") or {})}
@@ -5152,11 +5287,11 @@ class Handler(BaseHTTPRequestHandler):
                     }
                 )
                 return
-            task_run_action_match = re.fullmatch(r"/api/tasks/([^/]+)/runs/(resume|rerun)", parsed.path)
+            task_run_action_match = re.fullmatch(r"/api/tasks/([^/]+)/runs/(continue_after_fix|continue-after-fix|resume|rerun)", parsed.path)
             if task_run_action_match:
                 task_id_value = urllib.parse.unquote(task_run_action_match.group(1))
                 action = task_run_action_match.group(2)
-                if action == "resume":
+                if action in {"continue_after_fix", "continue-after-fix", "resume"}:
                     run = start_blocked_task_resume(
                         self.home,
                         payload["project_id"],
@@ -5174,7 +5309,7 @@ class Handler(BaseHTTPRequestHandler):
                     )
                 self.send_json({"run": run, "result": {"run": run}})
                 return
-            run_resume_match = re.fullmatch(r"/api/runs/([^/]+)/resume", parsed.path)
+            run_resume_match = re.fullmatch(r"/api/runs/([^/]+)/(continue_after_fix|continue-after-fix|resume)", parsed.path)
             if run_resume_match:
                 run = start_run_resume(
                     self.home,

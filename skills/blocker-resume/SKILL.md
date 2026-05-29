@@ -35,12 +35,12 @@ For a full context read, gather:
    - Read the run log with `viberig.runs.get_log`.
    - Read run events, artifacts, diff, and Codex session transcript when they exist.
 3. Decide the action:
-   - Use resume when the current worktree and previous Codex session are still useful, such as missing user input, credentials now provided, or a small correction is needed.
+   - Use continue-after-fix when the current worktree and previous Codex session are still useful, such as missing user input, credentials now provided, or a small correction is needed.
    - Use rerun when the previous run is stale, worktree setup is bad, the wrong branch/base was used, or the task definition changed.
 4. Execute through MCP:
-   - Resume: call `viberig.tasks.resume_blocked` with `project_id`, `requirement_id`, `task_id`, and a concise `comment` describing the unblock information or requested analysis.
+   - Continue after fix: call `viberig.tasks.continue_after_fix` with `project_id`, `requirement_id`, `task_id`, and a concise `comment` describing what was fixed or what should be checked. The backend first runs an AI resume preflight. Only if that preflight approves continuing does the backend move the task to `running` and resume the previous Codex session.
    - Rerun: call `viberig.tasks.rerun` with `project_id`, `requirement_id`, `task_id`, and a `reason`.
-   - For a known run id, `viberig.runs.resume` may be used instead of task-level resume.
+   - For a known run id, `viberig.runs.continue_after_fix` may be used instead of task-level continue-after-fix.
 5. Report:
    - State whether you resumed or reran.
    - Include run id, reused Codex session id if resumed, and the next place to inspect logs.
@@ -49,6 +49,6 @@ For a full context read, gather:
 ## Guardrails
 
 - Do not edit `.vibeRig/` files, SQLite files, or generated evidence files to change state.
-- Do not call raw task status updates for resume unless the resume tools are unavailable; prefer `viberig.tasks.resume_blocked`.
-- Resume moves the task back to `running` and continues the existing session id. It is not a fresh run.
+- Do not call raw task status updates to move a blocked task to `running`; use `viberig.tasks.continue_after_fix`.
+- Continue-after-fix keeps the task `blocked` during AI preflight, then moves it to `running` only after the backend approves the resume path and continues the existing session id. It is not a fresh run.
 - Rerun moves the task back through `ready` with a reason and creates a new run.

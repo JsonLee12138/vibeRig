@@ -77,6 +77,7 @@ tasks:
             "VIBERIG_CODEX_FULL_AUTO",
             "VIBERIG_CODEX_CALLBACK_URI",
             "VIBERIG_FAKE_CODEX_STATUS",
+            "VIBERIG_FAKE_RESUME_PREFLIGHT_READY",
             "VIBERIG_FAKE_CODEX_WRITE_FILE",
             "VIBERIG_FAKE_MCP_CAPTURE",
             "VIBERIG_HOME",
@@ -163,6 +164,8 @@ tasks:
 
         blocked = viberig_service.execute_ready_task(self.home, self.project["id"], "REQ-CODEX", "T1")
         blocked_session_id = blocked["codex"]["session_id"]
+        with self.assertRaisesRegex(ValueError, "Invalid task transition"):
+            viberig_service.update_task_status(self.home, self.project["id"], "REQ-CODEX", "T1", "running")
         os.environ["VIBERIG_FAKE_CODEX_STATUS"] = "success"
 
         result = viberig_service.execute_blocked_task_resume(
@@ -179,7 +182,9 @@ tasks:
 
         self.assertEqual(result["run"]["status"], "success")
         self.assertEqual(detail["task"]["status"], "human_review")
+        self.assertIsNotNone(result["resume_preflight"])
         self.assertEqual(result["codex"]["session_id"], blocked_session_id)
+        self.assertIn("resume_preflight_started", event_types)
         self.assertIn("resume_started", event_types)
         self.assertIn("codex_session_resumed", event_types)
         self.assertIn("codex-resume-prompt.md", resumed_session["prompt_path"])
@@ -187,6 +192,33 @@ tasks:
             "credentials are now available",
             Path(resumed_session["prompt_path"]).read_text(encoding="utf-8"),
         )
+
+    def test_blocked_task_resume_preflight_can_keep_task_blocked(self) -> None:
+        os.environ["VIBERIG_FAKE_CODEX_STATUS"] = "input_required"
+        self.ready_task()
+
+        blocked = viberig_service.execute_ready_task(self.home, self.project["id"], "REQ-CODEX", "T1")
+        os.environ["VIBERIG_FAKE_CODEX_STATUS"] = "success"
+        os.environ["VIBERIG_FAKE_RESUME_PREFLIGHT_READY"] = "no"
+
+        result = viberig_service.execute_blocked_task_resume(
+            self.home,
+            self.project["id"],
+            "REQ-CODEX",
+            "T1",
+            "credentials are still missing",
+        )
+        detail = viberig_service.get_task(self.home, self.project["id"], "REQ-CODEX", "T1")
+        events = viberig_service.list_run_events(self.home, blocked["run"]["id"])
+        event_types = [event["event_type"] for event in events]
+
+        self.assertEqual(result["run"]["status"], "blocked")
+        self.assertEqual(detail["task"]["status"], "blocked")
+        self.assertIsNotNone(result["resume_preflight"])
+        self.assertIsNone(result["codex"])
+        self.assertIn("resume_preflight_started", event_types)
+        self.assertIn("resume_preflight_blocked", event_types)
+        self.assertNotIn("codex_session_resumed", event_types)
 
     def test_manual_validation_moves_task_to_human_review_not_failed(self) -> None:
         task_file = self.requirement_root / "tasks.yaml"

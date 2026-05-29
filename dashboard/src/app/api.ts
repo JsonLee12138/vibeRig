@@ -142,7 +142,7 @@ export const api = {
   },
   async resumeTask(projectId: string, requirementId: string, taskId: string, comment?: string): Promise<Run> {
     return (
-      await post<{ run: Run }>(`/api/tasks/${encodeURIComponent(taskId)}/runs/resume`, {
+      await post<{ run: Run }>(`/api/tasks/${encodeURIComponent(taskId)}/runs/continue-after-fix`, {
         project_id: projectId,
         requirement_id: requirementId,
         comment,
