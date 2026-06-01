@@ -299,6 +299,22 @@ tasks:
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM evidence").fetchone()[0], 0)
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM manual_reviews").fetchone()[0], 0)
 
+    def test_project_registration_keeps_same_root_id_stable_when_name_changes(self) -> None:
+        first_id = self.project["id"]
+
+        registered = viberig_service.save_project(
+            self.home,
+            self.project_root,
+            "Renamed Example",
+            Path(__file__).resolve().parents[1],
+        )
+        projects = viberig_service.list_projects(self.home)
+
+        self.assertEqual(registered["id"], first_id)
+        self.assertEqual(len([project for project in projects if project["project_root"] == str(self.project_root)]), 1)
+        self.assertEqual(projects[0]["id"], first_id)
+        self.assertEqual(projects[0]["name"], "Renamed Example")
+
     def test_task_detail_activity_evidence_discovery_and_exports(self) -> None:
         viberig_service.import_requirement(self.home, self.project, self.requirement_root)
         evidence_dir = self.requirement_root / "evidence" / "T1"

@@ -651,8 +651,18 @@ def db_project_payload(project: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
-def sync_project_to_db(home: Path, project: dict[str, Any]) -> None:
+def sync_project_to_db(home: Path, project: dict[str, Any]) -> dict[str, Any]:
     with connect_db(home) as connection:
+        existing_by_root = connection.execute(
+            "SELECT id, registered_at FROM projects WHERE project_root = ?",
+            (project["project_root"],),
+        ).fetchone()
+        if existing_by_root and existing_by_root["id"] != project["id"]:
+            project = {
+                **project,
+                "id": existing_by_root["id"],
+                "registered_at": existing_by_root["registered_at"] or project.get("registered_at"),
+            }
         connection.execute(
             """
             INSERT INTO projects (id, name, project_root, config_path, status, plugin_root, registered_at, updated_at)
@@ -668,6 +678,7 @@ def sync_project_to_db(home: Path, project: dict[str, Any]) -> None:
             db_project_payload(project),
         )
         connection.commit()
+    return project
 
 
 def new_record_id(prefix: str, *parts: Any) -> str:
@@ -837,6 +848,11 @@ def load_projects(home: Path) -> dict[str, Any]:
 
 def save_project(home: Path, project_root: Path, name: str, plugin_root: Path) -> dict[str, Any]:
     data = load_projects(home)
+    existing_db_project: dict[str, Any] | None = None
+    with connect_db(home) as connection:
+        row = connection.execute("SELECT * FROM projects WHERE project_root = ?", (str(project_root),)).fetchone()
+        if row:
+            existing_db_project = dict(row)
     project = {
         "id": project_id(project_root, name),
         "name": name,
@@ -854,17 +870,29 @@ def save_project(home: Path, project_root: Path, name: str, plugin_root: Path) -
     next_projects = []
     for existing in data["projects"]:
         if existing.get("id") == project["id"] or existing.get("project_root") == project["project_root"]:
-            merged = {**existing, **project, "registered_at": existing.get("registered_at", project["registered_at"])}
+            merged = {
+                **existing,
+                **project,
+                "id": existing.get("id") or project["id"],
+                "registered_at": existing.get("registered_at", project["registered_at"]),
+            }
             next_projects.append(merged)
             project = merged
             replaced = True
         else:
             next_projects.append(existing)
+    if not replaced and existing_db_project:
+        project = {
+            **existing_db_project,
+            **project,
+            "id": existing_db_project["id"],
+            "registered_at": existing_db_project.get("registered_at", project["registered_at"]),
+        }
     if not replaced:
         next_projects.append(project)
     data["projects"] = sorted(next_projects, key=lambda item: item.get("name", ""))
     write_json(projects_file(home), data)
-    sync_project_to_db(home, project)
+    project = sync_project_to_db(home, project)
     with connect_db(home) as connection:
         add_activity_event(connection, "project.registered", project["id"], payload={"project_root": project["project_root"]})
         connection.commit()

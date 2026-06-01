@@ -5,10 +5,21 @@ import sys
 import tempfile
 import unittest
 import json
+import importlib.util
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+INIT_PROJECT_PATH = ROOT / "scripts" / "init_project.py"
+
+
+def load_init_project_module():
+    spec = importlib.util.spec_from_file_location("init_project", INIT_PROJECT_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load init_project module")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class InitProjectTest(unittest.TestCase):
@@ -44,7 +55,7 @@ url = "https://stitch.googleapis.com/mcp"
 
             command = [
                 sys.executable,
-                str(ROOT / "scripts" / "init_project.py"),
+                str(INIT_PROJECT_PATH),
                 str(project_root),
                 "--skip-global-service",
             ]
@@ -64,6 +75,29 @@ url = "https://stitch.googleapis.com/mcp"
             self.assertIn("mcp_command: npx -y codex-mcp-server", viberig_config)
             self.assertIn("mcp_initialize_timeout_ms: 60000", viberig_config)
             self.assertIn("mcp_tool_timeout_ms: 600000", viberig_config)
+
+    def test_registered_project_for_root_requires_exact_normalized_match(self) -> None:
+        module = load_init_project_module()
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / "project"
+            target.mkdir()
+            other = Path(temp) / "other"
+            other.mkdir()
+
+            def fake_get_json(port: int, path: str) -> dict:
+                self.assertEqual(port, 49160)
+                self.assertEqual(path, "/api/projects")
+                return {
+                    "projects": [
+                        {"id": "other", "project_root": str(other)},
+                        {"id": "target", "project_root": str(target / ".." / "project")},
+                    ]
+                }
+
+            module.get_json = fake_get_json
+
+            self.assertEqual(module.registered_project_for_root(49160, target)["id"], "target")
+            self.assertIsNone(module.registered_project_for_root(49160, target / "nested"))
 
 
 if __name__ == "__main__":

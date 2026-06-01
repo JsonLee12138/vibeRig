@@ -77,7 +77,10 @@ Create or update this target-project structure:
    - The global panel uses fixed local URL `http://127.0.0.1:49160`.
    - Run `api/server.py ensure --install-autostart` unless the user explicitly opts out.
    - Register the current project with `api/server.py register <project-root>`.
-   - If the daemon is already running, do not start a duplicate; just register or update the project.
+   - After registration, verify the project appears in `api/server.py status` or `GET /api/projects` with an exact normalized `project_root` match.
+   - Refresh the registered project so existing `.vibeRig/requirements/*` are imported into the dashboard.
+   - If registration or verification fails, stop and report the register output instead of continuing as if the project is dashboard-ready.
+   - If the daemon is already running, do not start a duplicate; just register or update the project, verify it, and refresh it.
 10. Check optional context-mode support:
    - Prefer this Codex plugin marketplace install path:
      `codex plugin marketplace add mksglu/context-mode`

@@ -4,11 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shlex
 import subprocess
+import urllib.request
 from pathlib import Path
 
+
+DEFAULT_SERVICE_PORT = 49160
 
 CONFIG_TEMPLATE = """project:
   name: {project_name}
@@ -250,6 +254,21 @@ def append_gitignore(path: Path) -> bool:
     return True
 
 
+def get_json(port: int, path: str) -> dict:
+    with urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=5) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def registered_project_for_root(port: int, project_root: Path) -> dict | None:
+    normalized_project_root = project_root.expanduser().resolve()
+    payload = get_json(port, "/api/projects")
+    for project in payload.get("projects") or []:
+        root_value = project.get("project_root")
+        if root_value and Path(root_value).expanduser().resolve() == normalized_project_root:
+            return project
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("project_root", nargs="?", default=".")
@@ -260,6 +279,7 @@ def main() -> int:
     parser.add_argument("--test-command", default="")
     parser.add_argument("--skip-global-service", action="store_true")
     parser.add_argument("--no-autostart", action="store_true")
+    parser.add_argument("--service-port", type=int, default=DEFAULT_SERVICE_PORT)
     args = parser.parse_args()
 
     root = Path(args.project_root).expanduser().resolve()
@@ -309,11 +329,11 @@ def main() -> int:
         print(f"- {item}")
     if not args.skip_global_service:
         service_script = plugin_root / "api" / "server.py"
-        ensure_cmd = ["python3", str(service_script), "ensure"]
+        ensure_cmd = ["python3", str(service_script), "ensure", "--port", str(args.service_port)]
         if not args.no_autostart:
             ensure_cmd.append("--install-autostart")
         subprocess.run(ensure_cmd, check=True)
-        subprocess.run(
+        register_result = subprocess.run(
             [
                 "python3",
                 str(service_script),
@@ -323,10 +343,34 @@ def main() -> int:
                 project_name,
                 "--plugin-root",
                 str(plugin_root),
+                "--port",
+                str(args.service_port),
             ],
             check=True,
+            capture_output=True,
+            text=True,
         )
-        print("VibeRig panel: http://127.0.0.1:49160")
+        print(register_result.stdout, end="" if register_result.stdout.endswith("\n") else "\n")
+        registered_project = registered_project_for_root(args.service_port, root)
+        if not registered_project:
+            raise RuntimeError(f"VibeRig project registration did not persist for {root}")
+        refresh_result = subprocess.run(
+            [
+                "python3",
+                str(service_script),
+                "refresh",
+                registered_project["id"],
+                "--via-daemon",
+                "--port",
+                str(args.service_port),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        print(refresh_result.stdout, end="" if refresh_result.stdout.endswith("\n") else "\n")
+        print(f"Verified VibeRig project registration: {registered_project['id']}")
+        print(f"VibeRig panel: http://127.0.0.1:{args.service_port}")
     return 0
 
 
