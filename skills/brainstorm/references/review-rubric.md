@@ -1,66 +1,39 @@
-# Review Rubric
+# Brainstorm Review Rubric
 
-Use this checklist before finishing. Fix issues directly in the generated documents.
+Use this after each stage and before handing off to `write-plan`.
 
-## Result-Only Check
+## Brief
 
-- No brainstorming transcript.
-- No chronological research log.
-- No internal reasoning.
-- No "I considered..." process notes.
-- Rejected options appear only as meaningful tradeoffs.
-- Each generated document preserves the relevant `Why`, `What`, `Who`, and `How` information for its phase, even when the final document does not use those labels as headings.
-- Human-facing summaries and numbered points are concise enough for a user to review as `1`, `2`, `3`.
-- No TBD, TODO, 待定, 待确认, open questions, unresolved blockers, unknowns, empty placeholder sections, or unresolved template text.
-- Non-blocking uncertainty is written only as an approved working decision with rationale and a review trigger.
+- Goals and non-goals are explicit and stable.
+- Success signals are observable.
+- Constraints, risks, and decisions have sources or approved assumptions.
 
-## Requirement Check
+## Research
 
-- `requirement.md` has numbered goals, numbered requirement points, non-goals, boundary decisions, business rules, constraints, and confirmed decisions.
-- Requirement IDs such as `R1`, `R2`, and `R3` are stable and concrete enough for acceptance mapping.
-- Business rules have an explicit source, approved decision, or review trigger.
-- Source links are retained when relevant.
+- Facts, inferences, and hypotheses are separated.
+- Sources are linked when external facts influence implementation or acceptance.
+- Recommendation states confidence and tradeoffs.
 
-## Research Check
+## Contract
 
-- `research.md` is human-facing and starts with concise numbered conclusions.
-- Research-first output clearly labels requirement assumptions instead of treating them as approved requirements.
-- `research.md` separates facts, inferences, and approved working decisions.
-- GitHub repository research uses DeepWiki MCP when available.
-- Ordinary URL research uses Browser when available.
-- Technical risks have validation tasks, mitigations, or review triggers.
+- `contract.json` has stable IDs.
+- Goals, rules, workflows, constraints, risks, and decisions map back to the brief.
+- JSON schema validation passed or the skipped validation is reported.
 
-## Acceptance Check
+## Architecture
 
-- Every major requirement has at least one acceptance point.
-- Acceptance phase writes both `acceptance.md` and `acceptance-human.md`.
-- `acceptance-human.md` uses the same IDs and numbered order as `acceptance.md`; every major item maps one-to-one across the two files.
-- Manual acceptance is separated from automated acceptance.
-- Automated and manual acceptance points use stable IDs that downstream task plans can reference.
-- `acceptance.md` does not invent task IDs before task splitting.
-- Manual acceptance points include why human judgment is required and concrete pass criteria.
-- Boundary, risk, and regression scenarios are represented.
-- Pass criteria are concrete.
+- Affected modules and integration boundaries are clear.
+- Data/state flow and failure modes are covered.
+- Mermaid diagrams are present when they clarify state, sequence, or flow.
 
-## Roadmap Check
+## Acceptance
 
-- `roadmap.md` starts with a concise numbered human-facing summary before detailed planning content.
-- Phases are sequenced by dependency and risk.
-- High-risk findings from `research.md` have mitigation or validation tasks when research exists.
-- Tasks are reviewable and not overly granular.
+- Every acceptance item has ID, source, precondition, action, expected result, evidence, mode, and risk.
+- `acceptance.md` and `acceptance.json` use the same IDs.
+- Criteria are testable or explicitly marked manual.
 
-## Spec Check
+## Validation
 
-- `spec.md` starts with a concise numbered human-facing summary before detailed implementation design.
-- Recommended implementation direction is consistent with `research.md` when it exists.
-- Design covers relevant modules, interfaces, data, state/process flow, errors, compatibility, and tests.
-- No design question that blocks implementation remains in the written file; blocking questions are asked before writing.
-
-## Cross-Document Check
-
-- Terms and names are consistent across files.
-- `acceptance.md` covers `requirement.md`.
-- `acceptance-human.md` maps one-to-one to `acceptance.md`.
-- `roadmap.md` reflects `research.md` when present and `acceptance.md`.
-- `spec.md` implements the recommended technical direction.
-- Task-to-acceptance mapping is left for `write-plan` unless `plan.md` or `tasks.yaml` already exists.
+- Required commands and manual checks are tied to acceptance IDs.
+- CI is recorded as project-specific policy, not a universal requirement.
+- Proof packet expectations point to Linear comments.

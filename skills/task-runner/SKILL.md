@@ -1,195 +1,223 @@
 ---
 name: task-runner
-description: >
-  Use when the user asks Codex to execute, continue, resume, pick the next task,
-  or run an entire VibeRig requirement from the current chat. This is a
-  foreground runner skill: Codex itself performs the work in the current session,
-  follows agent-sop for staged delivery, uses real git worktrees for execution
-  isolation, and uses VibeRig MCP only to read task state and synchronize
-  dashboard-visible task, run, evidence, acceptance, and review status. Do not
-  use the backend automatic runner.
+description: Execute or continue a VibeRig task from Linear in the current Codex session. Use when the user asks to run, execute, continue, resume, fix, validate, or complete a VibeRig Linear issue or requirement. The main agent selects an appropriate subagent, validates the result, submits a PR, and updates Linear with a proof packet.
 ---
 
 # Task Runner
 
-## Contract
+Use this skill as the Linear-native execution protocol for VibeRig.
 
-Use this skill as a VibeRig foreground execution wrapper around `agent-sop`.
+Codex is already running inside the Codex plugin environment. Do not launch another Codex process and do not use a backend runner. The current main agent orchestrates the work, delegates bounded execution to the appropriate subagent, validates the result, and writes status/proof back to Linear.
 
-Codex remains the main agent and executes the task in the current chat. Load and follow `agent-sop` for scope analysis, test decisions, implementation, validation, QA review, and evidence-based rework. This skill only adds VibeRig task selection and MCP status synchronization.
+## Sources Of Truth
 
-The main agent owns all VibeRig MCP writes. Subagents may inspect code, implement bounded changes, write tests, review, or return evidence, but they must not mutate VibeRig task, run, acceptance, evidence, or review state.
+- Linear issue/sub-issue: task status, assignment, discussion, acceptance conclusion, and proof packet.
+- Local `.vibeRig/requirements/<requirement-id>/`: requirement contract, architecture, acceptance matrix, validation policy, and diagrams.
+- `.vibeRig/project.yaml`: Linear registration, docs root, worktrees root, pull request policy, gate policy, and default subagent routing.
+- Current git workspace: implementation changes, branch/commit/PR, and validation evidence.
 
 ## Hard Rules
 
-- Do not call backend automatic execution, resume, rerun, or continue tools or HTTP routes, including `viberig.runs.execute_ready_task`, `viberig.tasks.continue_after_fix`, `viberig.tasks.resume_blocked`, `viberig.tasks.rerun`, `viberig.runs.continue_after_fix`, `viberig.runs.resume`, `POST /api/runs/execute_ready_task`, or `POST /api/tasks/<task_id>/runs`.
-- Do not ask the backend to run Codex. The current Codex session performs the work directly.
-- `viberig.runs.create` is allowed only as dashboard bookkeeping for the current foreground run. It must not be treated as permission for the backend to execute anything.
-- Do not edit `.vibeRig/` files, SQLite files, or generated dashboard runtime state to update status. Use VibeRig MCP.
-- Do not mark acceptance items passed unless there is concrete implementation and validation evidence.
-- Do not move a task to `accepted`; foreground Codex stops at `human_review` unless a human explicitly performs manual acceptance.
-- If VibeRig MCP is unavailable, continue only with explicit user consent and report that dashboard synchronization is degraded.
-- Execution workspaces must be real git worktrees. Do not treat a normal branch checkout inside the main project checkout as a worktree substitute.
-- In requirement-run mode, use one requirement-level worktree for the whole requirement. Do not create one worktree per task.
-- Every successfully completed task must produce a git commit in the execution worktree before moving to the next task or reporting requirement-run completion.
+- Every Linear task execution must declare and use a suitable subagent through `subagent-routing`.
+- Default to an isolated git worktree for implementation work. Direct development in the current main workspace is allowed only when the user explicitly asks for it, the task is trivial/docs-only, or worktree setup is impossible and the reason is recorded.
+- Subagents must not use context-mode.
+- Subagents must not update Linear, project status, acceptance status, or final proof.
+- The main agent owns context-mode, final validation, acceptance mapping, Linear comments, and status updates.
+- Do not call `codex-cli-mcp`, `codex mcp-server`, shell-launched Codex, or local backend automatic execution.
+- Do not call VibeRig dashboard/task-engine MCP tools or HTTP routes.
+- Do not create or rely on `tasks.yaml`.
+- Do not write a local long-term proof packet directory. Proof packets are Linear comments referencing durable logs, CI URLs, commits, branches, changed files, and local docs.
+- Do not mark a Linear issue complete or done from this skill. Move validated work to a human-acceptance/review state and require the `human-acceptance` skill for final human sign-off.
+- When `pull_request.required` is true or absent, do not finish a successful implementation without creating or updating a PR and recording its URL.
+- Do not merge the PR or remove the task worktree from this skill. Merge and cleanup belong to `human-acceptance` after explicit user acceptance.
 
-## Project Registration Preflight
+## Worktree Policy
 
-This preflight is mandatory before any requirement, board, task, run, evidence, or acceptance tool call. Do not skip it just because a requirement id or task id was provided.
+Before implementation, explicitly decide where the task will run:
 
-1. Determine the intended project root. Prefer the current workspace or git root unless the user provided a project path.
-2. Call `viberig.projects.list`.
-3. Normalize project roots to absolute paths and match the intended project root against registered `project_root` values. Require an exact path match after symlink and `..` normalization; do not pick a different project just because it is the only registered project.
-4. If no registered project matches, immediately call `viberig.projects.register` with the intended absolute `project_root`. Include `project_name` when it can be inferred safely from the directory name or user input.
-5. After registering, call `viberig.projects.list` again and verify the intended `project_root` is now present. If it is still absent, treat registration as failed, report the returned register payload, and stop before task selection.
-6. Call `viberig.projects.refresh` when available so dashboard-visible requirements and tasks are synchronized before task selection.
-7. Use the matched or newly registered project id for the rest of the task-runner flow.
+- Default: create or reuse an isolated git worktree for the Linear issue.
+- Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to `<project-root>/.worktrees/`.
+- Worktree directory pattern: `<project-root>/.worktrees/<issue-key>-<short-slug>`.
+- Preferred branch naming: `codex/<issue-key>-<short-slug>` when a branch is needed.
+- Use the current main workspace only when:
+  - the user explicitly asks to work in the current workspace
+  - the task is trivial or documentation-only
+  - the repository or environment cannot create a worktree
+  - continuing existing uncommitted task work in the current workspace is safer than splitting it
+- When using the current workspace, inspect dirty files first and protect unrelated user changes.
+- Record the worktree/main-workspace decision and reason in the Proof Packet.
+- Pass the selected workspace path to the subagent in the Task Brief.
 
-If VibeRig MCP is unavailable, stop before task selection and ask whether to continue without dashboard synchronization. If multiple registered projects plausibly match the workspace, list the ambiguity briefly and ask for the intended project id.
+If worktree creation fails, do not silently fall back. State the failure, choose the safest available workspace, and include the reason in the proof.
 
-## Inputs
+The default configured path for a project named `my-app` and issue `APP-123` is:
 
-Resolve these before acting:
+```text
+<project-root>/.worktrees/APP-123-<short-slug>
+```
 
-- project id
-- requirement id
-- task id, or a requirement whose next task should be selected
-- execution mode: single-task mode or requirement-run mode
+## Pull Request Policy
 
-If ids are missing, infer them from the current workspace, current VibeRig project, current requirement context, or task files. If multiple plausible projects or requirements exist, list the ambiguity briefly and ask for the missing id.
+Read `pull_request` from `.vibeRig/project.yaml`; if the section is absent, use:
 
-## Execution Mode
+```yaml
+pull_request:
+  required: "true"
+  provider: "auto"
+  base_branch: ""
+  draft: "false"
+```
 
-Choose the mode from the user's intent before selecting work:
+For implementation tasks, the default end state is a submitted PR:
 
-- Single-task mode: use when the user names a task, asks for the next task, asks to continue one blocked or failed task, or otherwise expects one task to be implemented.
-- Requirement-run mode: use when the user asks to run, finish, execute, or complete the whole requirement, all ready tasks in a requirement, or the requirement end to end.
+- Create or reuse the issue branch before implementation when practical.
+- After validation passes, inspect the diff, protect unrelated changes, and commit only the task changes.
+- Push the branch and create or update a PR against `pull_request.base_branch`, or the repository default branch when the base branch is empty.
+- Use the target project's PR provider. For GitHub projects, use the GitHub plugin or `gh` CLI when authenticated.
+- Include the Linear issue key, source docs, AC coverage, validation evidence, and residual risks in the PR body.
+- Link the PR back to Linear through the Proof Packet comment and issue links/status fields when available.
 
-In single-task mode, run exactly one actionable task and stop after its final state is synchronized.
+If PR creation is required but cannot be completed because the repo has no remote, provider/auth is missing, pushes fail, or checks block PR submission, do not present the task as ready for human acceptance. Move or comment the Linear issue as blocked/waiting with the exact missing condition and ask the user for the needed action.
 
-In requirement-run mode:
+## Linear Status Policy
 
-1. Resolve the requirement once and prepare one requirement-level worktree.
-2. Repeatedly select the next actionable task from the same requirement.
-3. For each task, create its own VibeRig run, status updates, events, evidence, acceptance updates, validation, and final task state.
-4. After each successful task, commit that task's completed changes in the requirement worktree before selecting the next task.
-5. Stop when there are no actionable tasks, a task fails, a task is blocked, validation cannot be completed, or the user interrupts.
-6. Report the aggregate requirement result, including every task attempted, each run id, each commit sha, validation status, and any remaining blocked or waiting tasks.
+Use `_list_issue_statuses` to map VibeRig lifecycle intent to the team's actual Linear workflow states. Do not invent states that are not available in the team.
 
-Requirement-run mode still respects task dependencies, readiness, and human review boundaries. Tasks that reach `human_review` are complete for foreground execution, but they are not accepted until a human review records acceptance.
+Recommended semantic lifecycle:
 
-## Task Selection
+- `Backlog` / `Triage`: issue exists but is not ready for execution.
+- `Ready`: source docs, AC refs, validation expectations, and subagent recommendation are present.
+- `In Progress`: implementation work has started in a worktree or the current workspace.
+- `In Review` / `QA`: implementation is complete and validation or review is underway.
+- `Human Acceptance`: proof packet is posted and the issue is waiting for explicit user acceptance.
+- `Done` / `Accepted` / `Completed`: only set by the `human-acceptance` skill after explicit human sign-off.
+- `Blocked`: execution cannot proceed without user input, credentials, external state, or product decisions.
 
-When the user gives a task id:
+If the team has no `Human Acceptance` status, use the closest review/waiting state and write a comment that the intended state is human acceptance.
 
-1. Read it with `viberig.tasks.get`.
-2. Confirm the task belongs to the intended project and requirement.
-3. Continue only if the task is actionable.
+## Preflight
 
-When the user gives a requirement:
+1. Locate the project root and read `.vibeRig/project.yaml`, including `workspace.worktrees_root` and `pull_request` when present.
+2. Resolve Linear project/team ids from YAML or Linear search:
+   - use `_list_projects` or `_search` when `.vibeRig/project.yaml` is missing project identifiers or the recorded project cannot be trusted
+   - use `_list_issue_statuses` to understand the team's workflow states before moving issues
+3. Resolve the target Linear issue:
+   - use the issue named by the user when provided
+   - otherwise find the next actionable issue in the registered Linear Project
+   - if multiple plausible issues exist, ask the user to choose
+   - use `_get_issue` for a named issue and `_list_issues` for project/team queues
+4. Read the Linear issue description and comments for source doc paths, acceptance IDs, validation expectations, and recommended subagent:
+   - use `_get_issue` for issue details
+   - use `_list_comments` for proof packets, blockers, and prior handoff notes
+5. Read only the referenced local docs needed for the task.
+6. Main agent may use context-mode to summarize prior context, docs, and code search results.
+7. Decide the workspace using the Worktree Policy and prepare the worktree when selected.
+8. Resolve branch and PR policy, including provider, base branch, draft setting, and whether PR submission is required.
+9. Build a compact Task Brief for the subagent.
 
-1. Read the board with `viberig.board.get`.
-2. Choose the next actionable task by dependency readiness first, then explicit ordering, then priority.
-3. Skip `accepted` and `canceled` tasks.
-4. Treat `human_review` and `self_accepted` tasks as waiting for review, not implementation work.
-5. Treat `blocked` or `failed` tasks as rework only when the user asked to continue, resume, or fix them.
-6. Prefer `ready` tasks. Only move `draft` to `ready` when dependencies are satisfied and the transition succeeds.
+## Task Brief
 
-If no task is actionable, report the requirement state and the blocking reason.
+```markdown
+## Goal
+<task goal from Linear>
 
-## Git Worktree and Commit Discipline
+## Source Docs
+- .vibeRig/requirements/<requirement-id>/brief.md#...
+- .vibeRig/requirements/<requirement-id>/architecture.md#...
+- .vibeRig/requirements/<requirement-id>/acceptance.md#...
 
-Prepare execution isolation before implementation, after project and requirement resolution:
+## Acceptance
+- AC-...: <expected result>
 
-1. Resolve the git root and base ref. Prefer task or requirement metadata when present; otherwise use the project's configured VibeRig base ref, then `origin/main`, then the current branch only when no remote base is available.
-2. Choose the branch and worktree path:
-   - Single-task mode: prefer the task's `branch` and `worktree_hint`; otherwise use `viberig/<requirement-id>-<task-id>` and `./worktrees/<requirement-id>-<task-id>`.
-   - Requirement-run mode: prefer an existing requirement-level branch or worktree hint if present; otherwise use `viberig/<requirement-id>` and `./worktrees/<requirement-id>`.
-3. Fetch the base ref when a remote base is used.
-4. Create or reuse a real git worktree with `git worktree add`. If the branch already exists, attach the worktree to that branch. If the worktree already exists, verify it points at the intended branch before reusing it.
-5. Verify the execution path appears in `git worktree list --porcelain` as a `worktree` entry. If not, stop and fix the workspace setup before changing files.
-6. Run implementation, tests, validation, diff inspection, and commits from the execution worktree, not from the main checkout.
-7. Inspect `git status --short` before each task. If unrelated existing changes are present, do not overwrite them; either work around them or ask the user how to proceed.
+## Constraints
+- <scope boundaries>
+- do not revert unrelated user changes
+- no context-mode inside subagent
+- no Linear updates inside subagent
 
-Commit rules:
+## Validation
+- <commands/manual checks>
 
-- Commit only after task validation and self-acceptance evidence support completion.
-- Make one commit per successfully completed task, even in requirement-run mode where all tasks share the same requirement worktree.
-- Keep each commit scoped to the just-completed task. Do not mix pending work for later tasks into the commit.
-- Use a traceable message such as `viberig(<requirement-id>): complete <task-id>` and include the run id, validation commands, and key evidence in the commit body when practical.
-- Record the commit sha in VibeRig evidence or a run event.
-- If a task is genuinely complete with no file changes, create an explicit empty commit only after recording why no file changes were expected.
-- Do not commit `.vibeRig/` runtime files, SQLite files, generated dashboard runtime state, or unrelated user changes.
+## Workspace
+- mode: <worktree | current-workspace>
+- path: <absolute path>
+- reason: <why this mode was selected>
 
-## Foreground Run Lifecycle
+## Pull Request
+- required: <true | false>
+- provider: <auto | github | other>
+- branch: <codex/<issue-key>-<short-slug>>
+- base: <base branch or repository default>
+- draft: <true | false>
 
-After choosing an actionable task:
+## Output Contract
+- changed files
+- validation attempted
+- acceptance coverage
+- residual risks
+- handoff notes
+```
 
-1. Read the task detail with `viberig.tasks.get`.
-2. Create dashboard bookkeeping with `viberig.runs.create`.
-3. Move the task to `running` with `viberig.tasks.update_status`.
-4. Append a `preflight` run event that names the selected task, the reason it was selected, and the intended validation approach.
-5. Load `agent-sop` if it has not already been loaded this turn, then execute the task through that protocol from the prepared execution worktree.
+## Execution Workflow
 
-Use the run id from `viberig.runs.create` for all later run events and finalization.
+1. Select the appropriate subagent capability using `subagent-routing`.
+   - If no suitable subagent exists or subagent tooling is unavailable, stop before implementation and report the missing capability instead of silently executing the Linear task directly.
+2. Move the Linear issue to the closest `In Progress` state with `_save_issue` when work starts, unless it is already in an equivalent active state.
+3. Delegate the Task Brief to that subagent.
+4. Inspect the returned work, changed files, and stated evidence.
+5. Run main-agent validation:
+   - targeted tests
+   - build/lint/typecheck when required by `.vibeRig/project.yaml`
+   - manual checks when automation is impossible
+   - acceptance coverage review against AC ids
+6. If validation fails, send a bounded rework brief to the same or better subagent. Include failed evidence and expected correction.
+7. Stop and ask the user when the same issue family fails repeatedly, external credentials are missing, scope conflicts with docs, or product decisions are required.
+8. When validation is sufficient, submit the PR:
+   - inspect `git status` and `git diff` from the selected workspace
+   - commit only task-scoped changes
+   - push the task branch
+   - create or update the PR
+   - capture PR URL, branch, commit, base branch, and any CI/check URL
+9. If PR submission is required and fails, write a Linear blocker/comment with `_save_comment`, move/update the Linear issue to the closest blocked/waiting state with `_save_issue`, and stop before requesting human acceptance.
+10. When validation and required PR submission are sufficient, write a Linear proof packet comment and move/update the Linear issue to the closest `Human Acceptance`, waiting-for-review, or QA state:
+   - use `_save_comment` for the Proof Packet comment
+   - use `_save_issue` for issue status, labels, assignee, links, project, or relation updates
+11. Tell the user that final acceptance requires explicitly invoking `human-acceptance` with the accepted/rejected AC ids or an "all accepted" decision. Tell the user that PR merge and worktree cleanup happen only in `human-acceptance` after full acceptance.
 
-In requirement-run mode, repeat this lifecycle independently for every selected task in the same requirement worktree. Do not reuse a previous task's run id for a later task.
+## Proof Packet Comment
 
-## Stage Sync Points
+Post one concise Linear comment containing:
 
-At each stage boundary, the main agent appends a VibeRig run event:
+- issue key and task goal
+- workspace mode and path
+- branch/commit/PR URL
+- PR provider, base branch, draft/ready state, and CI/check URL when available
+- changed files summary
+- validation commands and results
+- CI/log links when available
+- acceptance IDs covered
+- acceptance IDs not covered and why
+- manual checks needed
+- subagent used and subagent handoff notes
+- residual risks
 
-- `preflight`: task, scope, dependencies, acceptance refs, and test decision.
-- `development`: implementation start, important design decisions, and implementation completion.
-- `test_authoring`: tests added, tests changed, or why no focused test is appropriate.
-- `validating`: validation commands, results, failures, and manual validation notes.
-- `self_acceptance`: evidence summary and acceptance criteria coverage.
-- `acceptance_review`: review verdict, residual risks, and whether human review is needed.
+Do not duplicate the proof packet into `.vibeRig/`.
 
-If `viberig.runs.update_progress` exists, call it at these same boundaries to update `implementation_status`. If it does not exist, use `viberig.runs.append_event` only.
+## Human Acceptance Boundary
 
-## Evidence Sync
+`task-runner` can prove that implementation and automated validation are complete. It cannot perform final human acceptance.
 
-Record durable evidence with `viberig.evidence.record` when useful evidence exists, especially:
+After proof is posted and the required PR exists, leave the Linear issue in the closest available human-acceptance/review state. The user must explicitly call `human-acceptance` to record accepted/rejected AC ids, merge the PR on full acceptance, clean up the task worktree, move the issue to a terminal status, and trigger post-acceptance insights or approved skill updates.
 
-- validation command results
-- focused test coverage summary
-- changed-file summary or diff artifact path
-- self-acceptance notes
-- screenshots, logs, or manual verification notes
+## Final Response
 
-Keep evidence summaries short and factual. Prefer file paths for durable artifacts when they already exist. Do not create noisy evidence files just to satisfy this skill.
+Report:
 
-## Acceptance Sync
-
-Use `viberig.acceptance.list` or the task detail to map task acceptance refs before self-acceptance.
-
-For each linked acceptance item:
-
-- mark `passed` only when implementation and validation evidence directly support it;
-- mark `failed` when validation proves it is not met;
-- mark `blocked` when external input, missing credentials, unavailable services, or unresolved product decisions prevent verification;
-- leave `pending` when evidence is incomplete.
-
-Do not use acceptance status as a substitute for human review.
-
-## Final State
-
-Finish every foreground run with one of these outcomes:
-
-- Success: record validation, self-acceptance evidence, and commit sha; move the task to `human_review`; then call `viberig.runs.finish` with `status: "success"`.
-- Validation failure: record failure evidence, move the task to `failed`, then call `viberig.runs.finish` with `status: "failed"`.
-- Blocked: record the blocker, move the task to `blocked`, then call `viberig.runs.finish` with `status: "blocked"`.
-- Canceled by user: move the task to `canceled` only when the user explicitly asks and a reason is provided, then finish or cancel the run if the MCP tool supports it.
-
-The final response to the user should include the task id, final task status, run id, key evidence, validation result, and any required human review or rework.
-
-## Error Handling
-
-If a VibeRig MCP write fails:
-
-1. Stop and read the current task/run state.
-2. Retry only when the failure is transient or caused by stale local assumptions.
-3. If the write still fails, do not continue mutating code unless the user explicitly accepts unsynchronized execution.
-
-If implementation fails after the task is already `running`, try to record a `blocked` or `failed` run event and finish the run before reporting the blocker.
+- Linear issue key/url
+- workspace mode and path
+- subagent used
+- files changed
+- validation result
+- branch/commit/PR URL
+- proof packet status
+- human acceptance status and unresolved risk

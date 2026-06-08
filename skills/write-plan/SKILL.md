@@ -1,96 +1,119 @@
 ---
 name: write-plan
-description: Compile VibeRig brainstorm outputs into plan.md and tasks.yaml. Use after brainstorm has produced requirement.md, acceptance.md, roadmap.md, and spec.md, with research.md optional, or when the user asks to split a VibeRig requirement into local execution tasks, Linear child issue drafts, worktree branches, validation commands, and subagent assignments.
+description: Convert VibeRig Docs as Code requirement contracts into Linear issues and sub-issues. Use after brainstorm has produced brief, contract, architecture, acceptance, and validation documents, or when the user asks to map a VibeRig requirement into Linear tasks, acceptance references, validation gates, and subagent assignments.
 ---
 
 # Write Plan
 
-Use this skill after `brainstorm` has produced the planning-ready requirement documents. `research.md` is useful context but is not required when `requirement.md`, `acceptance.md`, `roadmap.md`, and `spec.md` are present.
+Use this skill after `brainstorm` has produced a planning-ready requirement contract under `.vibeRig/requirements/<requirement-id>/`.
+
+`write-plan` no longer creates `tasks.yaml` and no longer feeds a local task engine. Linear is the task source of truth.
 
 ## Input Contract
 
 Resolve a requirement directory under:
 
 ```text
-.vibeRig/requirements/<requirement-name>/
+.vibeRig/requirements/<requirement-id>/
 ```
 
 Required inputs:
 
-- `requirement.md`
+- `brief.md`
+- `contract.schema.json`
+- `contract.json`
+- `architecture.md`
+- `acceptance.schema.json`
+- `acceptance.json`
 - `acceptance.md`
-- `roadmap.md`
-- `spec.md`
+- `validation.md`
 
 Optional inputs:
 
 - `research.md`
-- `acceptance-human.md`
+- `diagrams/*.mmd`
+- existing Linear issue keys or ids recorded in docs
 
-Do not generate missing brainstorm documents in this skill. If any required file is missing, stop and tell the user which `brainstorm` phase must run first. If only `research.md` is missing, continue and treat `roadmap.md`, `spec.md`, and `acceptance.md` as the approved technical direction; record any research-gap risk in `plan.md` only when it materially affects task confidence.
+Also read `.vibeRig/project.yaml` for Linear project/team ids, docs root, gate policy, and default subagent routing.
+
+If required files are missing, stop and tell the user which `brainstorm` phase must run first. Do not synthesize missing requirement facts inside this skill.
 
 ## Output Contract
 
-Write:
+Create or update Linear artifacts:
 
-```text
-.vibeRig/requirements/<requirement-name>/
-├── plan.md
-└── tasks.yaml
+- One parent Linear issue for the requirement or feature.
+- Linear sub-issues or linked issues for implementation tasks.
+- Linear issue descriptions that reference local docs and acceptance IDs instead of copying full documents.
+- Linear labels, status, assignee, and project linkage when available.
+
+Optionally update local docs only to add stable Linear references, such as issue keys or URLs. Do not create a local task file as a long-term source of truth.
+
+## Language Policy
+
+Linear issue titles, descriptions, sub-issue names, plan-sync comments, and chat summaries should follow the user's current working language as closely as possible.
+
+- If the user is chatting in Chinese, write the human-facing Linear content in Chinese.
+- If the user is chatting in English, write the human-facing Linear content in English.
+- If the requirement docs are in a different language from the current user conversation, prefer the current conversation language and preserve exact technical identifiers from the docs.
+- Do not translate stable IDs, file paths, commands, branch names, labels that already exist in Linear, acceptance IDs, issue keys, schema field names, or code symbols.
+- If the user explicitly requests a language, use that language for all newly created or updated human-facing Linear text.
+
+## Linear Issue Template
+
+Each Linear task should include:
+
+```markdown
+## Task
+<short task goal>
+
+## Source Docs
+- .vibeRig/requirements/<requirement-id>/brief.md#...
+- .vibeRig/requirements/<requirement-id>/architecture.md#...
+- .vibeRig/requirements/<requirement-id>/acceptance.md#...
+
+## Acceptance References
+- AC-...
+
+## Validation
+- <command/manual gate from validation.md or project.yaml>
+
+## Subagent
+Recommended: <subagent capability>
+
+## Proof Packet
+Post final validation as a Linear comment with commands, logs/CI links, changed files, commit/branch, AC coverage, and residual risks.
 ```
-
-`plan.md` is the human-readable execution plan. `tasks.yaml` is the machine contract for the VibeRig local task engine, optional Linear exports, worktrees, and subagents.
 
 ## Workflow
 
-1. Resolve the VibeRig root and requirement directory.
-2. Read all required brainstorm files, optional `research.md` and `acceptance-human.md` when present, and `.vibeRig/config.yaml` if it exists.
-3. Check for contradictions:
-   - requirement points that are not represented in acceptance, roadmap, or spec
-   - acceptance criteria that are not represented in spec or roadmap
-   - roadmap tasks that are not testable
-   - spec changes that exceed stated goals or non-goals
-   - manual acceptance points that cannot be mapped to a task, task group, or final integration check
-   - research findings that conflict with roadmap or spec when `research.md` exists
-4. If contradictions are material, stop and request a brainstorm update.
-5. Draft task boundaries. Each task should map to one child issue, one branch, one worktree, and one PR or handoff.
-6. Prefer different subagents for task splitting, implementation, acceptance, and code review.
-7. If a needed subagent is missing, ask the user whether to create it with `agent-creator`. If declined, record the fallback risk in `plan.md`.
-8. Write `plan.md` using `references/plan-template.md`.
-9. Write `tasks.yaml` using `references/tasks-yaml-template.md`.
-10. Validate `tasks.yaml` with `scripts/validate_tasks.py` when available.
-11. Optionally render Linear child issue markdown with `scripts/render_linear_children.py`.
+1. Resolve the target project root and `.vibeRig/project.yaml`.
+2. Resolve the requirement directory and validate all required Docs as Code inputs exist.
+3. Validate `contract.json` against `contract.schema.json` and `acceptance.json` against `acceptance.schema.json` when a local JSON Schema validator is available. If validation cannot run, report the skipped check.
+4. Check consistency:
+   - every goal/non-goal in `brief.md` has contract coverage or is explicitly out of scope
+   - every acceptance item has source, precondition, action, expected result, evidence, and validation mode
+   - every implementation task maps to at least one acceptance ID
+   - validation gates match `.vibeRig/project.yaml`
+   - risks from `research.md` or `architecture.md` are represented in tasks or validation
+5. Use `subagent-routing` to choose recommended subagent capabilities for research follow-up, implementation, QA, review, and integration tasks.
+6. Use the `linear` skill/plugin to create or update the parent issue and child issues with concrete Linear app tools:
+   - `_list_issue_statuses` to resolve valid workflow states for the target team
+   - `_list_issue_labels` and `_create_issue_label` to reuse or create VibeRig labels
+   - `_list_issues` to detect existing parent/child issues before creating duplicates
+   - `_save_issue` to create or update the parent issue and each child issue; use `parentId` for sub-issues, `project` for project linkage, `team` for creation, and `blockedBy`/`blocks` for dependencies
+7. Apply the Language Policy before writing any human-facing Linear title, description, or comment. Keep technical identifiers unchanged.
+8. Keep Linear descriptions concise. Link to local doc paths and stable section/AC ids; do not paste full local documents into issues.
+9. Add a final Linear comment with `_save_comment` summarizing the plan sync: source docs revision, issue list, acceptance coverage, validation gates, and unresolved risks.
+10. Report Linear issue URLs/keys and any local docs updated with references.
 
-## Task Rules
+## Hard Rules
 
-- `depends_on` must make serial requirements explicit.
-- `parallelizable` must be false when tasks are likely to collide on the same files or shared contracts.
-- `scope.include` and `scope.exclude` must be specific enough for an implementation agent to obey.
-- `acceptance_refs` must point to criteria in `acceptance.md`.
-- If `acceptance-human.md` exists, referenced IDs must also appear there in the same human-facing order.
-- `acceptance_refs` must include manual acceptance IDs when the task requires human verification.
-- `validation` must include executable commands or explicit manual acceptance items, and manual items must cite the related acceptance ID.
-- `branch` should use `viberig/<requirement-id>-<task-id>`.
-- `worktree_hint` should use `./worktrees/<requirement-id>-<task-id>`.
-- `base_policy.default_base` should default to `origin/main`.
-- `base_policy.require_fetch_before_worktree`, `require_base_sha_record`, and `require_sync_before_pr` should be true.
-
-## Local Execution Fit
-
-Plan for VibeRig's local task and acceptance flow:
-
-- `tasks.yaml` is imported into the global VibeRig panel.
-- Each task maps to a branch, a worktree, validation commands, acceptance checks, manual checks when needed, and review ownership.
-- Optional Linear child issue drafts should mirror the local task contract instead of becoming the source of truth.
-
-## Acceptance Mapping
-
-`brainstorm` defines stable automated and manual acceptance IDs in `acceptance.md`; `write-plan` maps them to executable tasks.
-
-For every task:
-
-- Include the relevant automated and manual IDs in `acceptance_refs`.
-- Put runnable checks in `validation` as commands.
-- Put manual checks in `validation` as explicit strings prefixed with the acceptance ID, for example `[AC-M1] Manual: verify keyboard focus order in the browser and capture notes`.
-- Use `plan.md` to show the human-readable Task -> Acceptance -> Manual Check mapping.
-- If a manual check only makes sense after multiple tasks are complete, assign it to the integration task or note the dependency in `plan.md`.
+- Do not write `.vibeRig/requirements/<requirement-id>/tasks.yaml`.
+- Do not call local VibeRig dashboard import, refresh, or task-engine APIs.
+- Do not render Linear markdown exports as a separate source of truth.
+- Do not put full requirement documents into Linear issues. Local docs remain the durable contract.
+- Do not force English Linear issue content when the user is working in another language. Match the user's current working language for human-facing issue text and comments.
+- If Linear tools are unavailable, produce a concise issue-draft summary in the chat and stop before pretending issues were created.
+- Do not claim plan sync is complete when `_save_issue` or `_save_comment` was skipped despite available Linear tools.
+- Main agent may use context-mode for summarizing docs and history. Subagents must not use context-mode.

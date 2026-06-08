@@ -1,11 +1,7 @@
-# .vibeRig/project.yaml Template
-
-```yaml
 version: 1
 project:
-  name: "example-project"
+  name: "vb-plugin"
   root: "."
-  repo_url: ""
 docs:
   root: ".vibeRig/requirements"
 workspace:
@@ -16,9 +12,9 @@ pull_request:
   base_branch: ""
   draft: "false"
 linear:
-  team_id: ""
-  project_id: ""
-  project_document_id: ""
+  team_id: "d468277e-24d2-447d-a981-a20e0f1a7693"
+  project_id: "a06bfaa0-13b4-401d-a3e7-3fe1c45cf60c"
+  project_document_id: "7135b388-77cf-4bdf-8418-2e24acb6eab1"
   project_document_title: "VibeRig Project Registration"
 gate_policy:
   ci_required: "project_decides"
@@ -33,4 +29,3 @@ subagents:
   default_integration: "integrator"
 context_mode:
   main_agent_only: true
-```

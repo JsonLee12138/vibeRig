@@ -1,176 +1,102 @@
 # VibeRig
 
-VibeRig 是一个 Codex 插件，用于把模糊需求转成可审查的需求文档、本地可执行任务、隔离 worktree，以及验收后的经验沉淀。
-
-项目地址：[JsonLee12138/vibeRig](https://github.com/JsonLee12138/vibeRig)
+VibeRig 是一个面向 Linear-native 软件交付的 Codex 插件。它把模糊需求整理成本地 Docs as Code 契约，把已确认的计划映射到 Linear issues，通过合适的 Codex subagents 执行任务，并把证据、验收结果和经验沉淀写回 Linear。
 
 英文文档：[README.md](./README.md)
 
-## 提供什么
+## 目录
 
-- `brainstorm`：把需求整理成 `requirement.md`、`research.md`、`acceptance.md`、`roadmap.md` 和 `spec.md`。
-- `write-plan`：把 brainstorm 结果继续整理成 `plan.md`、`tasks.yaml`、可选 Linear 子任务草稿、worktree 策略、验证命令和 subagent 分工。
-- `init-viberig`：初始化目标项目，创建 `.vibeRig/`、本地 worktree 目录、全局面板注册和默认运行配置。
-- `insights`：在需求验收完成后记录保守的经验候选项。
-- `api/server.py`：运行本地 VibeRig 后端和面板，默认地址是 `http://127.0.0.1:49160`。
+1. [安装](#安装)
+2. [更新](#更新)
+3. [人工使用方法](#人工使用方法)
+4. [内置 skills 和 subagents](#内置-skills-和-subagents)
+5. [运行流程](#运行流程)
 
-## 从 Marketplace 安装
+## 安装
 
-本仓库包含 `.agents/plugins/marketplace.json`，所以可以作为 Codex marketplace 源被追踪：
+添加 VibeRig marketplace，并安装插件：
 
 ```sh
 codex plugin marketplace add JsonLee12138/vibeRig --ref main
-codex plugin marketplace list
+codex plugin add vibe-rig@viberig
 ```
 
-然后重启 Codex，打开插件目录，选择 `VibeRig` marketplace，并安装 `VibeRig` 插件。Codex 会把启用的插件安装到自己的插件缓存中，并不是直接从当前源码仓库执行。
+当前 Codex CLI selector 格式是 `PLUGIN@MARKETPLACE`。本仓库中 marketplace 是 `viberig`，plugin 是 `vibe-rig`。
 
-## 只在某个 Codex 项目中安装
+当你需要 VibeRig 创建或更新 Linear project、document、issue、comment 时，需要同时启用并登录 Linear 插件。
 
-如果只想让 VibeRig 在某一个项目中可用，使用 repo-scoped marketplace。在目标项目中创建 `.agents/plugins/marketplace.json`：
+## 更新
 
-```json
-{
-  "name": "viberig-project",
-  "interface": {
-    "displayName": "VibeRig Project"
-  },
-  "plugins": [
-    {
-      "name": "vibe-rig",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/JsonLee12138/vibeRig.git",
-        "ref": "main"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    }
-  ]
-}
-```
-
-然后重启 Codex，打开插件目录，选择 `VibeRig Project` marketplace，并安装插件。插件技术名是 `vibe-rig`，展示名是 `VibeRig`。
-
-如果你需要一个稳定的本地路径来直接运行辅助脚本，可以把插件放进目标仓库，再让 marketplace 指向这个本地目录：
+刷新 marketplace snapshot：
 
 ```sh
-mkdir -p .agents/plugins plugins
-git submodule add https://github.com/JsonLee12138/vibeRig plugins/vibe-rig
-git submodule update --init plugins/vibe-rig
+codex plugin marketplace upgrade viberig
 ```
 
-这种方式使用下面的 local-source marketplace entry：
-
-```json
-{
-  "name": "viberig-project",
-  "interface": {
-    "displayName": "VibeRig Project"
-  },
-  "plugins": [
-    {
-      "name": "vibe-rig",
-      "source": {
-        "source": "local",
-        "path": "./plugins/vibe-rig"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    }
-  ]
-}
-```
-
-`source.path` 是相对仓库根目录解析的，不是相对 `.agents/plugins/` 目录。修改本地插件源码后，需要重启 Codex，让已安装的插件缓存重新加载新版本。
-
-## 初始化目标项目
-
-安装插件后，让 Codex 使用 `init-viberig` skill 初始化目标项目。
-
-如果你是以 local-source 方式把 VibeRig 放在 `plugins/vibe-rig`，也可以在目标项目根目录直接执行：
+如果当前 Codex 安装不会自动刷新已安装插件缓存，可以重新安装插件：
 
 ```sh
-python3 plugins/vibe-rig/scripts/init_project.py . \
-  --project-name "<项目名>" \
-  --test-command "npm test"
+codex plugin remove vibe-rig
+codex plugin add vibe-rig@viberig
 ```
 
-该命令会创建或确认以下结构：
+更新后重启 Codex，让新的 skills 生效。
+
+## 人工使用方法
+
+在目标项目中，直接让 Codex 使用对应的 VibeRig skill。
+
+常用提示词：
+
+- `Use init-viberig for this repo.`
+- `Use brainstorm for this requirement: ...`
+- `Use write-plan for .vibeRig/requirements/<requirement-id>.`
+- `Use task-runner for Linear issue ABC-123.`
+- `Use human-acceptance: all ACs are accepted for ABC-123.`
+- `Use insights for the accepted Linear work.`
+
+VibeRig 会创建或使用这些项目本地文件：
 
 ```text
 .vibeRig/
-  config.yaml
-  bin/
-    viberig
+  project.yaml
   requirements/
-  insights/
-.codex/agents/
-worktrees/
-.gitignore
+.worktrees/
+  <issue-key>-<short-slug>/
 ```
 
-默认 worktree 目录是 `./worktrees`。VibeRig 还会确保全局本地面板可用，固定地址是：
+Linear 是任务和状态界面。本地 requirement docs 是契约，不是 issues。
 
-```text
-http://127.0.0.1:49160
-```
+## 内置 Skills 和 Subagents
 
-项目初始化会在需要时启动全局 VibeRig daemon，在支持的 macOS 环境中安装登录自启动 LaunchAgent，并把当前项目注册到全局面板。
+Skills：
 
-## 运行 Planning 和 Implementation
+- `init-viberig`：初始化 `.vibeRig/project.yaml`、`.vibeRig/requirements/`、`.worktrees/`、Linear 项目注册、门禁策略、PR 策略和默认路由。
+- `brainstorm`：把粗略想法整理成本地 Docs as Code 需求契约。
+- `write-plan`：根据本地验收标准创建或更新 Linear issues 和 sub-issues。
+- `task-runner`：在当前 Codex 会话中执行 Linear task，委派合适 subagent，完成验证，提交 PR，并写入 Linear Proof Packet。
+- `human-acceptance`：记录用户显式给出的人工验收通过或拒绝；全量验收时合并 PR、清理任务 worktree、更新 Linear 最终状态，并触发 insights。
+- `insights`：从已验收工作中生成保守的经验候选项。
+- `subagent-routing`：选择并 brief 专用 subagent，同时保证 context-mode 和 Linear 更新只在主 agent 中发生。
+- `agent-creator`：帮助创建或更新项目本地 Codex custom subagents。
+- `agent-sop`：编排分阶段实现、验证、QA 和基于证据的 rework。
+- `blocker-resume`：检查被阻塞的 Linear work，并决定恢复执行或请求缺失决策。
 
-使用全局 VibeRig 面板：
+内置 subagent prompt entries：
 
-```text
-http://127.0.0.1:49160
-```
+- `Agent Creator`
+- `Agent SOP`
+- `Brainstorm`
+- `Subagent Routing`
+- `Task Runner`
 
-在面板中选择项目、导入需求任务、查看任务看板、运行 ready 状态的本地任务流程，并记录验证证据和验收结果。
+具体的实现、QA、review、调研或集成 subagent 是项目或用户自己的 agents。VibeRig 通过 `subagent-routing` 路由到它们；subagents 不应使用 context-mode、不应更新 Linear、不应做最终验收判断。
 
-## 全局状态
+## 运行流程
 
-VibeRig 会把本机服务状态放在项目仓库之外：
-
-```text
-~/.viberig/
-  projects.json
-  runtime/
-    daemon.json
-  logs/
-  runs/
-  exports/
-```
-
-业务代码和实现验收仍然发生在各项目自己的 `worktrees/` 目录下。
-
-## 推荐工作流
-
-1. 让 Codex 使用 VibeRig brainstorm 处理一个需求。
-2. 审查 `.vibeRig/requirements/<requirement-name>/` 下生成的需求文档。
-3. 让 Codex 使用 VibeRig write-plan 为该需求生成执行计划。
-4. 校验 `tasks.yaml`：
-
-   ```sh
-   python3 plugins/vibe-rig/scripts/validate_tasks.py \
-     .vibeRig/requirements/<requirement-name>/tasks.yaml
-   ```
-
-5. 把需求导入 VibeRig 面板并检查任务看板。
-6. 每个任务在自己的 branch 和 `./worktrees/<task>` 目录中实现、运行和验收。
-7. 记录验证证据、验收评审和代码审查。
-8. 需求验收通过后，运行 VibeRig insights 记录经验候选项。
-
-## 注意事项
-
-- 保持 `brainstorm` 和 `write-plan` 分离。brainstorm 负责需求事实，write-plan 负责执行契约。
-- 每个完成的任务分支建议先提交代码，再开始依赖它的后续任务。
-- 实现前必须同步 worktree base。VibeRig 的任务契约默认基于 `origin/main`。
-- 缺少专门 subagent 时，应该显式使用 `agent-creator` skill 创建，而不是把所有职责塞给一个通用 agent。
-- `worktrees/`、`.vibeRig/runtime.json` 和 `.vibeRig/context-mode.md` 是本地运行产物，通常不要提交。
+1. 使用 `init-viberig` 初始化项目。
+2. 使用 `brainstorm` 发现和结构化需求；审查 `.vibeRig/requirements/<requirement-id>/` 下生成的本地文件。
+3. 使用 `write-plan` 把已确认的计划转成 Linear issues。
+4. 使用 `task-runner` 执行 Linear issue；VibeRig 默认在项目内 `.worktrees/<issue-key>-<short-slug>/` worktree 中执行，验证结果，提交或更新 PR，把 Proof Packet 写到 Linear，并让 issue 进入人工验收或 review 状态。
+5. 人工 review 后，显式调用 `human-acceptance`。全量验收会合并 PR，在安全时移除任务 worktree，更新 Linear 最终状态，并运行验收后 insights。
+6. 只有在用户明确确认后，才应用 insights 提出的 skill 或 workflow 更新。

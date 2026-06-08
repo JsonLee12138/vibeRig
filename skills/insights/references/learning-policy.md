@@ -10,12 +10,11 @@ Only auto-apply a candidate when all are true:
 - confidence is `high`
 - evidence includes an accepted task or accepted planning gate
 - the note is factual and low-risk
-- the target is `.vibeRig/insights/confirmed.md`
+- the target is a Linear retrospective/proof comment, or an explicitly approved project-local learning file
 
 Examples:
 
 - The project validation command is `go test ./...`.
-- The project keeps implementation worktrees under `./worktrees`.
 - The accepted workflow uses `origin/main` as the default base.
 
 ## Requires Confirmation
@@ -45,4 +44,4 @@ Do not create candidates from:
 
 ## Development-Time Use
 
-During implementation, read confirmed learnings as guidance. Do not update learning files until the post-acceptance finalizer runs.
+During implementation, read confirmed learnings as guidance when the project has an approved learning location. Do not update learning files or Linear retrospective comments until the post-acceptance finalizer runs.

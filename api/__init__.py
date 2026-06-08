@@ -1,1 +1,0 @@
-"""VibeRig backend package."""

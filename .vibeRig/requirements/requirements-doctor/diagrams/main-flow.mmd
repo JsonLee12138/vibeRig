@@ -1,0 +1,13 @@
+flowchart TD
+    A["CLI receives requirement path"] --> B{"Directory exists?"}
+    B -- "No" --> E1["Emit VRD001"]
+    B -- "Yes" --> C["Check required files"]
+    C --> D{"Required files present?"}
+    D -- "No" --> E2["Emit VRD002 for each missing file"]
+    D -- "Yes" --> F["Parse contract.json and acceptance.json"]
+    F --> G{"JSON valid?"}
+    G -- "No" --> E3["Emit VRD003"]
+    G -- "Yes" --> H["Check structure and AC sources"]
+    H --> I{"Any error diagnostics?"}
+    I -- "Yes" --> J["Print diagnostics and exit non-zero"]
+    I -- "No" --> K["Print success and exit 0"]

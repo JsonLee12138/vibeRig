@@ -1,33 +1,28 @@
-# plan.md Template
+# Linear Plan Sync Template
+
+Use this structure for a Linear plan-sync comment or a short user-facing
+summary. Do not write it as a local task source of truth unless the user asks
+for an exported summary.
 
 ```markdown
-# Execution Plan: <Requirement Title>
+# Linear Plan Sync: <Requirement Title>
 
 ## Source Documents
 
-List required source documents first. Mark `research.md` and `acceptance-human.md` as optional and record whether each was present.
+- Brief: .vibeRig/requirements/<REQ>/brief.md
+- Contract: .vibeRig/requirements/<REQ>/contract.json
+- Architecture: .vibeRig/requirements/<REQ>/architecture.md
+- Acceptance: .vibeRig/requirements/<REQ>/acceptance.md
+- Validation: .vibeRig/requirements/<REQ>/validation.md
 
-## Summary
+## Linear Issues
 
-## Execution Strategy
+| Issue | Task | Acceptance IDs | Subagent | Validation |
+|---|---|---|---|---|
 
-## Task Graph
+## Gate Policy
 
-| Task | Title | Depends On | Parallel | Agent | Acceptance | Validation |
-|---|---|---|---|---|---|---|
+## Coverage
 
-## Worktree Strategy
-
-## Subagent Assignments
-
-## Linear Child Issues
-
-## AI Review Gates
-
-## Human Acceptance Entry
-
-| Task | Acceptance IDs | Manual Check | Evidence |
-|---|---|---|---|
-
-## Risks And Fallbacks
+## Risks And Follow-Ups
 ```

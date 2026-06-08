@@ -1,54 +1,75 @@
 ---
 name: blocker-resume
-description: Use when a VibeRig task is blocked and the agent should inspect the blocker, run log, Codex session, transcript, diff, or evidence, then either resume the blocked run through the existing session or rerun the task through VibeRig MCP.
+description: Use when a VibeRig Linear issue is blocked and the main agent should inspect the blocker, referenced local docs, proof comments, validation logs, and current git state, then either resume through task-runner or ask for the missing decision/input.
 ---
 
 # Blocker Resume
 
-Use this workflow when a VibeRig task is in `blocked` state and the user wants AI-assisted recovery instead of manual-only inspection.
+Use this workflow when a Linear-backed VibeRig task is blocked and the user wants AI-assisted recovery.
 
-## ID Lookup Modes
+VibeRig no longer resumes backend runs or command-mode Codex sessions. Recovery happens in the current Codex main-agent session using Linear issue context, local Docs as Code, and `task-runner`.
 
-The user may provide any of these ids. Resolve the full blocker context before deciding whether to resume or rerun.
+## Inputs
 
-- `project_id` + `requirement_id` + `task_id`: call `viberig.tasks.get`, then use the latest blocked run from `runs`.
-- `run_id`: call `viberig.runs.get`, then read the run log, events, artifacts, diff, and Codex session. Use the returned task/project/requirement ids to call `viberig.tasks.get`.
-- `codex_session_id`: call `viberig.codex_sessions.get`, read transcript/events, then use the session's run id to call `viberig.runs.get` and task ids to call `viberig.tasks.get`.
-- If only a human-facing task id is provided, first locate the active project and requirement from `viberig.projects.list`, `viberig.requirements.list`, and `viberig.board.get`.
+The user may provide:
 
-For a full context read, gather:
+- Linear issue key or URL
+- requirement id
+- local docs path under `.vibeRig/requirements/`
+- branch, PR, commit, validation log, or CI URL
+- plain-language blocker summary
 
-- task detail, dependencies, acceptance items, evidence, manual reviews, and activity
-- latest blocked run metadata
-- run log, run events, artifacts, and diff
-- Codex session metadata, transcript, and events
+If no Linear issue is provided, search the registered Linear Project from `.vibeRig/project.yaml` when Linear tools are available. Use `_list_projects` or `_search` to confirm the project and `_list_issues` to find blocked issues. If multiple blocked issues match, ask the user to choose.
+
+## Evidence To Gather
+
+- Linear issue title, description, status, labels, assignee, comments, and proof packet comments.
+- Referenced local docs:
+  - `brief.md`
+  - `contract.json`
+  - `architecture.md`
+  - `acceptance.json`
+  - `acceptance.md`
+  - `validation.md`
+- Current git status, branch, changed files, commit/PR links when available.
+- Validation logs or CI URLs referenced from Linear comments.
+- Prior subagent handoff notes.
+
+The main agent may use context-mode to summarize large histories or logs. Subagents must not use context-mode.
 
 ## Workflow
 
-1. Identify the task:
-   - If project, requirement, task, run, or session id is provided, resolve it using the ID Lookup Modes above.
-   - If project, requirement, or task id is missing, read projects, requirements, and board data until the task is uniquely identified.
-   - Confirm the task status is `blocked`.
-2. Inspect the blocker:
-   - Read `viberig.tasks.get`.
-   - Read the latest run with `viberig.runs.get`.
-   - Read the run log with `viberig.runs.get_log`.
-   - Read run events, artifacts, diff, and Codex session transcript when they exist.
-3. Decide the action:
-   - Use continue-after-fix when the current worktree and previous Codex session are still useful, such as missing user input, credentials now provided, or a small correction is needed.
-   - Use rerun when the previous run is stale, worktree setup is bad, the wrong branch/base was used, or the task definition changed.
-4. Execute through MCP:
-   - Continue after fix: call `viberig.tasks.continue_after_fix` with `project_id`, `requirement_id`, `task_id`, and a concise `comment` describing what was fixed or what should be checked. The backend first runs an AI resume preflight. Only if that preflight approves continuing does the backend move the task to `running` and resume the previous Codex session.
-   - Rerun: call `viberig.tasks.rerun` with `project_id`, `requirement_id`, `task_id`, and a `reason`.
-   - For a known run id, `viberig.runs.continue_after_fix` may be used instead of task-level continue-after-fix.
-5. Report:
-   - State whether you resumed or reran.
-   - Include run id, reused Codex session id if resumed, and the next place to inspect logs.
-   - Do not mark acceptance or final review yourself.
+1. Resolve the blocked Linear issue and matching local requirement docs:
+   - use `_get_issue` for a named issue
+   - use `_list_issues` for blocked issue queues
+   - use `_list_comments` for blocker comments and prior proof packets
+2. Confirm the issue is actually blocked or has an unresolved blocker comment.
+3. Classify the blocker:
+   - missing product decision
+   - missing credentials or external service
+   - validation failure
+   - architecture/acceptance contradiction
+   - implementation defect
+   - stale branch or merge conflict
+   - unclear task scope
+4. Decide the next action:
+   - Ask the user when the blocker requires a product decision, credentials, or external state.
+   - Update local docs only when the blocker proves the contract is wrong and the user approves the doc change.
+   - Use `task-runner` when implementation or validation can continue now.
+   - Use `subagent-routing` for specialized investigation, QA, security, architecture, or implementation rework.
+5. If work resumes, build a concise Task Brief that includes the blocker evidence and expected correction.
+6. After validation, post a Linear comment with `_save_comment`:
+   - blocker classification
+   - action taken
+   - validation commands/results
+   - acceptance IDs affected
+   - remaining risks or user decisions
+7. Move/update Linear status with `_save_issue` according to the team's workflow only after evidence supports it.
 
 ## Guardrails
 
-- Do not edit `.vibeRig/` files, SQLite files, or generated evidence files to change state.
-- Do not call raw task status updates to move a blocked task to `running`; use `viberig.tasks.continue_after_fix`.
-- Continue-after-fix keeps the task `blocked` during AI preflight, then moves it to `running` only after the backend approves the resume path and continues the existing session id. It is not a fresh run.
-- Rerun moves the task back through `ready` with a reason and creates a new run.
+- Do not call VibeRig backend run, resume, rerun, task, or dashboard tools.
+- Do not edit SQLite files, local runtime state, or generated dashboard data.
+- Do not create a local proof packet directory.
+- Do not mark an issue unblocked or done unless the blocker evidence is resolved.
+- Do not let subagents update Linear or use context-mode.

@@ -1,31 +1,32 @@
-# Linear Child Issue Template
+# Linear Issue Template
 
 ```markdown
-## Task Contract
+## Task
 
-- Requirement: <requirement_id>
-- Task: <task_id>
-- Branch: <branch>
-- Worktree: <worktree_hint>
-- Depends on: <depends_on>
+<short task goal>
 
-## Scope
+## Source Docs
 
-Include:
-
-Exclude:
+- .vibeRig/requirements/<requirement-id>/brief.md#...
+- .vibeRig/requirements/<requirement-id>/architecture.md#...
+- .vibeRig/requirements/<requirement-id>/acceptance.md#...
+- .vibeRig/requirements/<requirement-id>/validation.md#...
 
 ## Acceptance References
 
+- AC-...
+
 ## Validation
 
-## Agents
+- <command/manual gate>
 
-- Implementation:
-- Acceptance:
-- Code review:
+## Subagent
 
-## Source Snapshot
+Recommended: <capability>
 
-Include the minimal requirement, spec, and acceptance excerpts needed for this task to run without relying on an unmerged planning worktree. Include research excerpts only when `research.md` exists and materially changes the task decision.
+## Proof Packet
+
+Post final validation as a Linear comment. Include commands, results, CI/log
+links, changed files, commit/branch/PR, acceptance coverage, uncovered items,
+manual checks, subagent handoff notes, and residual risks.
 ```

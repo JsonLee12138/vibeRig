@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VibeRig Acceptance Matrix",
+  "type": "object",
+  "required": ["items"],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "precondition",
+          "action",
+          "expected_result",
+          "evidence",
+          "validation_mode",
+          "risk_covered"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^AC-[0-9]{3}$" },
+          "source": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "precondition": { "type": "string", "minLength": 1 },
+          "action": { "type": "string", "minLength": 1 },
+          "expected_result": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string", "minLength": 1 },
+          "validation_mode": {
+            "type": "string",
+            "enum": ["automated-test", "manual-check", "command-output", "review"]
+          },
+          "risk_covered": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}

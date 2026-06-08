@@ -1,0 +1,16 @@
+stateDiagram-v2
+    [*] --> Unchecked
+    Unchecked --> MissingDirectory: path not found
+    Unchecked --> MissingFiles: required file absent
+    Unchecked --> InvalidJson: JSON parse failure
+    Unchecked --> InvalidStructure: required field missing
+    Unchecked --> CoverageGap: AC source unmapped
+    Unchecked --> Ready: no error diagnostics
+    MissingDirectory --> Failed
+    MissingFiles --> Failed
+    InvalidJson --> Failed
+    InvalidStructure --> Failed
+    CoverageGap --> Failed
+    Ready --> Passed
+    Failed --> [*]
+    Passed --> [*]

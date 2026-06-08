@@ -7,17 +7,19 @@ description: Use for implementation, bug fix, refactor, validation, or delivery 
 
 ## Contract
 
-Use this skill as the main-agent execution protocol. Keep the main agent responsible for task analysis, routing, evidence gathering, validation, rework decisions, and final reporting.
+Use this skill as the main-agent execution protocol. Keep the main agent responsible for task analysis, routing, evidence gathering, validation, rework decisions, Linear updates, and final reporting.
 
 Do not outsource the whole task and wait. Delegate bounded phases only. If subagent tooling is unavailable, or no suitable subagent exists for a phase, execute that phase directly and record the reason.
 
-Do not require tests for every task. Always make an explicit test decision. Use current MCP and local tools for verification. Use context-mode-style tools for large outputs and return only conclusions plus key evidence.
+Do not require tests for every task. Always make an explicit test decision. Use current MCP and local tools for verification. The main agent may use context-mode-style tools for large outputs and return only conclusions plus key evidence.
 
-Subagents must not mutate VibeRig task status, run status, or acceptance status. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent calls VibeRig MCP to move the task to `human_review`.
+Subagents must not use context-mode, mutate Linear status, mutate VibeRig task/run/acceptance status, or make final acceptance calls. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent writes the proof packet and status update to Linear when the task is Linear-backed, using `_save_comment` for proof comments and `_save_issue` for issue status or metadata updates.
 
 ## Capability Routing
 
 Before delegating, inspect the available subagents or known tool descriptions. Choose by capability, not by a fixed role name.
+
+For VibeRig work, load and follow `subagent-routing` before delegation when available.
 
 Prefer the most specific suitable capability for each phase, such as frontend, backend, UI, database, security, docs, test, QA, reviewer, worker, or default. Use a generic worker only when no closer match is available.
 
@@ -26,6 +28,7 @@ For each delegation, provide:
 - task goal and phase
 - relevant files, modules, or ownership boundary
 - constraints, including not reverting unrelated user changes
+- constraints that subagents do not use context-mode and do not update Linear
 - expected artifact
 - required evidence or return format
 

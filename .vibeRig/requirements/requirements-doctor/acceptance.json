@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "id": "AC-001",
+      "source": ["G-001", "RULE-002"],
+      "precondition": "A complete requirement directory exists and includes all write-plan required files.",
+      "action": "Run the requirements doctor command against that directory.",
+      "expected_result": "The command exits 0 and prints a success summary or no error diagnostics.",
+      "evidence": "Pytest case using a temporary valid requirement directory.",
+      "validation_mode": "automated-test",
+      "risk_covered": ["R-001"]
+    },
+    {
+      "id": "AC-002",
+      "source": ["G-002", "RULE-002"],
+      "precondition": "A requirement directory is missing at least one required write-plan input file.",
+      "action": "Run the requirements doctor command against that directory.",
+      "expected_result": "The command exits non-zero and reports VRD002 with the missing file path.",
+      "evidence": "Pytest case asserting exit code and diagnostic output.",
+      "validation_mode": "automated-test",
+      "risk_covered": ["R-001"]
+    },
+    {
+      "id": "AC-003",
+      "source": ["G-002", "RULE-003"],
+      "precondition": "A requirement directory contains invalid JSON in contract.json or acceptance.json.",
+      "action": "Run the requirements doctor command against that directory.",
+      "expected_result": "The command exits non-zero and reports VRD003 for the invalid JSON file.",
+      "evidence": "Pytest case asserting deterministic JSON parse diagnostics.",
+      "validation_mode": "automated-test",
+      "risk_covered": ["R-001"]
+    },
+    {
+      "id": "AC-004",
+      "source": ["G-002", "RULE-004"],
+      "precondition": "acceptance.json contains an item whose source does not reference a known goal or rule id from contract.json.",
+      "action": "Run the requirements doctor command against that directory.",
+      "expected_result": "The command exits non-zero and reports VRD006 for the acceptance item.",
+      "evidence": "Pytest case asserting acceptance coverage diagnostics.",
+      "validation_mode": "automated-test",
+      "risk_covered": ["R-001"]
+    },
+    {
+      "id": "AC-005",
+      "source": ["G-003", "RULE-005"],
+      "precondition": "The feature has been implemented.",
+      "action": "Run the repository test suite.",
+      "expected_result": "All existing tests plus the new requirements doctor tests pass.",
+      "evidence": "`python3 -m pytest -q` output.",
+      "validation_mode": "command-output",
+      "risk_covered": ["R-001", "R-002"]
+    },
+    {
+      "id": "AC-006",
+      "source": ["RULE-001", "D-001"],
+      "precondition": "A requirement directory contains valid source files.",
+      "action": "Run the requirements doctor command.",
+      "expected_result": "No requirement source file is created, edited, or deleted by the command.",
+      "evidence": "Code review plus automated test or temporary-directory content comparison.",
+      "validation_mode": "review",
+      "risk_covered": ["R-002"]
+    }
+  ]
+}

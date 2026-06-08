@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Runner"
-  short_description: "Run VibeRig tasks or full requirements in-chat"
-  default_prompt: "Use $task-runner to run this VibeRig task or full requirement in the current Codex session through agent-sop, use a real git worktree for execution, commit each completed task, and keep the dashboard synchronized with VibeRig MCP."
+  short_description: "Run VibeRig Linear tasks in the current Codex session"
+  default_prompt: "Use $task-runner to execute a VibeRig Linear issue in the current Codex session. Read .vibeRig/project.yaml and referenced .vibeRig/requirements docs, choose an appropriate subagent with $subagent-routing, keep context-mode in the main agent only, validate against acceptance IDs, submit or update the PR, and write the proof packet as a Linear comment."

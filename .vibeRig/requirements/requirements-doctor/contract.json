@@ -1,0 +1,105 @@
+{
+  "id": "requirements-doctor",
+  "title": "Requirements Doctor",
+  "goals": [
+    {
+      "id": "G-001",
+      "text": "Provide a local command that validates whether a requirement directory is ready for write-plan."
+    },
+    {
+      "id": "G-002",
+      "text": "Return deterministic diagnostics for missing files, invalid JSON, invalid structure, and acceptance coverage gaps."
+    },
+    {
+      "id": "G-003",
+      "text": "Add focused pytest coverage for valid and invalid requirement directories."
+    }
+  ],
+  "rules": [
+    {
+      "id": "RULE-001",
+      "text": "The validator must not mutate requirement files or call Linear tools."
+    },
+    {
+      "id": "RULE-002",
+      "text": "The validator must check all required write-plan input files."
+    },
+    {
+      "id": "RULE-003",
+      "text": "The validator must parse contract.json and acceptance.json as JSON."
+    },
+    {
+      "id": "RULE-004",
+      "text": "Each acceptance item must reference at least one source requirement or rule."
+    },
+    {
+      "id": "RULE-005",
+      "text": "The command must exit 0 only when no diagnostics with severity error are present."
+    }
+  ],
+  "entities": [
+    {
+      "id": "ENT-001",
+      "name": "Requirement Directory",
+      "description": "A directory under .vibeRig/requirements/<requirement-id>/ containing local Docs as Code planning files."
+    },
+    {
+      "id": "ENT-002",
+      "name": "Diagnostic",
+      "description": "A deterministic validation result with code, severity, file path, and message."
+    },
+    {
+      "id": "ENT-003",
+      "name": "Acceptance Item",
+      "description": "A structured acceptance criterion consumed by write-plan and referenced by Linear tasks."
+    }
+  ],
+  "workflows": [
+    {
+      "id": "WF-001",
+      "name": "Validate one requirement directory",
+      "steps": [
+        "Resolve the target requirement directory from a CLI argument.",
+        "Check required files exist.",
+        "Parse contract and acceptance JSON files.",
+        "Validate structural fields needed by write-plan.",
+        "Print diagnostics in deterministic order.",
+        "Exit with 0 when there are no error diagnostics, otherwise exit non-zero."
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "C-001",
+      "text": "Use the existing scripts/ and tests/ layout."
+    },
+    {
+      "id": "C-002",
+      "text": "Keep implementation scoped to local validation."
+    },
+    {
+      "id": "C-003",
+      "text": "Avoid adding mandatory third-party runtime dependencies."
+    }
+  ],
+  "risks": [
+    {
+      "id": "R-001",
+      "text": "Structural validation may diverge from schema files if future requirement contracts change."
+    },
+    {
+      "id": "R-002",
+      "text": "A command that is too broad may become another local task system, which is out of scope."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-001",
+      "text": "Implement the first version as a local preflight command only."
+    },
+    {
+      "id": "D-002",
+      "text": "Use stable diagnostic codes to make both tests and agent consumption reliable."
+    }
+  ]
+}

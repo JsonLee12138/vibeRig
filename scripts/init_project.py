@@ -1,376 +1,230 @@
 #!/usr/bin/env python3
-"""Initialize a target project for VibeRig."""
+"""Initialize a target project for the Linear-native VibeRig workflow."""
 
 from __future__ import annotations
 
 import argparse
-import json
-import re
-import shlex
 import subprocess
-import urllib.request
 from pathlib import Path
 
 
-DEFAULT_SERVICE_PORT = 49160
+DEFAULT_DOCS_ROOT = ".vibeRig/requirements"
+DEFAULT_WORKTREES_ROOT = ".worktrees"
+DEFAULT_PR_REQUIRED = "true"
+DEFAULT_PR_PROVIDER = "auto"
 
-CONFIG_TEMPLATE = """project:
-  name: {project_name}
-  root: .
-worktrees:
-  root: ./worktrees
-  default_base: origin/main
-  sync_before_pr: merge
-viberig:
-  service_url: http://127.0.0.1:49160
-  service_port: 49160
-  autostart: true
-  user_entry: panel
-  task_engine: local
-ports:
-  preview_start: 49200
-  strategy: find-next-free
-context_mode:
-  required: false
-  install_method: codex-plugin-marketplace
-  marketplace: mksglu/context-mode
-  status_file: ./.vibeRig/context-mode.md
-runner:
-  codex:
-    adapter: codex-cli-mcp
-    mcp_command: npx -y codex-mcp-server
-    mcp_tool: codex
-    enable_features:
-      - hooks
-    sandbox: workspace-write
-    full_auto: false
-    mcp_initialize_timeout_ms: 60000
-    mcp_tool_timeout_ms: 600000
-    turn_timeout_ms: 600000
-insights:
-  enabled: true
-  trigger: post_acceptance
-  auto_apply_project_notes: true
-  auto_apply_workflow_rules: false
-  auto_apply_skill_updates: false
-  auto_apply_user_preferences: false
+
+def quote_yaml(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def yaml_list(values: list[str], indent: int = 2) -> str:
+    prefix = " " * indent
+    if not values:
+        return f"{prefix}[]"
+    return "\n".join(f"{prefix}- {quote_yaml(value)}" for value in values)
+
+
+def git_remote_url(root: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "config", "--get", "remote.origin.url"],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return ""
+    return result.stdout.strip()
+
+
+def project_yaml_template(
+    *,
+    project_name: str,
+    docs_root: str,
+    worktrees_root: str,
+    linear_team_id: str,
+    linear_project_id: str,
+    linear_project_document_id: str,
+    linear_project_document_title: str,
+    ci_required: str,
+    required_commands: list[str],
+    manual_checks: list[str],
+    repo_url: str,
+    pr_required: str,
+    pr_provider: str,
+    pr_base_branch: str,
+    pr_draft: str,
+) -> str:
+    return f"""version: 1
+project:
+  name: {quote_yaml(project_name)}
+  root: "."
+  repo_url: {quote_yaml(repo_url)}
+docs:
+  root: {quote_yaml(docs_root)}
+workspace:
+  worktrees_root: {quote_yaml(worktrees_root)}
+pull_request:
+  required: {quote_yaml(pr_required)}
+  provider: {quote_yaml(pr_provider)}
+  base_branch: {quote_yaml(pr_base_branch)}
+  draft: {quote_yaml(pr_draft)}
 linear:
-  project_slug: "{linear_project_slug}"
-  planning_states:
-    - Planning
-  implementation_states:
-    - Todo
-    - In Progress
-    - Rework
-commands:
-  install: "{install_command}"
-  dev: "{dev_command}"
-  test: "{test_command}"
+  team_id: {quote_yaml(linear_team_id)}
+  project_id: {quote_yaml(linear_project_id)}
+  project_document_id: {quote_yaml(linear_project_document_id)}
+  project_document_title: {quote_yaml(linear_project_document_title)}
+gate_policy:
+  ci_required: {quote_yaml(ci_required)}
+  required_commands:
+{yaml_list(required_commands, indent=4)}
+  manual_checks:
+{yaml_list(manual_checks, indent=4)}
+subagents:
+  default_research: "researcher"
+  default_planning: "planner"
+  default_implementation: "implementation"
+  default_qa: "qa"
+  default_review: "code_review"
+  default_integration: "integrator"
+context_mode:
+  main_agent_only: true
 """
-
-
-GITIGNORE_SNIPPET = """
-# VibeRig local worktrees and runtime state
-worktrees/
-.vibeRig/runtime.json
-.vibeRig/context-mode.md
-"""
-
-
-CANDIDATES_TEMPLATE = """# VibeRig Learning Candidates
-
-Candidates here are proposed from accepted work only. Do not treat them as
-confirmed project policy until they are reviewed or explicitly auto-applied by
-the VibeRig learning policy.
-"""
-
-
-CONFIRMED_TEMPLATE = """# VibeRig Confirmed Learnings
-
-Confirmed learnings are safe to use during development. Implementation agents
-may read this file before starting work, but should not edit it during active
-implementation.
-"""
-
-
-CONTEXT_MODE_STATUS_TEMPLATE = """# Context Mode Status
-
-Context-mode is an optional VibeRig evidence source.
-
-Expected installation path:
-
-```sh
-codex plugin marketplace add mksglu/context-mode
-```
-
-Status: not checked
-"""
-
-
-VIBERIG_CONFIG_SNIPPET = """viberig:
-  service_url: http://127.0.0.1:49160
-  service_port: 49160
-  autostart: true
-  user_entry: panel
-  task_engine: local
-"""
-
-
-CODEX_CLI_MCP_CONFIG_SNIPPET = """runner:
-  codex:
-    adapter: codex-cli-mcp
-    mcp_command: npx -y codex-mcp-server
-    mcp_tool: codex
-    enable_features:
-      - hooks
-    sandbox: workspace-write
-    full_auto: false
-    mcp_initialize_timeout_ms: 60000
-    mcp_tool_timeout_ms: 600000
-    turn_timeout_ms: 600000
-"""
-
-
-def detect_plugin_root() -> Path:
-    return Path(__file__).resolve().parents[1]
 
 
 def write_if_missing(path: Path, content: str) -> bool:
     if path.exists():
         return False
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
     return True
 
 
-def ensure_config(path: Path, content: str) -> bool:
+def ensure_project_yaml(path: Path, content: str) -> bool:
     if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         return True
+
     existing = path.read_text(encoding="utf-8")
     updated = existing
-    if "\nviberig:" not in f"\n{updated}":
-        prefix = "" if updated.endswith("\n") else "\n"
-        updated = updated + prefix + VIBERIG_CONFIG_SNIPPET
-    elif "task_engine:" not in updated:
-        updated = updated.replace("  user_entry: panel\n", "  user_entry: panel\n  task_engine: local\n", 1)
-    if "\nrunner:" not in f"\n{updated}":
-        prefix = "" if updated.endswith("\n") else "\n"
-        updated = updated + prefix + CODEX_CLI_MCP_CONFIG_SNIPPET
+    if "\ndocs:" not in f"\n{updated}":
+        updated += "\ndocs:\n  root: \".vibeRig/requirements\"\n"
+    if "\nworkspace:" not in f"\n{updated}":
+        updated += "\nworkspace:\n  worktrees_root: \".worktrees\"\n"
+    if "\npull_request:" not in f"\n{updated}":
+        updated += (
+            "\npull_request:\n"
+            "  required: \"true\"\n"
+            "  provider: \"auto\"\n"
+            "  base_branch: \"\"\n"
+            "  draft: \"false\"\n"
+        )
+    if "\nlinear:" not in f"\n{updated}":
+        updated += (
+            "\nlinear:\n"
+            "  team_id: \"\"\n"
+            "  project_id: \"\"\n"
+            "  project_document_id: \"\"\n"
+            "  project_document_title: \"VibeRig Project Registration\"\n"
+        )
+    if "\ngate_policy:" not in f"\n{updated}":
+        updated += "\ngate_policy:\n  ci_required: \"project_decides\"\n  required_commands: []\n  manual_checks: []\n"
+    if "\nsubagents:" not in f"\n{updated}":
+        updated += (
+            "\nsubagents:\n"
+            "  default_research: \"researcher\"\n"
+            "  default_planning: \"planner\"\n"
+            "  default_implementation: \"implementation\"\n"
+            "  default_qa: \"qa\"\n"
+            "  default_review: \"code_review\"\n"
+            "  default_integration: \"integrator\"\n"
+        )
+    if "\ncontext_mode:" not in f"\n{updated}":
+        updated += "\ncontext_mode:\n  main_agent_only: true\n"
     if updated == existing:
         return False
     path.write_text(updated, encoding="utf-8")
     return True
-
-
-def ensure_codex_hooks_config(path: Path) -> bool:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        path.write_text("[features]\nhooks = true\n", encoding="utf-8")
-        return True
-
-    existing = path.read_text(encoding="utf-8")
-    lines = existing.splitlines(keepends=True)
-    section_start: int | None = None
-    section_end = len(lines)
-    for index, line in enumerate(lines):
-        if re.match(r"^\s*\[features\]\s*(?:#.*)?$", line):
-            section_start = index
-            continue
-        if section_start is not None and index > section_start and re.match(r"^\s*\[.*\]\s*(?:#.*)?$", line):
-            section_end = index
-            break
-
-    if section_start is None:
-        separator = "\n" if existing and not existing.endswith("\n") else ""
-        updated = existing + separator + ("\n" if existing else "") + "[features]\nhooks = true\n"
-    else:
-        hook_line_index: int | None = None
-        for index in range(section_start + 1, section_end):
-            if re.match(r"^\s*hooks\s*=", lines[index]):
-                hook_line_index = index
-                break
-        if hook_line_index is None:
-            lines.insert(section_start + 1, "hooks = true\n")
-        elif not re.match(r"^\s*hooks\s*=\s*true\s*(?:#.*)?$", lines[hook_line_index]):
-            newline = "\n" if lines[hook_line_index].endswith("\n") else ""
-            lines[hook_line_index] = "hooks = true" + newline
-        updated = "".join(lines)
-
-    if updated == existing:
-        return False
-    path.write_text(updated, encoding="utf-8")
-    return True
-
-
-def write_executable(path: Path, content: str) -> bool:
-    previous = path.read_text(encoding="utf-8") if path.exists() else None
-    path.write_text(content, encoding="utf-8")
-    path.chmod(0o755)
-    return previous != content
-
-
-def project_command(command_name: str, plugin_root: Path) -> str:
-    script_path = {
-        "viberig": "api/server.py",
-    }[command_name]
-    embedded_plugin_root = shlex.quote(str(plugin_root))
-    exec_line = 'exec python3 "${PLUGIN_ROOT}/api/server.py" "$@"'
-    return f"""#!/usr/bin/env bash
-set -euo pipefail
-
-PROJECT_ROOT="$(cd "$(dirname "${{BASH_SOURCE[0]}}")/../.." && pwd)"
-DEFAULT_PLUGIN_ROOT="${{PROJECT_ROOT}}/plugins/vibe-rig"
-EMBEDDED_PLUGIN_ROOT={embedded_plugin_root}
-PLUGIN_ROOT="${{VIBERIG_PLUGIN_ROOT:-}}"
-
-if [[ -z "${{PLUGIN_ROOT}}" ]]; then
-  if [[ -x "${{DEFAULT_PLUGIN_ROOT}}/{script_path}" ]]; then
-    PLUGIN_ROOT="${{DEFAULT_PLUGIN_ROOT}}"
-  else
-    PLUGIN_ROOT="${{EMBEDDED_PLUGIN_ROOT}}"
-  fi
-fi
-
-if [[ ! -x "${{PLUGIN_ROOT}}/{script_path}" ]]; then
-  echo "VibeRig plugin command not found: ${{PLUGIN_ROOT}}/{script_path}"
-  echo "Set VIBERIG_PLUGIN_ROOT or install VibeRig at ./plugins/vibe-rig."
-  exit 1
-fi
-
-{exec_line}
-"""
-
-
-def append_gitignore(path: Path) -> bool:
-    existing = path.read_text(encoding="utf-8") if path.exists() else ""
-    needed = []
-    for line in ["worktrees/", ".vibeRig/runtime.json"]:
-        if line not in existing.splitlines():
-            needed.append(line)
-    if not needed:
-        return False
-    prefix = "" if not existing or existing.endswith("\n") else "\n"
-    path.write_text(existing + prefix + GITIGNORE_SNIPPET.lstrip(), encoding="utf-8")
-    return True
-
-
-def get_json(port: int, path: str) -> dict:
-    with urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=5) as response:
-        return json.loads(response.read().decode("utf-8"))
-
-
-def registered_project_for_root(port: int, project_root: Path) -> dict | None:
-    normalized_project_root = project_root.expanduser().resolve()
-    payload = get_json(port, "/api/projects")
-    for project in payload.get("projects") or []:
-        root_value = project.get("project_root")
-        if root_value and Path(root_value).expanduser().resolve() == normalized_project_root:
-            return project
-    return None
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("project_root", nargs="?", default=".")
     parser.add_argument("--project-name")
-    parser.add_argument("--linear-project-slug", default="")
+    parser.add_argument("--docs-root", default=DEFAULT_DOCS_ROOT)
+    parser.add_argument("--worktrees-root", default=DEFAULT_WORKTREES_ROOT)
+    parser.add_argument("--pr-required", default=DEFAULT_PR_REQUIRED)
+    parser.add_argument("--pr-provider", default=DEFAULT_PR_PROVIDER)
+    parser.add_argument("--pr-base-branch", default="")
+    parser.add_argument("--pr-draft", default="false")
+    parser.add_argument("--linear-team-id", default="")
+    parser.add_argument("--linear-project-id", default="")
+    parser.add_argument("--linear-project-document-id", default="")
+    parser.add_argument("--linear-project-document-title", default="VibeRig Project Registration")
+    parser.add_argument("--ci-required", default="project_decides")
+    parser.add_argument("--required-command", action="append", default=[])
+    parser.add_argument("--manual-check", action="append", default=[])
     parser.add_argument("--install-command", default="")
     parser.add_argument("--dev-command", default="")
     parser.add_argument("--test-command", default="")
-    parser.add_argument("--skip-global-service", action="store_true")
-    parser.add_argument("--no-autostart", action="store_true")
-    parser.add_argument("--service-port", type=int, default=DEFAULT_SERVICE_PORT)
+
     args = parser.parse_args()
 
     root = Path(args.project_root).expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     project_name = args.project_name or root.name
-    plugin_root = detect_plugin_root()
+    docs_root = args.docs_root.strip("/") or DEFAULT_DOCS_ROOT
+    worktrees_root = args.worktrees_root.strip("/") or DEFAULT_WORKTREES_ROOT
+    docs_path = root / docs_root
+    worktrees_path = root / worktrees_root
+    project_yaml_path = root / ".vibeRig" / "project.yaml"
 
-    created: list[str] = []
-    for directory in [
-        root / ".vibeRig" / "requirements",
-        root / ".vibeRig" / "insights",
-        root / ".vibeRig" / "bin",
-        root / ".codex" / "agents",
-        root / "worktrees",
-    ]:
-        directory.mkdir(parents=True, exist_ok=True)
-        created.append(str(directory))
+    required_commands = list(args.required_command)
+    for command in [args.install_command, args.dev_command, args.test_command]:
+        if command and command not in required_commands:
+            required_commands.append(command)
 
-    config = CONFIG_TEMPLATE.format(
+    content = project_yaml_template(
         project_name=project_name,
-        linear_project_slug=args.linear_project_slug,
-        install_command=args.install_command,
-        dev_command=args.dev_command,
-        test_command=args.test_command,
+        docs_root=docs_root,
+        worktrees_root=worktrees_root,
+        linear_team_id=args.linear_team_id,
+        linear_project_id=args.linear_project_id,
+        linear_project_document_id=args.linear_project_document_id,
+        linear_project_document_title=args.linear_project_document_title,
+        ci_required=args.ci_required,
+        required_commands=required_commands,
+        manual_checks=list(args.manual_check),
+        repo_url=git_remote_url(root),
+        pr_required=args.pr_required,
+        pr_provider=args.pr_provider,
+        pr_base_branch=args.pr_base_branch,
+        pr_draft=args.pr_draft,
     )
-    if ensure_config(root / ".vibeRig" / "config.yaml", config):
-        created.append(str(root / ".vibeRig" / "config.yaml"))
-    if ensure_codex_hooks_config(root / ".codex" / "config.toml"):
-        created.append(str(root / ".codex" / "config.toml"))
-    if write_if_missing(root / ".vibeRig" / "insights" / "candidates.md", CANDIDATES_TEMPLATE):
-        created.append(str(root / ".vibeRig" / "insights" / "candidates.md"))
-    if write_if_missing(root / ".vibeRig" / "insights" / "confirmed.md", CONFIRMED_TEMPLATE):
-        created.append(str(root / ".vibeRig" / "insights" / "confirmed.md"))
-    if write_if_missing(root / ".vibeRig" / "context-mode.md", CONTEXT_MODE_STATUS_TEMPLATE):
-        created.append(str(root / ".vibeRig" / "context-mode.md"))
-    for command_name in ["viberig"]:
-        command_path = root / ".vibeRig" / "bin" / command_name
-        if write_executable(command_path, project_command(command_name, plugin_root)):
-            created.append(str(command_path))
-    if append_gitignore(root / ".gitignore"):
-        created.append(str(root / ".gitignore"))
 
-    print("Initialized VibeRig project:")
+    created_or_updated: list[str] = []
+    docs_path.mkdir(parents=True, exist_ok=True)
+    created_or_updated.append(str(docs_path))
+    worktrees_path.mkdir(parents=True, exist_ok=True)
+    created_or_updated.append(str(worktrees_path))
+    if ensure_project_yaml(project_yaml_path, content):
+        created_or_updated.append(str(project_yaml_path))
+
+    print("Initialized Linear-native VibeRig project:")
     print(root)
     print("Created or ensured:")
-    for item in created:
+    for item in created_or_updated:
         print(f"- {item}")
-    if not args.skip_global_service:
-        service_script = plugin_root / "api" / "server.py"
-        ensure_cmd = ["python3", str(service_script), "ensure", "--port", str(args.service_port)]
-        if not args.no_autostart:
-            ensure_cmd.append("--install-autostart")
-        subprocess.run(ensure_cmd, check=True)
-        register_result = subprocess.run(
-            [
-                "python3",
-                str(service_script),
-                "register",
-                str(root),
-                "--project-name",
-                project_name,
-                "--plugin-root",
-                str(plugin_root),
-                "--port",
-                str(args.service_port),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        print(register_result.stdout, end="" if register_result.stdout.endswith("\n") else "\n")
-        registered_project = registered_project_for_root(args.service_port, root)
-        if not registered_project:
-            raise RuntimeError(f"VibeRig project registration did not persist for {root}")
-        refresh_result = subprocess.run(
-            [
-                "python3",
-                str(service_script),
-                "refresh",
-                registered_project["id"],
-                "--via-daemon",
-                "--port",
-                str(args.service_port),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        print(refresh_result.stdout, end="" if refresh_result.stdout.endswith("\n") else "\n")
-        print(f"Verified VibeRig project registration: {registered_project['id']}")
-        print(f"VibeRig panel: http://127.0.0.1:{args.service_port}")
+    print("Next steps:")
+    print("- Use the Linear plugin/skill to select or create the Linear Project.")
+    print("- Create or update the Linear Project Document for project registration.")
+    print("- Keep requirement contracts under .vibeRig/requirements/.")
+    print("- Keep VibeRig task worktrees under .worktrees/.")
+    print("- Submit a pull request before moving task work to human acceptance.")
     return 0
 
 

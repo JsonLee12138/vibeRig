@@ -6,11 +6,9 @@ Use this flow only after the accepted-work gate passes.
 
 At least one accepted signal must be present:
 
-- validation passed and acceptance reviewer passed
-- code reviewer passed and PR was created
-- PR merged
-- Linear child issue moved to Done or accepted
-- human handoff accepted
+- Linear issue moved to the team's accepted/done state after validation
+- proof packet comment shows validation passed and reviewer accepted
+- PR merged or human handoff accepted
 
 Do not run this retrospective for active implementation or speculative planning.
 
@@ -20,22 +18,24 @@ Expected fields:
 
 ```yaml
 requirement_id: VB-123
-task_id: T1
+linear_issue: VB-456
 status: accepted
 gate:
   validation_passed: true
   acceptance_passed: true
   code_review_passed: true
-  pr_created: true
 sources:
-  task_contract: .vibeRig/requirements/VB-123/tasks.yaml
+  brief: .vibeRig/requirements/VB-123/brief.md
+  contract: .vibeRig/requirements/VB-123/contract.json
+  architecture: .vibeRig/requirements/VB-123/architecture.md
   acceptance: .vibeRig/requirements/VB-123/acceptance.md
-  spec: .vibeRig/requirements/VB-123/spec.md
-  plan: .vibeRig/requirements/VB-123/plan.md
+  validation: .vibeRig/requirements/VB-123/validation.md
+linear:
+  proof_packet_comment: "<url-or-comment-id>"
+  issue_url: "<url>"
 git:
-  branch: viberig/VB-123-T1
-  base_sha: <sha>
-  head_sha: <sha>
+  branch: "<branch>"
+  head_sha: "<sha>"
   changed_files: []
 validation:
   commands: []
@@ -44,6 +44,7 @@ review:
   acceptance_notes: ""
   code_review_notes: ""
 context_mode:
+  main_agent_only: true
   available: false
 ```
 
@@ -53,12 +54,12 @@ context_mode:
 Review only accepted work.
 
 Use the provided evidence:
-- task contract
-- acceptance criteria
+- Linear issue and proof packet comment
+- local Docs as Code requirement contract
 - implementation diff
 - validation results
 - review notes
-- context-mode events if available
+- context-mode evidence gathered by the main agent, if available
 
 Extract durable learnings only if they are proven by the accepted outcome.
 

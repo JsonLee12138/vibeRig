@@ -1,7 +1,7 @@
 {
   "name": "vibe-rig",
   "version": "0.1.0",
-  "description": "Requirement planning, local task control, and accepted-work insights for VibeRig workflows.",
+  "description": "Linear-native requirement planning, local Docs as Code contracts, subagent routing, and accepted-work insights for VibeRig workflows.",
   "author": {
     "name": "jsonlee"
   },
@@ -12,14 +12,14 @@
     "linear",
     "insights",
     "accepted-learning",
-    "worktree"
+    "subagents",
+    "docs-as-code"
   ],
-  "mcpServers": "./.mcp.json",
   "skills": "./skills/",
   "interface": {
     "displayName": "VibeRig",
-    "shortDescription": "Turn requirements into local execution plans.",
-    "longDescription": "VibeRig helps Codex turn ambiguous requirements into reviewable requirement docs, acceptance criteria, task graphs, Linear child issue drafts, worktree execution plans, and post-acceptance retrospectives with conservative learning candidates.",
+    "shortDescription": "Turn requirements into local contracts and Linear tasks.",
+    "longDescription": "VibeRig helps Codex turn ambiguous requirements into local Docs as Code contracts, Linear issues, subagent-routed execution, Linear proof packets, and post-acceptance retrospectives with conservative learning candidates.",
     "developerName": "jsonlee",
     "category": "Productivity",
     "capabilities": [
@@ -28,8 +28,9 @@
     ],
     "defaultPrompt": [
       "Brainstorm a VibeRig requirement",
-      "Write a VibeRig implementation plan",
-      "Split this spec into child tasks",
+      "Create Linear issues from this VibeRig requirement",
+      "Run the next VibeRig Linear task",
+      "Record human acceptance for a VibeRig Linear task",
       "Generate accepted-work insights"
     ]
   }
