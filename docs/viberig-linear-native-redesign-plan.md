@@ -480,10 +480,11 @@ Proof Packet 不写入本地长期目录。最终证据写入 Linear issue comme
 - 不能从测试通过、QA pass、Proof Packet 存在等信号推断人工验收通过。
 - 必须读取 Linear issue、comments、Proof Packet、AC refs 和必要的本地 docs。
 - 全量验收时必须合并 Proof Packet 中记录的 PR；如果 PR 缺失、冲突、权限不足或检查未通过，则不得进入 Done/Accepted/Completed。
-- PR 合并成功后，必须清理项目内 `.worktrees/` 下对应任务 worktree；不得清理当前 main workspace 或项目 `.worktrees/` 之外的路径。
 - 必须用 `_save_comment` 写入 Human Acceptance comment，记录 accepted/rejected AC、人工检查、风险接受或拒绝原因。
 - 必须用 `_save_issue` 按团队已有状态更新 issue：全量验收才进入 Done/Accepted/Completed；部分验收或拒绝进入 rework/in-progress/blocked 等非终态。
-- 全量验收后运行 `insights`，生成保守学习候选项；只有用户显式确认具体 skill_update 候选时，才修改 VibeRig skill。
+- PR 合并成功后，必须先写入 Human Acceptance comment 并将 Linear issue 更新到 Done/Accepted/Completed，再运行 `insights`。
+- `insights` 生成保守学习候选项；已确认或本次验收预授权的 skill_update 必须通过 `skill-builder` 修改对应 VibeRig skill。
+- Linear 终态更新成功后，才清理项目内 `.worktrees/` 下对应任务 worktree；不得清理当前 main workspace 或项目 `.worktrees/` 之外的路径。
 
 ## 15. 需要废弃或重写的当前模块
 
@@ -531,7 +532,7 @@ Proof Packet 不写入本地长期目录。最终证据写入 Linear issue comme
 - 主 agent 生成 Task Brief。
 - subagent 执行后返回结构化结果。
 - 主 agent 验证、提交或更新 PR，并写回 Linear Proof Packet，将 issue 移动到等待人工验收状态。
-- 用户显式调用 `human-acceptance` 完成验收签字；全量验收时合并 PR、清理项目内任务 worktree、最终状态更新和 insights。
+- 用户显式调用 `human-acceptance` 完成验收签字；全量验收时先合并 PR，再更新 Linear 终态，然后运行 insights 并通过 `skill-builder` 应用已确认的 skill 更新，最后安全清理项目内任务 worktree。
 
 ## 17. 验收标准
 
@@ -546,7 +547,7 @@ Proof Packet 不写入本地长期目录。最终证据写入 Linear issue comme
 - 每次执行任务必须声明并使用合适 subagent。
 - subagent 不使用 context-mode。
 - 主 agent 负责最终验证、Proof Packet 和等待人工验收状态更新。
-- `human-acceptance` 只能由用户显式调用，并负责全量验收后的 PR merge、项目内 worktree cleanup 和最终验收状态更新。
+- `human-acceptance` 只能由用户显式调用，并负责全量验收后的 PR merge、最终验收状态更新、验收后 insights/skill-builder 更新和项目内 worktree cleanup。
 - Proof Packet 只写 Linear comment，不写入本地长期 proof 目录。
 
 ## 18. 已决策事项
@@ -557,7 +558,7 @@ Proof Packet 不写入本地长期目录。最终证据写入 Linear issue comme
 - 项目注册采用 `project.yaml` + Linear Project Document 双记录。
 - Proof Packet 只写 Linear comment，并引用验证日志、CI run、commit 或本地临时产物路径。
 - 任务执行默认使用项目内 `.worktrees/` 的 git worktree；可以由用户或明确原因选择当前 workspace。
-- `task-runner` 完成实现后必须提交或更新 PR；`human-acceptance` 全量验收后负责 merge PR 并清理项目内任务 worktree。
+- `task-runner` 完成实现后必须提交或更新 PR；`human-acceptance` 全量验收后负责 merge PR、更新 Linear 终态、运行 insights/skill-builder，并在安全时清理项目内任务 worktree。
 - 最终 Done/Accepted 状态只能由人工验收流程写入。
 
 ## 19. 已关闭问题
@@ -577,7 +578,7 @@ Proof Packet 不写入本地长期目录。最终证据写入 Linear issue comme
 - `brainstorm` 已改为 Docs as Code 阶段门禁，输出 brief、research、contract、architecture、acceptance、validation 和 Mermaid diagrams。
 - `write-plan` 已改为根据本地 Acceptance Matrix 通过 `_save_issue` 创建或更新 Linear issues，并通过 `_save_comment` 写 plan sync comment，不再生成 `tasks.yaml`。
 - `task-runner` 已改为当前 Codex 主 agent 协议：选择 subagent、默认在项目内 `.worktrees/` 执行、验证结果、提交或更新 PR、通过 `_save_comment` 写 Linear Proof Packet comment，并通过 `_save_issue` 更新 issue 到等待人工验收状态。
-- 已新增 `human-acceptance` skill，作为用户显式调用的人工验收签字入口，负责全量验收后的 PR merge、项目内 worktree cleanup、最终状态更新和验收后 insights。
+- 已新增 `human-acceptance` skill，作为用户显式调用的人工验收签字入口，负责全量验收后的 PR merge、最终状态更新、验收后 insights/skill-builder 更新和项目内 worktree cleanup。
 - 已新增 `subagent-routing` skill，并让 `brainstorm`、`write-plan`、`task-runner`、`agent-sop` 引用该边界。
 - README 中的推荐工作流已切到 Linear-native。
 

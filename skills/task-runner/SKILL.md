@@ -83,10 +83,10 @@ Before implementation, explicitly decide where the task will run:
 
 If worktree creation fails, do not silently fall back to the current workspace. State the failure and stop before implementation unless the user explicitly authorizes main/current workspace changes. Include the failure and next required decision in the proof or blocker comment.
 
-The default configured path for a project named `my-app` and issue `APP-123` is:
+The default configured path pattern is:
 
 ```text
-<project-root>/.worktrees/APP-123-<short-slug>
+<project-root>/.worktrees/<issue-key>-<short-slug>
 ```
 
 ## Pull Request Policy
@@ -240,7 +240,7 @@ Do not duplicate the proof packet into `.vibeRig/`.
 
 `task-runner` can prove that implementation and automated validation are complete. It cannot perform final human acceptance.
 
-After proof is posted and the required PR exists, leave the Linear issue in the closest available human-acceptance/review state. The user must explicitly call `human-acceptance` to record accepted/rejected AC ids, merge the PR on full acceptance, clean up the task worktree, move the issue to a terminal status, and trigger post-acceptance insights or approved skill updates.
+After proof is posted and the required PR exists, leave the Linear issue in the closest available human-acceptance/review state. The user must explicitly call `human-acceptance` to record accepted/rejected AC ids, merge the PR on full acceptance, move the issue to a terminal status, trigger post-acceptance insights and approved skill updates through `skill-builder`, and then clean up the task worktree when safe.
 
 ## Validation
 

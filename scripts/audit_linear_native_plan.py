@@ -170,7 +170,7 @@ def build_checks() -> list[Check]:
                 "_list_issues",
                 "_save_issue",
                 "_save_comment",
-                "Do not write `.vibeRig/requirements/<requirement-id>/tasks.yaml`",
+                "Do not write `.vibeRig/requirements/{requirement-id}/tasks.yaml`",
             ),
             "write-plan creates/updates Linear issues with concrete Linear tools and user-language policy",
         ),
@@ -200,7 +200,7 @@ def build_checks() -> list[Check]:
             "task-runner requires subagent delegation, worktree preflight, PR submission, human acceptance boundary, and concrete Linear tools",
         ),
         Check(
-            "human-acceptance is manual, merges accepted PRs, and cleans worktrees",
+            "human-acceptance is manual, merges accepted PRs, finalizes Linear, then learns",
             exists("skills/human-acceptance/SKILL.md")
             and contains(
                 "skills/human-acceptance/SKILL.md",
@@ -208,6 +208,9 @@ def build_checks() -> list[Check]:
                 "Do not use this skill automatically",
                 "Git And PR Requirements",
                 "merge the linked PR",
+                "move the Linear issue to `Done`",
+                "before running insights",
+                "invoke `skill-builder`",
                 "git worktree remove <path>",
                 "Do not merge PRs for partial, rejected, blocked, or unverified acceptance",
                 "Do not remove worktrees outside the configured project `.worktrees/` directory",
@@ -217,9 +220,8 @@ def build_checks() -> list[Check]:
                 "_save_comment",
                 "_save_issue",
                 "post-acceptance insights",
-                "update VibeRig skills only when the user explicitly confirms",
             ),
-            "human-acceptance records explicit user sign-off, merges accepted PRs, cleans task worktrees, writes Linear comments/status, and gates skill updates",
+            "human-acceptance records explicit user sign-off, merges accepted PRs, writes Linear terminal status before insights, routes skill updates through skill-builder, and cleans task worktrees",
         ),
         Check(
             "blocker and insights use concrete Linear tools",

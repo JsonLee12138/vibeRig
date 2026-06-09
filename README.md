@@ -79,7 +79,7 @@ Skills:
 - `brainstorm`: turns a rough idea into local Docs as Code requirement contracts.
 - `write-plan`: creates or updates Linear issues and sub-issues from local acceptance criteria.
 - `task-runner`: executes a Linear task in the current Codex session, delegates to a suitable subagent, validates, submits a PR, and writes a Linear proof packet.
-- `human-acceptance`: records explicit human acceptance or rejection; on full acceptance it merges the PR, cleans the task worktree, updates Linear final status, and triggers insights.
+- `human-acceptance`: records explicit human acceptance or rejection; on full acceptance it merges the PR, updates Linear final status, runs insights with any confirmed skill updates through `skill-builder`, and cleans the task worktree when safe.
 - `insights`: generates conservative post-acceptance learning candidates.
 - `subagent-routing`: chooses and briefs specialized subagents while keeping context-mode and Linear updates in the main agent.
 - `agent-creator`: helps create or update project-local Codex custom subagents.
@@ -102,5 +102,5 @@ Specialized implementation, QA, review, research, or integration subagents are p
 2. Discover and structure a requirement with `brainstorm`; review the generated files under `.vibeRig/requirements/<requirement-id>/`.
 3. Convert accepted planning output into Linear issues with `write-plan`.
 4. Execute a Linear issue with `task-runner`; VibeRig defaults to a project-local `.worktrees/<issue-key>-<short-slug>/` worktree, validates the result, submits or updates a PR, writes the proof packet to Linear, and moves the issue to a human-acceptance/review state.
-5. Manually call `human-acceptance` after reviewing the work. Full acceptance merges the PR, removes the task worktree when safe, updates the final Linear status, and runs post-acceptance insights.
-6. Apply any proposed skill or workflow updates only after explicit user confirmation.
+5. Manually call `human-acceptance` after reviewing the work. Full acceptance merges the PR into the target base branch, updates the final Linear status, runs post-acceptance insights, applies any confirmed skill updates through `skill-builder`, and then removes the task worktree when safe.
+6. Apply proposed skill or workflow updates only when they are explicitly confirmed or pre-authorized in the acceptance request.

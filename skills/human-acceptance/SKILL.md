@@ -1,6 +1,6 @@
 ---
 name: human-acceptance
-description: Record explicit human acceptance or rejection for VibeRig Linear work. On full acceptance, merge the linked PR and clean up the task worktree. Use only when the user explicitly asks to perform or record human acceptance, such as "人工验收通过", "record human acceptance", "accept AC-001", or "reject this VibeRig issue". Never auto-trigger this skill from task-runner, agent-sop, or insights.
+description: Record explicit human acceptance or rejection for VibeRig Linear work. On full acceptance, merge the linked PR, finalize Linear status, and run post-acceptance learning. Use only when the user explicitly asks to perform or record human acceptance, such as "人工验收通过", "record human acceptance", "accept AC-001", or "reject this VibeRig issue". Never auto-trigger this skill from task-runner, agent-sop, or insights.
 ---
 
 # Human Acceptance
@@ -9,7 +9,7 @@ Use this skill only when the current user explicitly asks to record human accept
 
 This skill is the human sign-off gate. Automated validation, subagent QA, code review, and proof packets can prepare an issue for acceptance, but they must not replace this skill.
 
-For fully accepted PR-backed work, this skill is also the only VibeRig workflow step that may merge the PR and remove the task worktree.
+For fully accepted PR-backed work, this skill is also the only VibeRig workflow step that may merge the PR, move the Linear issue to Done, and remove the task worktree.
 
 ## Contract
 
@@ -53,10 +53,12 @@ On full acceptance:
 
 - Merge the linked PR through the project's provider. For GitHub projects, use the GitHub plugin or `gh` CLI when authenticated.
 - Use the target project's normal merge method when discoverable. If the method is unknown, use the provider default and record it in the acceptance comment.
-- If required checks, conflicts, missing auth, missing PR URL, or branch protection prevent merge, do not move the issue to a terminal status. Record the acceptance decision and merge blocker in Linear, move the issue to the closest blocked/waiting/rework state, and stop.
-- After a successful merge, remove the task worktree only when the recorded path is under the configured worktrees root, defaulting to the project's `.worktrees/` directory.
+- Treat the merge into the target base branch, normally `main`, as the gate before any terminal Linear status update.
+- If required checks, conflicts, missing auth, missing PR URL, or branch protection prevent merge, do not move the issue to a terminal status and do not run insights. Record the acceptance decision and merge blocker in Linear, move the issue to the closest blocked/waiting/rework state, and stop.
+- After a successful merge, write the human acceptance comment and move the Linear issue to `Done`, `Accepted`, `Completed`, or the team's closest terminal success status before running insights.
+- Remove the task worktree only after the terminal Linear status update succeeds, and only when the recorded path is under the configured worktrees root, defaulting to the project's `.worktrees/` directory.
 - Before cleanup, run `git status --short` in the worktree. If uncommitted or untracked files remain, do not force-remove the worktree unless the user explicitly authorizes discarding them.
-- Prefer `git worktree remove` with the verified task worktree path for cleanup. Delete the local task branch only after the PR is merged and the worktree is removed. Do not delete the remote branch unless the provider merge operation already did it or the user explicitly asks.
+- Prefer `git worktree remove <path>` with the verified task worktree path for cleanup. Delete the local task branch only after the PR is merged and the worktree is removed. Do not delete the remote branch unless the provider merge operation already did it or the user explicitly asks.
 - Never clean the current main workspace from this skill.
 
 On partial acceptance, rejection, or blocked acceptance, do not merge the PR and do not clean the worktree unless the user explicitly asks for a separate cleanup action.
@@ -81,11 +83,11 @@ Return and, when tools are available, write to Linear:
 - Acceptance decision and AC coverage.
 - Manual checks and risk decision.
 - PR merge result or blocker.
-- Worktree cleanup result or blocker.
 - Linear status update result.
-- Post-acceptance insights result and any pending skill-update confirmation.
+- Post-acceptance insights result and any skill-builder update result or pending confirmation.
+- Worktree cleanup result or blocker.
 
-Do not claim full acceptance is complete unless the Linear comment was written, required PR merge succeeded or was not required, and the issue moved to a valid terminal success status.
+Do not claim full acceptance is complete unless code has reached the target base branch when a PR is required, the Linear comment was written, and the issue moved to a valid terminal success status before insights ran.
 
 ## Status Mapping
 
@@ -111,15 +113,15 @@ Do not invent workflow states that do not exist in the Linear team. If no close 
    - accepted AC ids
    - rejected or unverified AC ids
    - explicit risk acceptance, if any
-4. If the issue is fully accepted and a PR is required or present, merge the PR before terminal status update.
-5. If the merge succeeds and the work used a project-local task worktree, clean up the worktree after confirming it is safe to remove.
-6. Write one Linear comment with `_save_comment`, including acceptance, merge, cleanup, and blocker details.
-7. Update the Linear issue with `_save_issue` according to the Status Mapping. Only use a terminal success state after any required PR merge succeeds.
-8. If the issue is fully accepted and any required PR merge succeeded, run the post-acceptance insights flow:
+4. If the issue is fully accepted and a PR is required or present, merge the PR into the target base branch, normally `main`, before any terminal status update.
+5. Write one Linear comment with `_save_comment`, including acceptance, merge result, and any blocker details.
+6. Update the Linear issue with `_save_issue` according to the Status Mapping. Only use a terminal success state after any required PR merge succeeds.
+7. If the issue is fully accepted, any required PR merge succeeded, and Linear is already in the terminal success state, run the post-acceptance insights flow:
    - use `insights` to generate conservative learning candidates from the accepted issue, proof packet, and source docs
    - write the retrospective or learning candidates as a Linear comment when useful
-   - update VibeRig skills only when the user explicitly confirms the concrete `skill_update` candidate or the current acceptance request explicitly authorizes applying that exact update
-9. Report the acceptance decision, PR merge result, worktree cleanup result, status update, insights result, and any skill updates or pending confirmations.
+   - for every confirmed or explicitly pre-authorized `skill_update`, invoke `skill-builder` and let it update the corresponding `skills/*/SKILL.md`
+8. If the merge and terminal Linear status update succeeded and the work used a project-local task worktree, clean up the worktree after confirming it is safe to remove.
+9. Report the acceptance decision, PR merge result, status update, insights result, any skill-builder updates or pending confirmations, and worktree cleanup result.
 
 ## Comment Template
 
@@ -139,13 +141,14 @@ Accepted by: <user-provided name or current user>
 ## Risk Decision
 - <accepted residual risks or rejection reasons>
 
-## PR And Cleanup
+## PR And Linear
 - PR: <merged | not merged | not required | blocked: reason>
-- Worktree cleanup: <removed | skipped | blocked: reason>
+- Linear status: <done | accepted | completed | unchanged | blocked: reason>
 
 ## Follow-up
 - Insights: <generated | skipped with reason>
-- Skill updates: <applied | proposed | none>
+- Skill updates: <applied through skill-builder | proposed | none>
+- Worktree cleanup: <removed | skipped | blocked: reason>
 ```
 
 ## Validation
@@ -156,6 +159,8 @@ Before final reporting, verify:
 - The AC ids in the comment match the issue/proof packet.
 - Linear issue status was mapped from `_list_issue_statuses`; no invented status was used.
 - Required PR merge succeeded before any terminal success status.
+- Insights ran only after any required PR merge succeeded and the Linear issue reached a terminal success status.
+- Any accepted skill update was applied through `skill-builder`, not by hand inside `human-acceptance` or `insights`.
 - Worktree cleanup only touched a safe task worktree and was skipped when uncommitted files remained.
 - `insights` ran or was skipped with a reason after full acceptance.
 
