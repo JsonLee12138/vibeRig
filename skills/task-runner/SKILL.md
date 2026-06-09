@@ -56,7 +56,7 @@ Do not claim a task is ready for human acceptance unless validation is sufficien
 ## Hard Rules
 
 - Every Linear task execution must declare and use a suitable subagent through `subagent-routing`.
-- Default to an isolated git worktree for implementation work. Direct development in the current main workspace is allowed only when the user explicitly asks for it, the task is trivial/docs-only, or worktree setup is impossible and the reason is recorded.
+- Default to an isolated git worktree for all task execution work. Direct development in the current main workspace is allowed only when the user explicitly asks to modify the main/current workspace.
 - Subagents must not use context-mode.
 - Subagents must not update Linear, project status, acceptance status, or final proof.
 - The main agent owns context-mode, final validation, acceptance mapping, Linear comments, and status updates.
@@ -76,16 +76,12 @@ Before implementation, explicitly decide where the task will run:
 - Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to the project `.worktrees/` directory.
 - Worktree directory pattern: project `.worktrees/` plus issue key and short slug.
 - Preferred branch naming: `codex/{issue-key}-{short-slug}` when a branch is needed.
-- Use the current main workspace only when:
-  - the user explicitly asks to work in the current workspace
-  - the task is trivial or documentation-only
-  - the repository or environment cannot create a worktree
-  - continuing existing uncommitted task work in the current workspace is safer than splitting it
+- Use the current main workspace only when the user explicitly asks to work in the main/current workspace.
 - When using the current workspace, inspect dirty files first and protect unrelated user changes.
 - Record the worktree/main-workspace decision and reason in the Proof Packet.
 - Pass the selected workspace path to the subagent in the Task Brief.
 
-If worktree creation fails, do not silently fall back. State the failure, choose the safest available workspace, and include the reason in the proof.
+If worktree creation fails, do not silently fall back to the current workspace. State the failure and stop before implementation unless the user explicitly authorizes main/current workspace changes. Include the failure and next required decision in the proof or blocker comment.
 
 The default configured path for a project named `my-app` and issue `APP-123` is:
 
