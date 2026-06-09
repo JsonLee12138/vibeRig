@@ -23,25 +23,25 @@ Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 Add the VibeRig marketplace and install the plugin:
 
 ```sh
-codex plugin marketplace add JsonLee12138/vibeRig --ref main
-codex plugin add vibe-rig@viberig
+codex plugin marketplace add JsonLee12138/codex-marketplace --ref main
+codex plugin add vibe-rig@jsonlee
 ```
 
-Current selector format is `PLUGIN@MARKETPLACE`. In this repository, the marketplace is `viberig` and the plugin is `vibe-rig`.
+Current selector format is `PLUGIN@MARKETPLACE`. In this repository, the marketplace is `jsonlee` and the plugin is `vibe-rig`.
 
 ## Update
 
 Refresh the marketplace snapshot:
 
 ```sh
-codex plugin marketplace upgrade viberig
+codex plugin marketplace upgrade jsonlee
 ```
 
 Then reinstall the plugin if your Codex installation does not refresh installed plugin caches automatically:
 
 ```sh
 codex plugin remove vibe-rig
-codex plugin add vibe-rig@viberig
+codex plugin add vibe-rig@jsonlee
 ```
 
 Restart Codex after updating so newly installed skills are loaded.
