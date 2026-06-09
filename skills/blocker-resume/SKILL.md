@@ -9,7 +9,15 @@ Use this workflow when a Linear-backed VibeRig task is blocked and the user want
 
 VibeRig no longer resumes backend runs or command-mode Codex sessions. Recovery happens in the current Codex main-agent session using Linear issue context, local Docs as Code, and `task-runner`.
 
-## Inputs
+## Contract
+
+Use this skill to inspect a blocked VibeRig Linear issue, classify the blocker, and either resume safely through `task-runner` or ask for the exact missing input.
+
+Do not use this skill for normal task execution, final acceptance, or retrospective learning. Use `task-runner` for executable work, `human-acceptance` for sign-off, and `insights` after accepted work.
+
+Stop and report when the blocker depends on a product decision, credentials, missing external system state, or ambiguous ownership that cannot be resolved from Linear and local docs.
+
+## Input Contract
 
 The user may provide:
 
@@ -20,6 +28,18 @@ The user may provide:
 - plain-language blocker summary
 
 If no Linear issue is provided, search the registered Linear Project from `.vibeRig/project.yaml` when Linear tools are available. Use `_list_projects` or `_search` to confirm the project and `_list_issues` to find blocked issues. If multiple blocked issues match, ask the user to choose.
+
+## Output Contract
+
+Return or write:
+
+- Blocked Linear issue key/url and matching requirement docs.
+- Blocker classification and evidence.
+- Next action: ask user, resume through `task-runner`, update docs with approval, or keep blocked.
+- Linear comment/status updates made, or the reason they were skipped.
+- Validation evidence and remaining blocker.
+
+Do not claim an issue is unblocked unless the blocking evidence is resolved and Linear has been updated or the user was told why it could not be updated.
 
 ## Evidence To Gather
 
@@ -65,6 +85,16 @@ The main agent may use context-mode to summarize large histories or logs. Subage
    - acceptance IDs affected
    - remaining risks or user decisions
 7. Move/update Linear status with `_save_issue` according to the team's workflow only after evidence supports it.
+
+## Validation
+
+Before reporting recovery, verify:
+
+- The target issue and requirement docs were resolved.
+- The blocker classification is backed by Linear comments, local docs, git state, validation output, or CI evidence.
+- Any resumed implementation went through `task-runner`.
+- Any Linear status change used an existing team status.
+- Remaining user decisions, credentials, or external blockers are stated explicitly.
 
 ## Guardrails
 

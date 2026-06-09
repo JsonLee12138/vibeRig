@@ -9,10 +9,47 @@ Use this skill as the Linear-native execution protocol for VibeRig.
 
 Codex is already running inside the Codex plugin environment. Do not launch another Codex process and do not use a backend runner. The current main agent orchestrates the work, delegates bounded execution to the appropriate subagent, validates the result, and writes status/proof back to Linear.
 
+## Contract
+
+Use this skill to execute or continue one VibeRig Linear issue or execution task in the current Codex session.
+
+Do not use this skill for requirement discovery, Linear plan synthesis, final human acceptance, PR merge, worktree cleanup after acceptance, or post-acceptance learning. Use `brainstorm`, `write-plan`, `human-acceptance`, and `insights` for those phases.
+
+Stop and report when the Linear issue, source docs, subagent capability, workspace safety, required credentials, or PR path cannot be resolved.
+
+## Input Contract
+
+Required:
+
+- Target Linear issue key/url or enough project context to locate the next actionable issue.
+- `.vibeRig/project.yaml` or equivalent project registration.
+- Referenced requirement docs and acceptance IDs.
+- Validation expectations from docs, Linear, or project gate policy.
+
+Optional:
+
+- Existing branch, PR, worktree path, prior proof packet, CI/log URL, or blocker comment.
+
+If multiple issues match or the source docs are missing, ask before implementation.
+
+## Output Contract
+
+Produce:
+
+- Worktree/main-workspace decision and path.
+- Selected subagent capability and Task Brief summary.
+- Task-scoped code/doc changes.
+- Validation evidence and AC coverage.
+- Commit/branch/PR URL when required.
+- Linear Proof Packet comment and status update.
+- Final handoff stating that `human-acceptance` is required for sign-off, merge, and cleanup.
+
+Do not claim a task is ready for human acceptance unless validation is sufficient and any required PR was created or updated.
+
 ## Sources Of Truth
 
 - Linear issue/sub-issue: task status, assignment, discussion, acceptance conclusion, and proof packet.
-- Local `.vibeRig/requirements/<requirement-id>/`: requirement contract, architecture, acceptance matrix, validation policy, and diagrams.
+- Local `.vibeRig/requirements/{requirement-id}/`: requirement contract, architecture, acceptance matrix, validation policy, and diagrams.
 - `.vibeRig/project.yaml`: Linear registration, docs root, worktrees root, pull request policy, gate policy, and default subagent routing.
 - Current git workspace: implementation changes, branch/commit/PR, and validation evidence.
 
@@ -36,9 +73,9 @@ Codex is already running inside the Codex plugin environment. Do not launch anot
 Before implementation, explicitly decide where the task will run:
 
 - Default: create or reuse an isolated git worktree for the Linear issue.
-- Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to `<project-root>/.worktrees/`.
-- Worktree directory pattern: `<project-root>/.worktrees/<issue-key>-<short-slug>`.
-- Preferred branch naming: `codex/<issue-key>-<short-slug>` when a branch is needed.
+- Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to the project `.worktrees/` directory.
+- Worktree directory pattern: project `.worktrees/` plus issue key and short slug.
+- Preferred branch naming: `codex/{issue-key}-{short-slug}` when a branch is needed.
 - Use the current main workspace only when:
   - the user explicitly asks to work in the current workspace
   - the task is trivial or documentation-only
@@ -158,7 +195,7 @@ If the team has no `Human Acceptance` status, use the closest review/waiting sta
 - handoff notes
 ```
 
-## Execution Workflow
+## Workflow
 
 1. Select the appropriate subagent capability using `subagent-routing`.
    - If no suitable subagent exists or subagent tooling is unavailable, stop before implementation and report the missing capability instead of silently executing the Linear task directly.
@@ -208,6 +245,17 @@ Do not duplicate the proof packet into `.vibeRig/`.
 `task-runner` can prove that implementation and automated validation are complete. It cannot perform final human acceptance.
 
 After proof is posted and the required PR exists, leave the Linear issue in the closest available human-acceptance/review state. The user must explicitly call `human-acceptance` to record accepted/rejected AC ids, merge the PR on full acceptance, clean up the task worktree, move the issue to a terminal status, and trigger post-acceptance insights or approved skill updates.
+
+## Validation
+
+Before final reporting, verify:
+
+- The task used `subagent-routing` and a suitable subagent, or stopped before implementation when none was available.
+- The selected workspace was inspected for dirty state and unrelated user changes were protected.
+- Validation commands/manual checks map to acceptance IDs and project gate policy.
+- The diff was inspected before commit/PR.
+- Required PR creation/update succeeded before requesting human acceptance.
+- The Linear Proof Packet includes workspace, branch/commit/PR, validation, AC coverage, subagent evidence, and residual risks.
 
 ## Final Response
 

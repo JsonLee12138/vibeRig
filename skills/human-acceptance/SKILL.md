@@ -11,6 +11,14 @@ This skill is the human sign-off gate. Automated validation, subagent QA, code r
 
 For fully accepted PR-backed work, this skill is also the only VibeRig workflow step that may merge the PR and remove the task worktree.
 
+## Contract
+
+Use this skill to record an explicit human acceptance, partial acceptance, rejection, or blocked acceptance decision for VibeRig Linear work.
+
+Do not use this skill for automated validation, implementation, QA, code review, planning, or retrospective generation by itself. It may call `insights` only after explicit acceptance is recorded.
+
+Stop before updating Linear, merging a PR, or cleaning a worktree when the user's acceptance decision is missing, the issue cannot be resolved, the PR cannot be verified, or cleanup safety cannot be proven.
+
 ## Manual Trigger Only
 
 - Do not use this skill automatically after `task-runner`, `agent-sop`, `write-plan`, or `insights`.
@@ -38,7 +46,7 @@ Read the latest Proof Packet to resolve:
 - PR URL and provider.
 - Branch, commit, and base branch.
 - Workspace mode and path.
-- Whether the workspace path is inside `<project-root>/.worktrees/`.
+- Whether the workspace path is inside the project worktrees root.
 - Validation and CI/check status referenced by the proof.
 
 On full acceptance:
@@ -46,14 +54,14 @@ On full acceptance:
 - Merge the linked PR through the project's provider. For GitHub projects, use the GitHub plugin or `gh` CLI when authenticated.
 - Use the target project's normal merge method when discoverable. If the method is unknown, use the provider default and record it in the acceptance comment.
 - If required checks, conflicts, missing auth, missing PR URL, or branch protection prevent merge, do not move the issue to a terminal status. Record the acceptance decision and merge blocker in Linear, move the issue to the closest blocked/waiting/rework state, and stop.
-- After a successful merge, remove the task worktree only when the recorded path is under the configured worktrees root, defaulting to `<project-root>/.worktrees/`.
+- After a successful merge, remove the task worktree only when the recorded path is under the configured worktrees root, defaulting to the project's `.worktrees/` directory.
 - Before cleanup, run `git status --short` in the worktree. If uncommitted or untracked files remain, do not force-remove the worktree unless the user explicitly authorizes discarding them.
-- Prefer `git worktree remove <path>` for cleanup. Delete the local task branch only after the PR is merged and the worktree is removed. Do not delete the remote branch unless the provider merge operation already did it or the user explicitly asks.
+- Prefer `git worktree remove` with the verified task worktree path for cleanup. Delete the local task branch only after the PR is merged and the worktree is removed. Do not delete the remote branch unless the provider merge operation already did it or the user explicitly asks.
 - Never clean the current main workspace from this skill.
 
 On partial acceptance, rejection, or blocked acceptance, do not merge the PR and do not clean the worktree unless the user explicitly asks for a separate cleanup action.
 
-## Inputs
+## Input Contract
 
 Resolve from the user's request or ask one concise blocking question:
 
@@ -66,12 +74,25 @@ Resolve from the user's request or ask one concise blocking question:
 
 If the user says all acceptance criteria passed, treat all AC ids referenced by the issue/proof packet as accepted, but list them explicitly in the comment.
 
+## Output Contract
+
+Return and, when tools are available, write to Linear:
+
+- Acceptance decision and AC coverage.
+- Manual checks and risk decision.
+- PR merge result or blocker.
+- Worktree cleanup result or blocker.
+- Linear status update result.
+- Post-acceptance insights result and any pending skill-update confirmation.
+
+Do not claim full acceptance is complete unless the Linear comment was written, required PR merge succeeded or was not required, and the issue moved to a valid terminal success status.
+
 ## Status Mapping
 
 Use `_list_issue_statuses` and choose the closest available team status.
 
 - Full acceptance: move to `Done`, `Accepted`, `Completed`, or the team's closest terminal success status.
-- Partial acceptance or rework required: move to `In Progress`, `Rework`, `Todo`, or the closest non-terminal working status.
+- Partial acceptance or rework required: move to `In Progress`, `Rework`, `To Do`, or the closest non-terminal working status.
 - Blocked human acceptance: move to `Blocked` or the closest blocked/waiting status.
 - Full acceptance with required PR merge failure: do not move to terminal success; use `Blocked`, `In Review`, `Rework`, or the closest non-terminal state and record the merge blocker.
 
@@ -126,6 +147,17 @@ Accepted by: <user-provided name or current user>
 - Insights: <generated | skipped with reason>
 - Skill updates: <applied | proposed | none>
 ```
+
+## Validation
+
+Before final reporting, verify:
+
+- The acceptance decision came explicitly from the current user or a quoted user instruction.
+- The AC ids in the comment match the issue/proof packet.
+- Linear issue status was mapped from `_list_issue_statuses`; no invented status was used.
+- Required PR merge succeeded before any terminal success status.
+- Worktree cleanup only touched a safe task worktree and was skipped when uncommitted files remained.
+- `insights` ran or was skipped with a reason after full acceptance.
 
 ## Hard Rules
 

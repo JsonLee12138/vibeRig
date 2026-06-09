@@ -39,6 +39,8 @@ Produce the skill files directly when the user asks to create or update a skill.
 
 Do not claim the skill is complete unless the `SKILL.md` frontmatter is valid, the body has no unresolved placeholders, and the skill can be discovered from the requested location.
 
+Literal placeholders are allowed only inside fenced examples or templates that are clearly marked as examples. Do not leave placeholders in executable instructions, required commands, file paths that should exist, or final user-facing artifacts.
+
 ## Workflow
 
 1. Inspect local conventions.
@@ -65,7 +67,7 @@ Do not claim the skill is complete unless the `SKILL.md` frontmatter is valid, t
 6. Validate.
    - Check frontmatter has `name` and `description`.
    - Confirm `name` matches the directory and uses lowercase hyphenated naming.
-   - Confirm no unresolved placeholders remain.
+   - Confirm no unresolved placeholders remain outside clearly marked example templates.
    - Confirm all referenced files exist and are linked directly from `SKILL.md`.
    - Confirm any bundled scripts are non-interactive and have clear usage or `--help`.
 
@@ -154,6 +156,17 @@ Before finishing, test the `description` mentally against:
 - Should not trigger: 3-5 adjacent prompts that should stay with another skill or normal agent behavior.
 
 Revise the description if it is too broad, too vague, or missing words users would naturally say.
+
+## Validation
+
+Minimum validation for every skill change:
+
+- Parse frontmatter and confirm `name` plus `description` are present.
+- Confirm the directory name matches `name`.
+- Confirm the skill has a clear contract, input contract, output contract, workflow, and validation guidance, or document why local convention intentionally differs.
+- Confirm references, scripts, and assets mentioned from `SKILL.md` exist.
+- Confirm placeholders exist only inside explicitly marked examples/templates.
+- Mentally test 3 should-trigger and 3 should-not-trigger prompts against the description.
 
 ## Common Anti-Patterns
 

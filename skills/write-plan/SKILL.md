@@ -5,9 +5,17 @@ description: Convert VibeRig Docs as Code requirement contracts into Linear issu
 
 # Write Plan
 
-Use this skill after `brainstorm` has produced a planning-ready requirement contract under `.vibeRig/requirements/<requirement-id>/`.
+Use this skill after `brainstorm` has produced a planning-ready requirement contract under `.vibeRig/requirements/{requirement-id}/`.
 
 `write-plan` no longer creates `tasks.yaml` and no longer feeds a local task engine. Linear is the task source of truth.
+
+## Contract
+
+Use this skill to convert one planning-ready VibeRig requirement directory into Linear parent/child issues and task references.
+
+Do not use this skill to invent missing requirement facts, execute implementation, create proof packets, or run final acceptance. Use `brainstorm` to finish missing docs and `task-runner` for execution.
+
+Stop when required requirement files are missing, schema validation reveals blocking contradictions, Linear tools are unavailable for a requested sync, or multiple Linear projects/issues match without a safe choice.
 
 ## Input Contract
 
@@ -107,9 +115,20 @@ Post final validation as a Linear comment with commands, logs/CI links, changed 
 9. Add a final Linear comment with `_save_comment` summarizing the plan sync: source docs revision, issue list, acceptance coverage, validation gates, and unresolved risks.
 10. Report Linear issue URLs/keys and any local docs updated with references.
 
+## Validation
+
+Before reporting plan sync complete, verify:
+
+- All required Docs as Code files exist.
+- `contract.json` and `acceptance.json` were schema-validated or the skipped validation reason is reported.
+- Each Linear task maps to at least one acceptance ID and validation expectation.
+- Existing Linear issues were checked to avoid duplicates.
+- `_save_issue` and `_save_comment` ran successfully when Linear tools were available.
+- Any local docs updates only add stable Linear references.
+
 ## Hard Rules
 
-- Do not write `.vibeRig/requirements/<requirement-id>/tasks.yaml`.
+- Do not write `.vibeRig/requirements/{requirement-id}/tasks.yaml`.
 - Do not call local VibeRig dashboard import, refresh, or task-engine APIs.
 - Do not render Linear markdown exports as a separate source of truth.
 - Do not put full requirement documents into Linear issues. Local docs remain the durable contract.

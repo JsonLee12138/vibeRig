@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: Run the VibeRig staged requirement discovery workflow. Use when the user asks to brainstorm, research, validate, specify, contract, or structure a requirement. Produces local Docs as Code under .vibeRig/requirements/<requirement-id>/ and may use specialized subagents through subagent-routing.
+description: Run the VibeRig staged requirement discovery workflow. Use when the user asks to brainstorm, research, validate, specify, contract, or structure a requirement. Produces local Docs as Code under .vibeRig/requirements/{requirement-id}/ and may use specialized subagents through subagent-routing.
 ---
 
 # Brainstorm
@@ -8,6 +8,29 @@ description: Run the VibeRig staged requirement discovery workflow. Use when the
 Use this skill to turn a rough requirement idea into a local Docs as Code requirement contract.
 
 The local docs are engineering contracts, not Linear issues. Linear is used later by `write-plan` to manage execution tasks through `_save_issue` and `_save_comment`.
+
+## Contract
+
+Use this skill to discover, structure, and write one VibeRig requirement contract under `.vibeRig/requirements/{requirement-id}/`.
+
+Do not use this skill for Linear issue creation, implementation execution, human acceptance, or post-acceptance retrospectives. Use `write-plan`, `task-runner`, `human-acceptance`, or `insights` for those phases.
+
+Stop and ask when a blocking product decision, missing source material, legal/security uncertainty, or architecture choice would make the generated contract misleading.
+
+## Input Contract
+
+Required:
+
+- Requirement idea, feature goal, bug scenario, or planning prompt.
+- Target project or workspace.
+
+Optional:
+
+- Existing `.vibeRig/requirements/<requirement-id>/` docs.
+- Research links, stakeholder notes, constraints, diagrams, or acceptance examples.
+- Desired requirement id.
+
+If the requirement id is missing, generate a safe slug from the requirement title and keep the human title in `brief.md`.
 
 ## Output Contract
 
@@ -35,7 +58,7 @@ Use this directory shape:
 
 Do not generate `tasks.yaml`, local dashboard data, local runner config, or proof packets in this skill.
 
-## Scientific Flow
+## Workflow
 
 Run one approved stage at a time unless the user explicitly asks for a full draft. Even in full-draft mode, stop for document-blocking unknowns.
 
@@ -88,7 +111,7 @@ Do not write brainstorming transcript, internal reasoning, or conversation logs 
    - prefer the current workspace if it contains `.vibeRig/project.yaml` or `.vibeRig/requirements/`
    - otherwise use the git root
    - if neither exists, create `.vibeRig/requirements/` under the workspace root
-2. Resolve `<requirement-id>`:
+2. Resolve the requirement id:
    - prefer a stable id supplied by the user
    - otherwise generate a safe slug from the requirement title
    - keep the human title inside `brief.md`
@@ -105,7 +128,7 @@ Use `subagent-routing` whenever a specialized perspective improves the result:
 
 Subagents must not use context-mode and must not update Linear. The main agent owns context gathering, file writes, and final stage approval.
 
-## Readiness Checks
+## Validation
 
 Before handing off to `write-plan`, confirm:
 

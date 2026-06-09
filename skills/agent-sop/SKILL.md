@@ -15,6 +15,32 @@ Do not require tests for every task. Always make an explicit test decision. Use 
 
 Subagents must not use context-mode, mutate Linear status, mutate VibeRig task/run/acceptance status, or make final acceptance calls. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent writes the proof packet and status update to Linear when the task is Linear-backed, using `_save_comment` for proof comments and `_save_issue` for issue status or metadata updates.
 
+## Input Contract
+
+Required:
+
+- A concrete implementation, bug fix, refactor, validation, or delivery goal.
+- The working repository or workspace.
+- Known acceptance criteria, issue link, failing behavior, or requested outcome.
+
+Optional:
+
+- Linear issue, PR, logs, screenshots, test commands, validation policy, or preferred subagent capabilities.
+
+If acceptance criteria are missing, infer narrow criteria from the request and local code. Ask only when the missing criteria would change the implementation path or risk.
+
+## Output Contract
+
+Return:
+
+- Scope decision and test decision.
+- Subagent phases used or the reason direct execution was necessary.
+- Files changed or reviewed.
+- Verification commands, pass/fail state, and key errors.
+- QA verdict, skipped checks, and residual risks.
+
+Do not report success unless the main agent has inspected the result and made an explicit verification decision.
+
 ## Capability Routing
 
 Before delegating, inspect the available subagents or known tool descriptions. Choose by capability, not by a fixed role name.
@@ -139,6 +165,17 @@ Scope: <files/modules>.
 Do not change: <protected areas>.
 Return: fix summary, evidence, remaining risk.
 ```
+
+## Validation
+
+Minimum validation is a main-agent decision covering:
+
+- Whether tests are required and why.
+- Which targeted tests, build, lint, typecheck, smoke, manual, or MCP-backed checks ran.
+- Whether a QA/review capability returned PASS, REWORK, or BLOCKED when one was available.
+- Which checks were skipped and what risk remains.
+
+If validation fails, run the Rework Loop before final reporting unless the failure requires user input, credentials, or external state.
 
 ## Final Reporting
 

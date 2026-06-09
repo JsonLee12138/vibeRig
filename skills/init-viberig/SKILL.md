@@ -13,9 +13,17 @@ VibeRig is a Codex plugin protocol, not a local dashboard or local task engine. 
 - Local `.vibeRig/project.yaml`: machine-readable project registration and workflow policy.
 - Linear Project, issues, sub-issues, and comments: task state, ownership, execution status, acceptance conclusion, and proof packets.
 - Codex main agent: context summary, subagent routing, validation, and Linear updates.
-- Git worktrees: isolated task execution directories under `<project-root>/.worktrees/`.
+- Git worktrees: isolated task execution directories under the project `.worktrees/` root.
 
-## Inputs To Resolve
+## Contract
+
+Use this skill to initialize or reconcile one project for the Linear-native VibeRig workflow.
+
+Do not use this skill to create requirements, Linear execution tasks, implementation branches, local dashboards, or backend runners. Use `brainstorm`, `write-plan`, and `task-runner` for those later phases.
+
+Stop and ask when the target project, Linear team/project choice, or permission to create Linear artifacts cannot be inferred safely.
+
+## Input Contract
 
 - Target project directory. Default to the current workspace or git root.
 - Project name. Default to the target directory name.
@@ -132,6 +140,18 @@ Use both `.vibeRig/project.yaml` and the Linear Project Document. The YAML is fo
 7. Record the resolved Linear Project id/name, Linear Project Document id/title, target project's pull request policy, and gate policy in `.vibeRig/project.yaml`.
 8. Check whether recommended project-level subagents exist under `.codex/agents/` only if the user wants project-local agents. Missing agents are handled through `subagent-routing`; do not block initialization.
 9. Report the project YAML path, docs root, Linear Project id/status, Linear Project Document id/status, and gate policy.
+
+## Validation
+
+Before reporting complete initialization, verify:
+
+- `.vibeRig/project.yaml` exists and contains project, docs, workspace, pull request, Linear, gate policy, subagent, and context-mode sections.
+- `.vibeRig/requirements/` exists.
+- `.worktrees/` exists or its absence is explained.
+- Linear Project and Project Document were created, found, or explicitly skipped because tools/auth were unavailable.
+- `.vibeRig/project.yaml` records resolved Linear ids after successful registration.
+
+Report partial initialization when only local files were created.
 
 ## Hard Rules
 

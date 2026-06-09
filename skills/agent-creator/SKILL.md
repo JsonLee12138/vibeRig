@@ -7,6 +7,38 @@ description: Create or update Codex custom subagent TOML files under `.codex/age
 
 Create Codex custom agents using the official custom agent TOML schema. Keep the file compatible with Codex by writing only supported top-level config keys, and put role boundaries, operating rules, and preferred skill dependencies inside `developer_instructions`.
 
+## Contract
+
+Use this skill to create, update, or review one Codex custom subagent TOML file.
+
+Do not use this skill for normal `SKILL.md` packages; use `skill-builder` for skill creation or skill edits. Do not install skills, publish agents, or change global Codex settings unless the user explicitly asks.
+
+Stop and ask when the target agent job, write location, destructive permission, or required credentials cannot be inferred safely.
+
+## Input Contract
+
+Resolve these inputs from the user request or nearby repository conventions:
+
+- Agent name and single responsibility.
+- Target path, defaulting to `.codex/agents/` for project-local agents or `~/.codex/agents/` only when the user asks for a global agent.
+- Whether the task is create, update, or review.
+- Runtime boundary, including read-only versus editing behavior.
+- Useful preferred skills, if the agent's job has repeatable capabilities.
+
+If preferred skills are relevant but unspecified, use `find-skills` to propose candidates and ask the user before adding them to `developer_instructions`.
+
+## Output Contract
+
+Produce or report:
+
+- The TOML file path created, updated, or reviewed.
+- The official Codex fields used.
+- The role boundary captured in `developer_instructions`.
+- Preferred skill guidance added or intentionally omitted.
+- Validation evidence and any unresolved risks.
+
+Do not claim completion unless the TOML uses supported fields only and the agent has one clear job.
+
 ## Workflow
 
 1. Clarify the agent's job, target location, and whether the user wants a new file or an update.
@@ -135,7 +167,7 @@ Skill resolution policy:
 """
 ```
 
-## Review Checklist
+## Validation
 
 Before finishing, verify:
 

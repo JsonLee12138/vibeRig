@@ -9,6 +9,49 @@ Use this skill whenever a VibeRig workflow needs specialized judgment or bounded
 
 Subagents are not only for `task-runner`. They can be used during brainstorm research, requirement review, architecture review, QA adversarial review, code review, integration planning, and implementation.
 
+## Contract
+
+Use this skill to decide whether VibeRig work should be delegated and to prepare a bounded subagent brief.
+
+Do not use this skill to outsource final decisions, update Linear, perform human acceptance, or hide main-agent responsibility. Subagents advise or execute bounded work; the main agent owns validation and final reporting.
+
+Stop and report when the requested delegation would require credentials, destructive operations, broad authority, or context the main agent cannot safely provide.
+
+## Input Contract
+
+Required:
+
+- VibeRig phase or task goal.
+- Available subagent capabilities or tool descriptions when delegation is possible.
+- Relevant Linear issue, local docs, code scope, or validation expectations.
+
+Optional:
+
+- Preferred subagent recommendation from `.vibeRig/project.yaml`, Linear issue text, or requirement docs.
+
+If no suitable subagent exists for a non-task phase, the main agent may proceed directly and report the routing risk. If no suitable subagent exists for Linear task execution, stop before implementation.
+
+## Output Contract
+
+Return:
+
+- Delegation decision and rationale.
+- Selected capability, or the reason no suitable subagent exists.
+- A compact Subagent Brief when delegating.
+- Main-agent validation responsibility and residual routing risk.
+
+Do not treat a subagent result as final until the main agent reviews it.
+
+## Workflow
+
+1. Identify the VibeRig phase, task goal, risk, and expected output.
+2. Inspect available subagent capabilities or configured defaults.
+3. Decide whether delegation is required, optional, or unsafe.
+4. Build a compact Subagent Brief for the selected capability.
+5. Send only the bounded context needed for the assignment.
+6. Review the returned evidence before using it in docs, code, Linear updates, or final reporting.
+7. Report the delegation decision, validation evidence, and any missing capability risk.
+
 ## Main-Agent Responsibility
 
 The main agent must:
@@ -83,3 +126,13 @@ Subagents must:
 - Integration: integrator, release, DevOps, code review.
 
 If no suitable subagent exists for a non-task phase, the main agent may proceed directly and must report the missing capability as a routing risk. If no suitable subagent exists for Linear task execution, stop and report the missing capability before implementation.
+
+## Validation
+
+Before using a subagent result, verify:
+
+- The brief had one bounded objective and explicit boundaries.
+- The subagent did not use context-mode, update Linear, or make final acceptance decisions.
+- The returned evidence covers the requested output.
+- The main agent inspected changed files or recommendations before acting on them.
+- Any missing capability or validation gap is reported.
