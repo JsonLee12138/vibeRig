@@ -10,6 +10,15 @@ argument-hint: "<Figma URL or design description>"
 
 Generate comprehensive developer handoff documentation from a design.
 
+## Contract
+
+Use this reference only after the target scope has implementation-ready `UIFLOW.md` and `DESIGN.md`.
+
+Before generating handoff specs:
+- Confirm `UIFLOW.md` exists and covers behavior, states, navigation, data, permissions, responsive flow, accessibility flow, and acceptance.
+- Confirm `DESIGN.md` exists and covers tokens, typography, layout, components, assets, responsive rules, and accessibility baseline.
+- If either file is missing or incomplete, route to `confirm-uiflow.md` and/or `confirm-design.md` and stop before producing handoff specs.
+
 ## Usage
 
 ```

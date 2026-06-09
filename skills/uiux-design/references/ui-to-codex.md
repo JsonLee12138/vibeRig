@@ -14,14 +14,14 @@ Implement UI in the local codebase from confirmed flow and design contracts.
 
 Use this reference for production-oriented UI implementation. It coordinates `UIFLOW.md`, `DESIGN.md`, handoff specs, existing code patterns, implementation, validation, and optional visual QA.
 
-Do not start coding from a vague visual preference. Confirm the flow and design contracts first, or report the missing decisions.
+Do not start coding from a vague visual preference. Confirm that `UIFLOW.md` and `DESIGN.md` both exist and are implementation-ready first, or stop and report the missing contract decisions.
 
 ## Input Contract
 
 Required before editing:
 - Target codebase and target screen/component/route.
-- `UIFLOW.md` or enough flow detail to run `confirm-uiflow.md`.
-- `DESIGN.md` or enough visual detail to run `confirm-design.md`.
+- Implementation-ready `UIFLOW.md`.
+- Implementation-ready `DESIGN.md`.
 - Interaction depth: `spec_only`, `static`, `interactive`, or `full_interactive`.
 
 Optional:
@@ -34,10 +34,10 @@ Optional:
    - Protect unrelated user changes.
 2. Confirm the flow contract.
    - If `UIFLOW.md` exists, run `confirm-uiflow.md` mentally against it.
-   - If it is missing or incomplete, draft the missing flow contract or ask one blocking question.
+   - If it is missing or incomplete, route to `confirm-uiflow.md` and stop before coding.
 3. Confirm the design contract.
    - If `DESIGN.md` exists, run `confirm-design.md` mentally against it.
-   - If it is missing or incomplete, route to `design-handoff.md` or ask one blocking question.
+   - If it is missing or incomplete, route to `confirm-design.md` and stop before coding.
 4. Decide component strategy.
    - Do not reopen visual or flow decisions here; route back to `confirm-uiflow.md`, `confirm-design.md`, or `design-handoff.md` if a decision is missing.
    - Reuse existing codebase components first.

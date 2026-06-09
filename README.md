@@ -6,11 +6,17 @@ Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
 ## Contents
 
-1. [Install](#install)
-2. [Update](#update)
-3. [Manual Usage](#manual-usage)
-4. [Built-In Skills And Subagents](#built-in-skills-and-subagents)
-5. [Workflow](#workflow)
+1. [Prerequisites](#prerequisites)
+2. [Install](#install)
+3. [Update](#update)
+4. [Manual Usage](#manual-usage)
+5. [Built-In Skills And Subagents](#built-in-skills-and-subagents)
+6. [Workflow](#workflow)
+
+## Prerequisites
+
+- Codex with plugin support enabled.
+- Linear plugin installed and authenticated. VibeRig uses Linear to create and update projects, documents, issues, comments, and status transitions.
 
 ## Install
 
@@ -22,8 +28,6 @@ codex plugin add vibe-rig@viberig
 ```
 
 Current selector format is `PLUGIN@MARKETPLACE`. In this repository, the marketplace is `viberig` and the plugin is `vibe-rig`.
-
-VibeRig expects the Linear plugin to be available and authenticated when you want it to create or update Linear projects, documents, issues, and comments.
 
 ## Update
 
