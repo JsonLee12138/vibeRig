@@ -9,7 +9,7 @@ Use this skill only when the current user explicitly asks to record human accept
 
 This skill is the human sign-off gate. Automated validation, subagent QA, code review, and proof packets can prepare an issue for acceptance, but they must not replace this skill.
 
-For fully accepted PR-backed work, this skill is also the only VibeRig workflow step that may merge the PR, move the Linear issue to Done, and remove the task worktree.
+For fully accepted PR-backed work, this skill is also the only VibeRig workflow step that may merge the PR, move the Linear issue to Done, archive the accepted requirement docs, and remove the task worktree.
 
 ## Contract
 
@@ -63,6 +63,21 @@ On full acceptance:
 
 On partial acceptance, rejection, or blocked acceptance, do not merge the PR and do not clean the worktree unless the user explicitly asks for a separate cleanup action.
 
+## Requirement Document Archival
+
+On full acceptance only, archive the accepted requirement docs after insights has read them and before task worktree cleanup.
+
+- Resolve the requirement id and source docs directory from the Linear issue, Proof Packet, and `.vibeRig/project.yaml` docs root.
+- Default active docs root: `.vibeRig/requirements/`.
+- Default archive root: `.vibeRig/archive/requirements/`.
+- Move the accepted requirement directory from `.vibeRig/requirements/{requirement-id}/` to `.vibeRig/archive/requirements/{requirement-id}/`.
+- If the archive target already exists, append an acceptance-date or issue-key suffix instead of overwriting existing archived docs.
+- Archive only docs tied to the accepted issue or requirement. Do not archive unrelated active requirements.
+- Preserve stable ids, source docs, acceptance evidence, and diagrams when moving the directory.
+- Record the archive source, destination, and any blocker in the Linear acceptance comment or follow-up comment.
+- If the docs directory is missing, ambiguous, dirty in a way that would overwrite user changes, or cannot be safely moved, skip archival, record the blocker, and continue reporting the accepted work.
+- If archiving creates repository changes, commit or PR them only when the target project's policy allows post-acceptance documentation archival changes from this workflow. Otherwise leave a clear follow-up note and do not pretend the archive was persisted.
+
 ## Input Contract
 
 Resolve from the user's request or ask one concise blocking question:
@@ -85,9 +100,10 @@ Return and, when tools are available, write to Linear:
 - PR merge result or blocker.
 - Linear status update result.
 - Post-acceptance insights result and any skill-builder update result or pending confirmation.
+- Requirement docs archive result or blocker.
 - Worktree cleanup result or blocker.
 
-Do not claim full acceptance is complete unless code has reached the target base branch when a PR is required, the Linear comment was written, and the issue moved to a valid terminal success status before insights ran.
+Do not claim full acceptance is complete unless code has reached the target base branch when a PR is required, the Linear comment was written, the issue moved to a valid terminal success status before insights ran, and requirement docs archival either succeeded or was explicitly skipped with a recorded reason.
 
 ## Status Mapping
 
@@ -120,8 +136,9 @@ Do not invent workflow states that do not exist in the Linear team. If no close 
    - use `insights` to generate conservative learning candidates from the accepted issue, proof packet, and source docs
    - write the retrospective or learning candidates as a Linear comment when useful
    - for every confirmed or explicitly pre-authorized `skill_update`, invoke `skill-builder` and let it update the corresponding `skills/*/SKILL.md`
-8. If the merge and terminal Linear status update succeeded and the work used a project-local task worktree, clean up the worktree after confirming it is safe to remove.
-9. Report the acceptance decision, PR merge result, status update, insights result, any skill-builder updates or pending confirmations, and worktree cleanup result.
+8. Archive the accepted requirement docs using the Requirement Document Archival policy. If archival is blocked, record the source, intended destination, and blocker.
+9. If the merge and terminal Linear status update succeeded and the work used a project-local task worktree, clean up the worktree after confirming it is safe to remove.
+10. Report the acceptance decision, PR merge result, status update, insights result, any skill-builder updates or pending confirmations, requirement docs archive result, and worktree cleanup result.
 
 ## Comment Template
 
@@ -148,6 +165,7 @@ Accepted by: <user-provided name or current user>
 ## Follow-up
 - Insights: <generated | skipped with reason>
 - Skill updates: <applied through skill-builder | proposed | none>
+- Requirement docs archive: <moved source -> destination | skipped | blocked: reason>
 - Worktree cleanup: <removed | skipped | blocked: reason>
 ```
 
@@ -161,6 +179,8 @@ Before final reporting, verify:
 - Required PR merge succeeded before any terminal success status.
 - Insights ran only after any required PR merge succeeded and the Linear issue reached a terminal success status.
 - Any accepted skill update was applied through `skill-builder`, not by hand inside `human-acceptance` or `insights`.
+- Requirement docs archival ran after insights, or was skipped with a recorded reason.
+- Archived docs moved only the accepted requirement directory and did not overwrite unrelated docs.
 - Worktree cleanup only touched a safe task worktree and was skipped when uncommitted files remained.
 - `insights` ran or was skipped with a reason after full acceptance.
 
@@ -171,5 +191,7 @@ Before final reporting, verify:
 - Do not perform new development work in this skill.
 - Do not merge PRs for partial, rejected, blocked, or unverified acceptance.
 - Do not remove worktrees outside the configured project `.worktrees/` directory.
+- Do not archive active requirement docs for partial, rejected, blocked, or unverified acceptance.
+- Do not overwrite existing archived requirement docs.
 - Do not use context-mode inside subagents. The main agent may use context-mode to summarize large evidence before writing the acceptance comment.
 - Do not update skills from weak evidence, failed work, or unaccepted work.

@@ -240,7 +240,7 @@ Do not duplicate the proof packet into `.vibeRig/`.
 
 `task-runner` can prove that implementation and automated validation are complete. It cannot perform final human acceptance.
 
-After proof is posted and the required PR exists, leave the Linear issue in the closest available human-acceptance/review state. The user must explicitly call `human-acceptance` to record accepted/rejected AC ids, merge the PR on full acceptance, move the issue to a terminal status, trigger post-acceptance insights and approved skill updates through `skill-builder`, and then clean up the task worktree when safe.
+After proof is posted and the required PR exists, leave the Linear issue in the closest available human-acceptance/review state. The user must explicitly call `human-acceptance` to record accepted/rejected AC ids, merge the PR on full acceptance, move the issue to a terminal status, trigger post-acceptance insights and approved skill updates through `skill-builder`, archive accepted requirement docs, and then clean up the task worktree when safe.
 
 ## Validation
 

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "mimo-v2-5-tts": {
+      "source": "XiaomiMiMo/MiMo-Skills",
+      "sourceType": "github",
+      "skillPath": "skills/mimo-v2-5-tts/SKILL.md",
+      "computedHash": "696dae25ba1ca805bafe7f2099fe9c6b9428797dd736d017fc0568b431f04756"
+    }
+  }
+}

@@ -200,7 +200,7 @@ def build_checks() -> list[Check]:
             "task-runner requires subagent delegation, worktree preflight, PR submission, human acceptance boundary, and concrete Linear tools",
         ),
         Check(
-            "human-acceptance is manual, merges accepted PRs, finalizes Linear, then learns",
+            "human-acceptance is manual, merges accepted PRs, finalizes Linear, learns, and archives docs",
             exists("skills/human-acceptance/SKILL.md")
             and contains(
                 "skills/human-acceptance/SKILL.md",
@@ -211,6 +211,10 @@ def build_checks() -> list[Check]:
                 "move the Linear issue to `Done`",
                 "before running insights",
                 "invoke `skill-builder`",
+                "Requirement Document Archival",
+                ".vibeRig/archive/requirements/",
+                "Archive only docs tied to the accepted issue or requirement",
+                "Do not overwrite existing archived requirement docs",
                 "git worktree remove <path>",
                 "Do not merge PRs for partial, rejected, blocked, or unverified acceptance",
                 "Do not remove worktrees outside the configured project `.worktrees/` directory",
@@ -221,7 +225,7 @@ def build_checks() -> list[Check]:
                 "_save_issue",
                 "post-acceptance insights",
             ),
-            "human-acceptance records explicit user sign-off, merges accepted PRs, writes Linear terminal status before insights, routes skill updates through skill-builder, and cleans task worktrees",
+            "human-acceptance records explicit user sign-off, merges accepted PRs, writes Linear terminal status before insights, routes skill updates through skill-builder, archives accepted docs, and cleans task worktrees",
         ),
         Check(
             "blocker and insights use concrete Linear tools",

@@ -1,6 +1,6 @@
 {
   "name": "vibe-rig",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Linear-native requirement planning, local Docs as Code contracts, subagent routing, and accepted-work insights for VibeRig workflows.",
   "author": {
     "name": "jsonlee"
