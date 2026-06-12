@@ -10,9 +10,13 @@ metadata:
 
 使用小米 MiMo V2.5 TTS 系列模型生成语音。支持中英文、预置音色、音色设计、音色克隆、情绪风格、方言、唱歌。
 
-脚本目录：`$SKILLS_PATH/mimo-v2-5-tts/scripts/`
+脚本定位：脚本与本 SKILL.md 同级，在 `scripts/` 子目录下。执行时用以下方式获取路径：
 
-> **`$SKILLS_PATH` 说明：** skills 目录路径，因部署环境而异。
+```bash
+SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
+# 或者当脚本不在 CWD 时，通过 find 定位：
+SKILL_DIR="$(dirname "$(find . -path "*/mimo-v2-5-tts/scripts/mimo_tts.py" -print -quit 2>/dev/null)")"
+```
 
 ## 模型选择
 
@@ -37,6 +41,7 @@ V2.5 系列提供三种模型，根据使用场景选择：
 | 环境变量       | 说明                               | 必需 |
 | -------------- | ---------------------------------- | ---- |
 | `MIMO_API_KEY` | MiMo API 密钥（MiMo 开放平台获取） | 是   |
+| `MIMO_BASE_URL` | MiMo API 地址，默认 `https://api.xiaomimimo.com/v1` | 否 |
 
 | 依赖      | 说明                     | 必需                 |
 | --------- | ------------------------ | -------------------- |
@@ -245,7 +250,7 @@ It's just so stupid! (sobbing) We spent all that money on the cake and the dog j
 ### 预置音色语音合成（mimo_tts.py）
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
+python3 "$SKILL_DIR/scripts/mimo_tts.py" \
   --text "你好，今天天气真不错。" \
   --voice "冰糖"
 ```
@@ -253,7 +258,7 @@ python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
 ### 预置音色 + 自然语言风格控制
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
+python3 "$SKILL_DIR/scripts/mimo_tts.py" \
   --context "用温柔的语气，语速稍慢" \
   --text "没关系，慢慢来，我等你。" \
   --voice "冰糖" \
@@ -263,7 +268,7 @@ python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
 ### 预置音色 + 音频标签控制
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
+python3 "$SKILL_DIR/scripts/mimo_tts.py" \
   --text "（紧张，深呼吸）呼……冷静，冷静。不就是一个面试吗……（小声）哎呀，领带歪没歪？" \
   --voice "冰糖" \
   --output tmp/mimo-v2.5-tts/interview.wav
@@ -272,7 +277,7 @@ python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
 ### 音色设计（mimo_tts_voicedesign.py）
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts_voicedesign.py \
+python3 "$SKILL_DIR/scripts/mimo_tts_voicedesign.py" \
   --context "Give me a young male tone." \
   --text "Yes, I had a sandwich." \
   --output tmp/mimo-v2.5-tts/voicedesign.wav
@@ -285,7 +290,7 @@ python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts_voicedesign.py \
 > **注意：** 音色样本 Base64 编码不超过 10 MB，仅支持 mp3 和 wav 格式。
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts_voiceclone.py \
+python3 "$SKILL_DIR/scripts/mimo_tts_voiceclone.py" \
   --voice-file voice.mp3 \
   --text "Yes, I had a sandwich." \
   --output tmp/mimo-v2.5-tts/voiceclone.wav
@@ -294,7 +299,7 @@ python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts_voiceclone.py \
 ### 音色克隆 + 导演模式
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts_voiceclone.py \
+python3 "$SKILL_DIR/scripts/mimo_tts_voiceclone.py" \
   --voice-file voice.mp3 \
   --context "用温柔的语气，语速稍慢" \
   --text "没关系，慢慢来，我等你。" \
@@ -306,7 +311,7 @@ python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts_voiceclone.py \
 > **注意：** 唱歌歌词要完整，残缺歌词会导致跑调、效果差。
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
+python3 "$SKILL_DIR/scripts/mimo_tts.py" \
   --text "(唱歌)原谅我这一生不羁放纵爱自由，也会怕有一天会跌倒，Oh no。背弃了理想，谁人都可以，哪会怕有一天只你共我。" \
   --voice "冰糖" \
   --output tmp/mimo-v2.5-tts/singing.wav
@@ -315,7 +320,7 @@ python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
 ### 英文 + 音频标签
 
 ```bash
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
+python3 "$SKILL_DIR/scripts/mimo_tts.py" \
   --text "I just... (sighs deeply) I don't know anymore. (suddenly firm) But I won't give up!" \
   --voice "Mia" \
   --output tmp/mimo-v2.5-tts/english.wav
@@ -364,26 +369,26 @@ ffmpeg -y -f concat -safe 0 -i /tmp/mimo-v2.5-tts/list.txt -c copy /tmp/mimo-v2.
 
 ```bash
 # 1. 生成语音
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
+python3 "$SKILL_DIR/scripts/mimo_tts.py" \
   --text "好的，马上就好！" \
   --voice "冰糖" \
   --output /tmp/mimo-v2.5-tts/voice.wav
 
 # 2. 发送到飞书私聊（receive_id_type 为 open_id，receive_id 为用户 ID）
-bash $SKILLS_PATH/mimo-v2-5-tts/scripts/feishu_send_audio.sh /tmp/mimo-v2.5-tts/voice.wav open_id ou_xxxxxx
+bash "$SKILL_DIR/scripts/feishu_send_audio.sh" /tmp/mimo-v2.5-tts/voice.wav open_id ou_xxxxxx
 ```
 
 #### 群聊发送（chat_id）
 
 ```bash
 # 1. 生成语音
-python3 $SKILLS_PATH/mimo-v2-5-tts/scripts/mimo_tts.py \
+python3 "$SKILL_DIR/scripts/mimo_tts.py" \
   --text "大家好，今天天气真不错！" \
   --voice "冰糖" \
   --output /tmp/mimo-v2.5-tts/voice.wav
 
 # 2. 发送到飞书群聊（receive_id_type 为 chat_id，receive_id 为群 ID）
-bash $SKILLS_PATH/mimo-v2-5-tts/scripts/feishu_send_audio.sh /tmp/mimo-v2.5-tts/voice.wav chat_id oc_xxxxxx
+bash "$SKILL_DIR/scripts/feishu_send_audio.sh" /tmp/mimo-v2.5-tts/voice.wav chat_id oc_xxxxxx
 ```
 
 `feishu_send_audio.sh` 内部流程：`wav → opus (ffmpeg)` → `获取 tenant_access_token` → `上传音频文件` → `发送 audio 消息`。

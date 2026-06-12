@@ -64,26 +64,32 @@ Run one approved stage at a time unless the user explicitly asks for a full draf
 
 1. Intake Brief
    - Output: `brief.md`
+   - Read `references/brief-template.md` first and follow its structure exactly; downstream `write-plan` parses these sections.
    - Capture goals, non-goals, users/stakeholders, success signals, constraints, risks, and decision records.
    - Ask only blocking questions. Convert non-blocking gaps into explicit working assumptions for user approval.
 2. Evidence Research
    - Output: `research.md`
+   - Read `references/research-template.md` first and follow its structure exactly.
    - Gather only facts that affect architecture, acceptance, risk, implementation path, or validation.
    - Separate facts, inferences, hypotheses, confidence, and source links.
    - Use a research subagent when specialized investigation would improve accuracy.
 3. Structured Contract
    - Output: `contract.schema.json` and `contract.json`
+   - Read `references/contract-template.md` first for the required field set and ID conventions.
    - Use stable IDs for goals, rules, entities, workflows, constraints, open risks, and decisions.
    - Prefer schema-valid JSON over prose when downstream planning needs machine-readable structure.
 4. Architecture And Flow
    - Output: `architecture.md` and optional `diagrams/*.mmd`
+   - Read `references/architecture-template.md` first and follow its structure exactly.
    - Document selected approach, affected modules, data/state flow, boundaries, failure modes, migration notes, and integration points.
    - Use Mermaid diagrams for state, sequence, or flow when they clarify execution or acceptance.
 5. Acceptance Matrix
    - Output: `acceptance.schema.json`, `acceptance.json`, and `acceptance.md`
+   - Read `references/acceptance-template.md` first; `write-plan` maps these AC IDs into Linear issues.
    - Each acceptance item must include stable ID, source requirement/rule, precondition, action, expected result, evidence, validation mode, and risk covered.
 6. Adversarial Review
    - Output: updates to the relevant files only.
+   - Score the draft against `references/review-rubric.md` before reporting the stage as done.
    - Use QA/security/reviewer subagents when useful.
    - Check ambiguity, missing negative cases, unsupported assumptions, untestable criteria, and architecture/acceptance mismatch.
 7. Linear Issue Synthesis Readiness
@@ -137,4 +143,4 @@ Before handing off to `write-plan`, confirm:
 - `architecture.md` covers affected modules, data/state flow, errors, and integration boundaries.
 - `acceptance.json` validates against `acceptance.schema.json` or validation was explicitly skipped with reason.
 - `acceptance.md` contains stable AC IDs matching `acceptance.json`.
-- `validation.md` names required commands, manual checks, CI/gate policy references, and evidence expectations.
+- `validation.md` follows `references/validation-template.md` and names required commands, manual checks, CI/gate policy references, and evidence expectations.

@@ -69,7 +69,7 @@ Linear issue titles, descriptions, sub-issue names, plan-sync comments, and chat
 
 ## Linear Issue Template
 
-Each Linear task should include:
+The canonical template lives in `references/linear-child-issue-template.md`; keep the inline copy below in sync with it. Each Linear task should include:
 
 ```markdown
 ## Task
@@ -112,7 +112,7 @@ Post final validation as a Linear comment with commands, logs/CI links, changed 
    - `_save_issue` to create or update the parent issue and each child issue; use `parentId` for sub-issues, `project` for project linkage, `team` for creation, and `blockedBy`/`blocks` for dependencies
 7. Apply the Language Policy before writing any human-facing Linear title, description, or comment. Keep technical identifiers unchanged.
 8. Keep Linear descriptions concise. Link to local doc paths and stable section/AC ids; do not paste full local documents into issues.
-9. Add a final Linear comment with `_save_comment` summarizing the plan sync: source docs revision, issue list, acceptance coverage, validation gates, and unresolved risks.
+9. Add a final Linear comment with `_save_comment` summarizing the plan sync. Read `references/plan-template.md` first and follow its structure: source docs revision, issue list, acceptance coverage, validation gates, and unresolved risks.
 10. Report Linear issue URLs/keys and any local docs updated with references.
 
 ## Validation

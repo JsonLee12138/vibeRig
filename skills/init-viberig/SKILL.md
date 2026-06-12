@@ -51,13 +51,14 @@ Do not create a local dashboard registration, local task database, `.vibeRig/bin
 
 ## Required Project YAML
 
-`.vibeRig/project.yaml` is the machine-readable registration file. It should contain only stable project policy and pointers:
+`.vibeRig/project.yaml` is the machine-readable registration file. The canonical template is `references/project-config-template.md`; read it before writing the file and keep the inline copy below in sync with it. It should contain only stable project policy and pointers:
 
 ```yaml
 version: 1
 project:
   name: "<project-name>"
   root: "."
+  repo_url: ""
 docs:
   root: ".vibeRig/requirements"
 workspace:

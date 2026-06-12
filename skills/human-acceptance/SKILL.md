@@ -129,7 +129,11 @@ Do not invent workflow states that do not exist in the Linear team. If no close 
    - accepted AC ids
    - rejected or unverified AC ids
    - explicit risk acceptance, if any
-4. If the issue is fully accepted and a PR is required or present, merge the PR into the target base branch, normally `main`, before any terminal status update.
+4. If the issue is fully accepted and a PR is required or present, run a merge preflight before any merge attempt:
+   - **CI status**: check required status checks on the PR. If any required check is failing, pending, or missing, stop before merge. Record the failing check(s) in Linear and move the issue to the closest blocked/rework state.
+   - **Conflicts**: check whether the PR branch has merge conflicts with the target base branch. If conflicts exist, stop before merge and record a rework blocker.
+   - **Approvals**: when the target branch has branch protection requiring PR review approvals, confirm the PR has the required approvals. If approvals are missing, stop before merge and record the blocker.
+   - Only when all three checks pass should the merge proceed. If any check fails, record the acceptance decision together with the merge blocker in Linear via `_save_comment`, update the issue status to a non-terminal blocked/rework state via `_save_issue`, and stop before attempting the merge, running insights, or cleaning the worktree.
 5. Write one Linear comment with `_save_comment`, including acceptance, merge result, and any blocker details.
 6. Update the Linear issue with `_save_issue` according to the Status Mapping. Only use a terminal success state after any required PR merge succeeds.
 7. If the issue is fully accepted, any required PR merge succeeded, and Linear is already in the terminal success state, run the post-acceptance insights flow:
@@ -177,6 +181,7 @@ Before final reporting, verify:
 - The AC ids in the comment match the issue/proof packet.
 - Linear issue status was mapped from `_list_issue_statuses`; no invented status was used.
 - Required PR merge succeeded before any terminal success status.
+- Merge preflight (CI status, conflicts, approvals) was checked before the merge attempt; if any check failed, the issue was moved to a non-terminal state and merge was skipped.
 - Insights ran only after any required PR merge succeeded and the Linear issue reached a terminal success status.
 - Any accepted skill update was applied through `skill-builder`, not by hand inside `human-acceptance` or `insights`.
 - Requirement docs archival ran after insights, or was skipped with a recorded reason.

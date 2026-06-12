@@ -7,6 +7,7 @@
 Requires:
     pip install openai
     export MIMO_API_KEY=...
+    export MIMO_BASE_URL=...  # optional, default https://api.xiaomimimo.com/v1
 """
 
 import argparse
@@ -56,7 +57,8 @@ def build_client() -> OpenAI:
     if not api_key:
         print("MIMO_API_KEY is not set", file=sys.stderr)
         sys.exit(1)
-    return OpenAI(api_key=api_key, base_url="https://token-plan-cn.xiaomimimo.com/v1")
+    base_url = os.environ.get("MIMO_BASE_URL", "https://api.xiaomimimo.com/v1")
+    return OpenAI(api_key=api_key, base_url=base_url)
 
 
 def main() -> None:

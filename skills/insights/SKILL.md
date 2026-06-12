@@ -67,7 +67,7 @@ Prefer explicit evidence over conversation memory:
 
 ## Workflow
 
-1. Confirm the work is accepted or explicitly authorized for retrospective generation.
+1. Confirm the work is accepted or explicitly authorized for retrospective generation. Read `references/post-acceptance-retrospective.md` and follow its gate and evidence-bundle flow.
 2. Read `.vibeRig/project.yaml` and the referenced requirement docs.
 3. Read Linear proof packet comments and linked implementation evidence:
    - use `_get_issue` for issue status, description, branch, links, and relations
@@ -79,24 +79,33 @@ Prefer explicit evidence over conversation memory:
    - acceptance gaps
    - architecture or process risks
    - proposed skill/rule updates
-6. Auto-apply only high-confidence low-risk project notes to a project-local confirmed-learning file when the project already uses one.
+6. Auto-apply only candidates that pass every rule in `references/learning-policy.md`. When in doubt, do not auto-apply.
 7. Leave workflow rules, skill updates, and user preferences for explicit user confirmation.
-8. When applying a confirmed `skill_update`, call `skill-builder` and let that skill perform the SKILL.md edit and validation. Do not hand-edit skill files from `insights` without `skill-builder`.
+8. When applying a confirmed `skill_update`, invoke `skill-builder` with these inputs:
+   - **skill name or path**: the `target_skill` from the candidate (e.g., `task-runner` or `skills/task-runner/`)
+   - **change request**: a natural-language description combining the `change_summary` and `evidence` so skill-builder can understand what to change and why
+   - **target section hint**: the `section` field to help skill-builder locate the edit target
+   Do not hand-edit skill files from `insights` without `skill-builder`. Let `skill-builder` perform the edit, validate frontmatter, confirm references, and report the result.
 
 ## Candidate Types
 
 - `project_note`: accepted project facts, commands, paths, conventions, and validation entry points.
 - `workflow_rule`: VibeRig process improvements proven by accepted work.
-- `skill_update`: proposed changes to `skills/*/SKILL.md`.
+- `skill_update`: proposed changes to `skills/*/SKILL.md`. Must include:
+  - `target_skill`: directory name under `skills/` (e.g., `task-runner`)
+  - `change_summary`: one-line description of what should change and why
+  - `evidence`: the accepted work evidence that motivated this change
+  - `section`: the SKILL.md section to modify (e.g., `## Workflow`, `## Validation`, `## Common Mistakes`)
+  - `confidence`: `high` | `medium` | `low`
 - `user_preference`: durable user preference, always requiring explicit confirmation.
 
 ## Output Contract
 
-Prefer a Linear comment or user-facing summary for retrospectives. Use `_save_comment` when writing a retrospective back to the Linear issue. Use `_save_document` only when the user explicitly wants a Linear document-level retrospective or project learning note. Only write local files when the project already has an approved local learning location or the user asks for one.
+Prefer a Linear comment or user-facing summary for retrospectives. Format retrospectives using `references/report-template.md`. Use `_save_comment` when writing a retrospective back to the Linear issue. Use `_save_document` only when the user explicitly wants a Linear document-level retrospective or project learning note. Only write local files when the project already has an approved local learning location or the user asks for one.
 
 Do not write proof packets into `.vibeRig/`.
 
-For skill changes, report the `skill-builder` invocation result: changed paths, trigger intent, resources added or omitted, validation performed, and remaining gaps.
+For skill changes, invoke `skill-builder` and report its result: changed file paths, the trigger intent captured in the updated description, any resources added or omitted, validation performed, and remaining gaps. If skill-builder reports validation failures, surface them to the user as pending follow-up.
 
 ## Validation
 
