@@ -1,5 +1,7 @@
 # Linear Issue Template
 
+Render the filled issue title, headings, table labels, and prose in `.vibeRig/project.yaml` `output.language`. Keep stable IDs, local paths, commands, branch names, Linear keys, acceptance IDs, schema keys, and code symbols unchanged.
+
 ```markdown
 ## Task
 

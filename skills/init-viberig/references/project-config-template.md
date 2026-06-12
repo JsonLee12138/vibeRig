@@ -8,6 +8,8 @@ project:
   repo_url: ""
 docs:
   root: ".vibeRig/requirements"
+output:
+  language: "zh-CN"
 workspace:
   worktrees_root: ".worktrees"
 pull_request:

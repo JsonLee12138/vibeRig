@@ -1,5 +1,7 @@
 # validation.md Template
 
+Render the filled document's human-readable title, headings, table headers, and prose in `.vibeRig/project.yaml` `output.language`. Keep commands, file paths, CI names, AC IDs, schema keys, and code symbols unchanged.
+
 ```markdown
 # Validation: <Requirement Title>
 

@@ -1,5 +1,10 @@
 # Report Template
 
+Render filled report titles, headings, table headers, and prose in
+`.vibeRig/project.yaml` `output.language`. Keep candidate type names, stable
+IDs, local paths, commands, branch names, Linear keys, acceptance IDs, schema
+keys, and code symbols unchanged.
+
 ## Task Retrospective
 
 ```md

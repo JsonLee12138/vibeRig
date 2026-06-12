@@ -10,7 +10,7 @@ Use this skill to prepare a project for the Linear-native VibeRig workflow.
 VibeRig is a Codex plugin protocol, not a local dashboard or local task engine. The source of truth is split deliberately:
 
 - Local `.vibeRig/requirements/`: versioned requirement, contract, architecture, acceptance, validation, and Mermaid documents.
-- Local `.vibeRig/project.yaml`: machine-readable project registration and workflow policy.
+- Local `.vibeRig/project.yaml`: machine-readable project registration, workflow policy, and project output language.
 - Linear Project, issues, sub-issues, and comments: task state, ownership, execution status, acceptance conclusion, and proof packets.
 - Codex main agent: context summary, subagent routing, validation, and Linear updates.
 - Git worktrees: isolated task execution directories under the project `.worktrees/` root.
@@ -30,6 +30,7 @@ Stop and ask when the target project, Linear team/project choice, or permission 
 - Linear team and project. Prefer existing `.vibeRig/project.yaml`; otherwise ask the user or use Linear search when available.
 - Linear Project Document title or id. Use it for human-readable registration notes.
 - Docs root. Default to `.vibeRig/requirements`.
+- Output language for human-readable records. Prefer existing `.vibeRig/project.yaml`; otherwise infer from the user's current working language or ask when ambiguous.
 - Worktrees root. Default to `.worktrees`.
 - Pull request policy. Default to required, provider auto-detected, and base branch inferred from the repository.
 - Gate policy for the target project: test/build/lint/manual gates and whether CI is required.
@@ -41,6 +42,7 @@ Create or update:
 
 ```text
 <project-root>/
+├── AGENTS.md
 ├── .vibeRig/
 │   ├── project.yaml
 │   └── requirements/
@@ -48,6 +50,21 @@ Create or update:
 ```
 
 Do not create a local dashboard registration, local task database, `.vibeRig/bin/viberig`, or Codex CLI/MCP runner config.
+
+## Required Project AGENTS.md
+
+Create or update the target project's root `AGENTS.md` with a VibeRig output language rule. Preserve existing project-specific rules and append or reconcile only the VibeRig section.
+
+Required rule:
+
+```markdown
+## VibeRig Output Language
+
+- Read `.vibeRig/project.yaml` before creating or updating VibeRig human-facing records.
+- Use `.vibeRig/project.yaml` `output.language` for VibeRig issue titles, issue descriptions, comments, requirement documents, validation notes, proof packets, human acceptance records, retrospectives, and final summaries.
+- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `.vibeRig/project.yaml` through `init-viberig`.
+- Do not translate stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, acceptance IDs, schema field names, code symbols, or existing external labels/status names.
+```
 
 ## Required Project YAML
 
@@ -61,6 +78,8 @@ project:
   repo_url: ""
 docs:
   root: ".vibeRig/requirements"
+output:
+  language: "zh-CN"
 workspace:
   worktrees_root: ".worktrees"
 pull_request:
@@ -117,6 +136,7 @@ Registration rules:
    - repo path or URL
    - docs root `.vibeRig/requirements`
    - worktrees root `.worktrees`
+   - output language for human-readable VibeRig records
    - pull request policy
    - gate policy summary
    - subagent routing summary
@@ -128,25 +148,28 @@ Use both `.vibeRig/project.yaml` and the Linear Project Document. The YAML is fo
 ## Workflow
 
 1. Locate the target project root. Prefer the current workspace or git root unless the user gives a path.
-2. Inspect existing `.vibeRig/project.yaml`, `.vibeRig/config.yaml`, and `.vibeRig/requirements/` when present.
+2. Inspect existing `AGENTS.md`, `.vibeRig/project.yaml`, `.vibeRig/config.yaml`, and `.vibeRig/requirements/` when present.
 3. Create `.vibeRig/requirements/` and `.worktrees/` if missing.
-4. Create or update `.vibeRig/project.yaml` using the required schema above, including `workspace.worktrees_root: ".worktrees"` and the default pull request policy.
-5. Resolve Linear registration using the `linear` skill/plugin when available:
+4. Create or update `.vibeRig/project.yaml` using the required schema above, including `output.language`, `workspace.worktrees_root: ".worktrees"`, and the default pull request policy.
+5. Create or update root `AGENTS.md` with the Required Project AGENTS.md VibeRig output language rule. Preserve unrelated project rules.
+6. Resolve Linear registration using the `linear` skill/plugin when available:
    - call `_list_teams` or `_get_team` to confirm the team
    - call `_search` or `_list_projects` to find existing projects
    - call `_save_project` when no matching project exists or when the project summary needs reconciliation
-6. Create or update the Linear Project Document with the registration explanation:
+7. Create or update the Linear Project Document with the registration explanation:
    - call `_list_documents` to find the registration document
    - call `_save_document` to create or update it under the Linear Project
-7. Record the resolved Linear Project id/name, Linear Project Document id/title, target project's pull request policy, and gate policy in `.vibeRig/project.yaml`.
-8. Check whether recommended project-level subagents exist under `.codex/agents/` only if the user wants project-local agents. Missing agents are handled through `subagent-routing`; do not block initialization.
-9. Report the project YAML path, docs root, Linear Project id/status, Linear Project Document id/status, and gate policy.
+8. Record the resolved Linear Project id/name, Linear Project Document id/title, target project's output language, pull request policy, and gate policy in `.vibeRig/project.yaml`.
+9. Check whether recommended project-level subagents exist under `.codex/agents/` only if the user wants project-local agents. Missing agents are handled through `subagent-routing`; do not block initialization.
+10. Report the project YAML path, AGENTS.md path/status, docs root, output language, Linear Project id/status, Linear Project Document id/status, and gate policy.
 
 ## Validation
 
 Before reporting complete initialization, verify:
 
-- `.vibeRig/project.yaml` exists and contains project, docs, workspace, pull request, Linear, gate policy, subagent, and context-mode sections.
+- `.vibeRig/project.yaml` exists and contains project, docs, output, workspace, pull request, Linear, gate policy, subagent, and context-mode sections.
+- `.vibeRig/project.yaml` records `output.language` as a stable BCP 47-style language tag such as `zh-CN` or `en-US`.
+- Root `AGENTS.md` exists and tells agents to use `.vibeRig/project.yaml` `output.language` for VibeRig human-facing records.
 - `.vibeRig/requirements/` exists.
 - `.worktrees/` exists or its absence is explained.
 - Linear Project and Project Document were created, found, or explicitly skipped because tools/auth were unavailable.

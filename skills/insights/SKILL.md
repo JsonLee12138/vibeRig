@@ -65,10 +65,18 @@ Prefer explicit evidence over conversation memory:
 9. Validation output, CI URLs, screenshots, logs, and manual review notes
 10. context-mode evidence only from the main agent when available
 
+## Language Policy
+
+Read `.vibeRig/project.yaml` and use `output.language` for human-facing retrospectives and learning reports.
+
+- Linear retrospective comments, user-facing summaries, Linear documents created by this workflow, and local learning reports should use `output.language`.
+- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
+- Do not translate stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, acceptance IDs, schema field names, code symbols, candidate type names, or existing external labels/status names.
+
 ## Workflow
 
 1. Confirm the work is accepted or explicitly authorized for retrospective generation. Read `references/post-acceptance-retrospective.md` and follow its gate and evidence-bundle flow.
-2. Read `.vibeRig/project.yaml` and the referenced requirement docs.
+2. Read `.vibeRig/project.yaml`, including `output.language`, and the referenced requirement docs.
 3. Read Linear proof packet comments and linked implementation evidence:
    - use `_get_issue` for issue status, description, branch, links, and relations
    - use `_list_comments` for Proof Packet comments and reviewer handoff notes
@@ -116,3 +124,4 @@ Before reporting completion, verify:
 - Durable project notes are high-confidence and low-risk.
 - Workflow rules, skill updates, and user preferences were not applied without explicit user confirmation.
 - Any skill file creation or modification was performed through `skill-builder`.
+- Human-facing retrospectives, Linear comments, documents, and summaries use `output.language` when configured.

@@ -2,6 +2,10 @@
 
 Use this after each stage and before handing off to `write-plan`.
 
+When the review asks for written fixes or summaries, write human-facing text in
+`.vibeRig/project.yaml` `output.language` and keep technical identifiers
+unchanged.
+
 ## Brief
 
 - Goals and non-goals are explicit and stable.

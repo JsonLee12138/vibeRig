@@ -26,6 +26,7 @@ Required:
 
 Optional:
 
+- Existing `.vibeRig/project.yaml` for docs root and output language.
 - Existing `.vibeRig/requirements/<requirement-id>/` docs.
 - Research links, stakeholder notes, constraints, diagrams, or acceptance examples.
 - Desired requirement id.
@@ -57,6 +58,15 @@ Use this directory shape:
 `research.md` and `diagrams/*.mmd` are optional when the requirement is simple, but `write-plan` requires the brief, contract, architecture, acceptance, and validation files.
 
 Do not generate `tasks.yaml`, local dashboard data, local runner config, or proof packets in this skill.
+
+## Language Policy
+
+Read `.vibeRig/project.yaml` when present and use `output.language` for every human-readable requirement document produced by this skill.
+
+- Write document titles, section headings, table headers, prose, acceptance text, risks, decisions, and validation explanations in `output.language`.
+- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
+- Do not translate stable IDs, file paths, commands, branch names, Linear keys, schema field names, JSON keys, code symbols, labels that already exist in external systems, or Mermaid identifiers when translating would break references.
+- `contract.json` and `acceptance.json` keep machine-readable field names unchanged, but their human-readable string values should use `output.language`.
 
 ## Workflow
 
@@ -117,6 +127,7 @@ Do not write brainstorming transcript, internal reasoning, or conversation logs 
    - prefer the current workspace if it contains `.vibeRig/project.yaml` or `.vibeRig/requirements/`
    - otherwise use the git root
    - if neither exists, create `.vibeRig/requirements/` under the workspace root
+   - when `.vibeRig/project.yaml` exists, read `docs.root` and `output.language` before writing requirement documents
 2. Resolve the requirement id:
    - prefer a stable id supplied by the user
    - otherwise generate a safe slug from the requirement title
@@ -144,3 +155,4 @@ Before handing off to `write-plan`, confirm:
 - `acceptance.json` validates against `acceptance.schema.json` or validation was explicitly skipped with reason.
 - `acceptance.md` contains stable AC IDs matching `acceptance.json`.
 - `validation.md` follows `references/validation-template.md` and names required commands, manual checks, CI/gate policy references, and evidence expectations.
+- Human-readable docs and generated summaries use `output.language` from `.vibeRig/project.yaml` when it exists.

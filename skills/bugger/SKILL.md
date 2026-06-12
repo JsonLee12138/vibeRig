@@ -53,11 +53,20 @@ Use the `linear` skill/plugin with these concrete Linear app tools:
 
 If Linear tools are unavailable, summarize the bug record in chat and stop before pretending Linear was updated.
 
+## Language Policy
+
+Read `.vibeRig/project.yaml` and use `output.language` for human-facing bug records.
+
+- New bug issue titles must be human-readable in `output.language`.
+- Bug descriptions, expected/actual behavior, reproduction steps, root cause comments, fix approach comments, fix evidence comments, and final handoff summaries should use `output.language`.
+- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
+- Do not translate stable IDs, file paths, commands, branch names, commit hashes, Linear keys, schema field names, code symbols, stack traces, log excerpts, or existing external labels/status names.
+
 ## Workflow
 
 ### Phase 1: Record And Analyze
 
-1. Read `.vibeRig/project.yaml` for Linear project/team context when available.
+1. Read `.vibeRig/project.yaml` for Linear project/team context and output language when available.
 2. Resolve the team's bug workflow states before creating or updating the issue:
    - use `_list_issue_statuses` to map the team's actual equivalents for triage/backlog, in-progress, and ready-for-acceptance
    - if the team uses different names, record the mapped status names and use them consistently in the rest of the flow
@@ -107,6 +116,8 @@ If Linear tools are unavailable, summarize the bug record in chat and stop befor
    - human-acceptance handles the acceptance decision, Linear status update, and any post-acceptance learning
 
 ## Comment Template
+
+Render these templates in `.vibeRig/project.yaml` `output.language`; the English headings below are structural examples, not required literal text.
 
 ### Root Cause Analysis Comment
 
@@ -163,6 +174,7 @@ When delegating root cause analysis, provide:
 Before reporting completion, verify:
 
 - The bug was recorded as a Linear issue with a valid status.
+- Newly created issue titles and human-facing Linear comments use `output.language` when configured.
 - The team-specific equivalents for triage/backlog, in-progress, and ready-for-acceptance were resolved before status changes.
 - Root cause analysis was written to a Linear comment before the fix started.
 - The user confirmed the fix direction before implementation.

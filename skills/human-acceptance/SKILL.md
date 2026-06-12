@@ -105,6 +105,15 @@ Return and, when tools are available, write to Linear:
 
 Do not claim full acceptance is complete unless code has reached the target base branch when a PR is required, the Linear comment was written, the issue moved to a valid terminal success status before insights ran, and requirement docs archival either succeeded or was explicitly skipped with a recorded reason.
 
+## Language Policy
+
+Read `.vibeRig/project.yaml` and use `output.language` for human acceptance records.
+
+- The Linear human acceptance/rejection comment, blocked acceptance note, merge blocker note, docs archival note, insights handoff summary, and final user-facing summary must use `output.language`.
+- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
+- Do not translate stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, acceptance IDs, schema field names, code symbols, or existing Linear status names.
+- If the user provides acceptance text in another language, preserve exact quoted user wording when needed as evidence, then summarize the record in `output.language`.
+
 ## Status Mapping
 
 Use `_list_issue_statuses` and choose the closest available team status.
@@ -118,7 +127,7 @@ Do not invent workflow states that do not exist in the Linear team. If no close 
 
 ## Workflow
 
-1. Read `.vibeRig/project.yaml` for Linear project/team context when available.
+1. Read `.vibeRig/project.yaml` for Linear project/team context and output language when available.
 2. Read the target Linear issue and comments:
    - source docs and AC references
    - latest Proof Packet comment
@@ -145,6 +154,8 @@ Do not invent workflow states that do not exist in the Linear team. If no close 
 10. Report the acceptance decision, PR merge result, status update, insights result, any skill-builder updates or pending confirmations, requirement docs archive result, and worktree cleanup result.
 
 ## Comment Template
+
+Render this template in `.vibeRig/project.yaml` `output.language`; the English headings below are structural examples, not required literal text.
 
 ```markdown
 ## Human Acceptance
@@ -180,6 +191,7 @@ Before final reporting, verify:
 - The acceptance decision came explicitly from the current user or a quoted user instruction.
 - The AC ids in the comment match the issue/proof packet.
 - Linear issue status was mapped from `_list_issue_statuses`; no invented status was used.
+- The human acceptance or rejection record was written in `output.language` when configured.
 - Required PR merge succeeded before any terminal success status.
 - Merge preflight (CI status, conflicts, approvals) was checked before the merge attempt; if any check failed, the issue was moved to a non-terminal state and merge was skipped.
 - Insights ran only after any required PR merge succeeded and the Linear issue reached a terminal success status.

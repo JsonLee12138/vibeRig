@@ -42,7 +42,7 @@ Optional inputs:
 - `diagrams/*.mmd`
 - existing Linear issue keys or ids recorded in docs
 
-Also read `.vibeRig/project.yaml` for Linear project/team ids, docs root, gate policy, and default subagent routing.
+Also read `.vibeRig/project.yaml` for Linear project/team ids, docs root, output language, gate policy, and default subagent routing.
 
 If required files are missing, stop and tell the user which `brainstorm` phase must run first. Do not synthesize missing requirement facts inside this skill.
 
@@ -59,13 +59,13 @@ Optionally update local docs only to add stable Linear references, such as issue
 
 ## Language Policy
 
-Linear issue titles, descriptions, sub-issue names, plan-sync comments, and chat summaries should follow the user's current working language as closely as possible.
+Linear issue titles, descriptions, sub-issue names, plan-sync comments, and chat summaries must use `.vibeRig/project.yaml` `output.language`.
 
-- If the user is chatting in Chinese, write the human-facing Linear content in Chinese.
-- If the user is chatting in English, write the human-facing Linear content in English.
-- If the requirement docs are in a different language from the current user conversation, prefer the current conversation language and preserve exact technical identifiers from the docs.
+- Linear issue titles and sub-issue titles must be human-readable in `output.language`; do not leave newly created titles in another language just because source docs or the current chat use that language.
+- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
+- If requirement docs are in a different language from `output.language`, write new human-facing Linear text in `output.language` and preserve exact technical identifiers from the docs.
 - Do not translate stable IDs, file paths, commands, branch names, labels that already exist in Linear, acceptance IDs, issue keys, schema field names, or code symbols.
-- If the user explicitly requests a language, use that language for all newly created or updated human-facing Linear text.
+- If the user explicitly requests a one-off language, use that language for the current output and recommend updating `project.yaml` if the change should become durable.
 
 ## Linear Issue Template
 
@@ -110,7 +110,7 @@ Post final validation as a Linear comment with commands, logs/CI links, changed 
    - `_list_issue_labels` and `_create_issue_label` to reuse or create VibeRig labels
    - `_list_issues` to detect existing parent/child issues before creating duplicates
    - `_save_issue` to create or update the parent issue and each child issue; use `parentId` for sub-issues, `project` for project linkage, `team` for creation, and `blockedBy`/`blocks` for dependencies
-7. Apply the Language Policy before writing any human-facing Linear title, description, or comment. Keep technical identifiers unchanged.
+7. Apply the Language Policy before writing any human-facing Linear title, description, or comment. Issue titles must use `output.language`. Keep technical identifiers unchanged.
 8. Keep Linear descriptions concise. Link to local doc paths and stable section/AC ids; do not paste full local documents into issues.
 9. Add a final Linear comment with `_save_comment` summarizing the plan sync. Read `references/plan-template.md` first and follow its structure: source docs revision, issue list, acceptance coverage, validation gates, and unresolved risks.
 10. Report Linear issue URLs/keys and any local docs updated with references.
@@ -132,7 +132,7 @@ Before reporting plan sync complete, verify:
 - Do not call local VibeRig dashboard import, refresh, or task-engine APIs.
 - Do not render Linear markdown exports as a separate source of truth.
 - Do not put full requirement documents into Linear issues. Local docs remain the durable contract.
-- Do not force English Linear issue content when the user is working in another language. Match the user's current working language for human-facing issue text and comments.
+- Do not force English Linear issue content. Use `.vibeRig/project.yaml` `output.language` for human-facing issue text and comments.
 - If Linear tools are unavailable, produce a concise issue-draft summary in the chat and stop before pretending issues were created.
 - Do not claim plan sync is complete when `_save_issue` or `_save_comment` was skipped despite available Linear tools.
 - Main agent may use context-mode for summarizing docs and history. Subagents must not use context-mode.

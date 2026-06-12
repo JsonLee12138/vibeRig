@@ -57,9 +57,17 @@ Do not claim an issue is unblocked unless the blocking evidence is resolved and 
 
 The main agent may use context-mode to summarize large histories or logs. Subagents must not use context-mode.
 
+## Language Policy
+
+Read `.vibeRig/project.yaml` and use `output.language` for human-facing blocker records.
+
+- Blocker classification comments, resume comments, remaining-risk notes, user-decision requests, and final summaries should use `output.language`.
+- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
+- Do not translate stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, acceptance IDs, schema field names, code symbols, log excerpts, or existing external labels/status names.
+
 ## Workflow
 
-1. Resolve the blocked Linear issue and matching local requirement docs:
+1. Resolve the blocked Linear issue, project output language, and matching local requirement docs:
    - use `_get_issue` for a named issue
    - use `_list_issues` for blocked issue queues
    - use `_list_comments` for blocker comments and prior proof packets
@@ -94,6 +102,7 @@ Before reporting recovery, verify:
 - The blocker classification is backed by Linear comments, local docs, git state, validation output, or CI evidence.
 - Any resumed implementation went through `task-runner`.
 - Any Linear status change used an existing team status.
+- Human-facing Linear comments and summaries use `output.language` when configured.
 - Remaining user decisions, credentials, or external blockers are stated explicitly.
 
 ## Guardrails

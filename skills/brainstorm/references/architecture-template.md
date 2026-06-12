@@ -1,5 +1,7 @@
 # architecture.md Template
 
+Render the filled document's human-readable title, headings, and prose in `.vibeRig/project.yaml` `output.language`. Keep stable IDs, file paths, commands, schema keys, code symbols, and Mermaid node ids unchanged.
+
 ```markdown
 # Architecture: <Requirement Title>
 

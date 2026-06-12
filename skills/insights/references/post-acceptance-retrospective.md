@@ -2,6 +2,11 @@
 
 Use this flow only after the accepted-work gate passes.
 
+Render human-facing retrospective prompts, summaries, and reports in
+`.vibeRig/project.yaml` `output.language`. Keep evidence-bundle YAML keys,
+candidate type names, stable IDs, local paths, commands, branch names, Linear
+keys, acceptance IDs, schema keys, and code symbols unchanged.
+
 ## Required Gate
 
 At least one accepted signal must be present:

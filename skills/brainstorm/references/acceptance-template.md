@@ -3,6 +3,11 @@
 Write both `acceptance.json` and `acceptance.md`. Pair `acceptance.json` with
 `acceptance.schema.json`.
 
+Use `.vibeRig/project.yaml` `output.language` for human-readable string values in
+`acceptance.json` and for the title, headings, table headers, and prose in
+`acceptance.md`. Keep JSON keys, AC IDs, source IDs, file paths, commands, and
+code symbols unchanged.
+
 ## acceptance.json
 
 ```json
