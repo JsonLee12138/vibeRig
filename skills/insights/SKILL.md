@@ -1,11 +1,11 @@
 ---
 name: insights
-description: Generate VibeRig post-acceptance retrospectives and learning candidates from accepted Linear work. Use after validation, acceptance review, and code review pass; when asked to summarize accepted VibeRig work; or when applying confirmed learning candidates. Do not use during active implementation except to read confirmed project learnings. When applying any skill_update that creates or modifies skills/*/SKILL.md, invoke skill-builder and follow its validation contract.
+description: Generate VibeRig post-acceptance retrospectives, learning candidates, and SkillOS-lite curation proposals from accepted Linear work. Use after validation, acceptance review, and code review pass; when asked to summarize accepted VibeRig work; or when applying confirmed learning candidates. Do not use during active implementation except to read confirmed project learnings. When applying any skill_update or curation proposal that creates, updates, or deprecates skills/*/SKILL.md, invoke skill-builder and follow its validation contract.
 ---
 
 # Insights
 
-Use this skill to turn accepted VibeRig work into conservative learning candidates.
+Use this skill to turn accepted VibeRig work into conservative learning candidates and skill curation proposals.
 
 Linear comments and local Docs as Code are the primary evidence sources. VibeRig no longer relies on local task-engine evidence directories or local proof packet files.
 
@@ -23,7 +23,7 @@ Stop before applying a learning when evidence is not tied to accepted work, the 
 - Do not learn during active implementation.
 - Do not learn from failed, abandoned, unmerged, or unaccepted work.
 - Do not modify other skills or user memory unless the user explicitly confirms.
-- For every confirmed `skill_update` that adds or changes a skill package, invoke `skill-builder` first and follow its contract for trigger wording, resource planning, file edits, and validation.
+- For every confirmed `skill_update` or SkillOS-lite curation proposal that adds, changes, or deprecates a skill package, invoke `skill-builder` first and follow its contract for trigger wording, resource planning, file edits, and validation.
 - When called from `human-acceptance`, use the explicit human acceptance comment as the acceptance boundary.
 - During implementation, read confirmed project learnings when present, but do not write new learnings.
 
@@ -87,12 +87,14 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing retrospe
    - acceptance gaps
    - architecture or process risks
    - proposed skill/rule updates
-6. Auto-apply only candidates that pass every rule in `references/learning-policy.md`. When in doubt, do not auto-apply.
-7. Leave workflow rules, skill updates, and user preferences for explicit user confirmation.
-8. When applying a confirmed `skill_update`, invoke `skill-builder` with these inputs:
+6. Use `skillos-lite` to generate skill curation proposals when accepted evidence suggests a reusable skill change, skill split, deprecation, or no-op decision.
+7. Auto-apply only candidates that pass every rule in `references/learning-policy.md`. When in doubt, do not auto-apply.
+8. Leave workflow rules, skill updates, curation proposals, and user preferences for explicit user confirmation.
+9. When applying a confirmed `skill_update` or SkillOS-lite curation proposal, invoke `skill-builder` with these inputs:
    - **skill name or path**: the `target_skill` from the candidate (e.g., `task-runner` or `skills/task-runner/`)
    - **change request**: a natural-language description combining the `change_summary` and `evidence` so skill-builder can understand what to change and why
    - **target section hint**: the `section` field to help skill-builder locate the edit target
+   For SkillOS-lite `insert`, use the proposed new `target_skill` name. For `deprecate`, ask `skill-builder` to add clear deprecation guidance rather than deleting files unless the user explicitly requests deletion.
    Do not hand-edit skill files from `insights` without `skill-builder`. Let `skill-builder` perform the edit, validate frontmatter, confirm references, and report the result.
 
 ## Candidate Types
@@ -107,13 +109,26 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing retrospe
   - `confidence`: `high` | `medium` | `low`
 - `user_preference`: durable user preference, always requiring explicit confirmation.
 
+## SkillOS-Lite Curation Proposals
+
+Use `skillos-lite` after candidate generation when the accepted evidence may affect the reusable skill library.
+
+Allowed operations:
+
+- `insert`: propose a new skill for a reusable accepted workflow that does not fit an existing skill.
+- `update`: propose a targeted change to an existing skill.
+- `deprecate`: propose deprecation for duplicated, stale, misleading, or risky skill guidance. Prefer deprecation over deletion.
+- `noop`: record that no skill-library change is justified.
+
+Every non-`noop` curation proposal requires explicit user confirmation and must be applied through `skill-builder`.
+
 ## Output Contract
 
 Prefer a Linear comment or user-facing summary for retrospectives. Format retrospectives using `references/report-template.md`. Use `_save_comment` when writing a retrospective back to the Linear issue. Use `_save_document` only when the user explicitly wants a Linear document-level retrospective or project learning note. Only write local files when the project already has an approved local learning location or the user asks for one.
 
 Do not write proof packets into `.vibeRig/`.
 
-For skill changes, invoke `skill-builder` and report its result: changed file paths, the trigger intent captured in the updated description, any resources added or omitted, validation performed, and remaining gaps. If skill-builder reports validation failures, surface them to the user as pending follow-up.
+For skill changes and confirmed SkillOS-lite curation proposals, invoke `skill-builder` and report its result: changed file paths, the trigger intent captured in the updated description, any resources added or omitted, validation performed, and remaining gaps. If skill-builder reports validation failures, surface them to the user as pending follow-up.
 
 ## Validation
 
@@ -124,4 +139,5 @@ Before reporting completion, verify:
 - Durable project notes are high-confidence and low-risk.
 - Workflow rules, skill updates, and user preferences were not applied without explicit user confirmation.
 - Any skill file creation or modification was performed through `skill-builder`.
+- Any SkillOS-lite `insert`, `update`, or `deprecate` proposal was explicitly confirmed and applied through `skill-builder`.
 - Human-facing retrospectives, Linear comments, documents, and summaries use `output.language` when configured.

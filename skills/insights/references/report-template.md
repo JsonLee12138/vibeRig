@@ -43,6 +43,11 @@ keys, and code symbols unchanged.
 | ID | Type | Confidence | Auto Apply | Target |
 | --- | --- | --- | --- | --- |
 
+## Skill Curation Proposals
+
+| ID | Operation | Target Skill | Confidence | Risk | Requires Confirmation |
+| --- | --- | --- | --- | --- | --- |
+
 ## Applied Learnings
 
 - Nothing applied.
@@ -64,6 +69,8 @@ keys, and code symbols unchanged.
 ## Validation Quality
 
 ## Learning Candidates
+
+## Skill Curation Proposals
 
 ## Confirmed Learnings
 ```

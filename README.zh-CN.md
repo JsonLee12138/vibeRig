@@ -80,7 +80,8 @@ Skills：
 - `write-plan`：根据本地验收标准创建或更新 Linear issues 和 sub-issues。
 - `task-runner`：在当前 Codex 会话中执行 Linear task，委派合适 subagent，完成验证，提交 PR，并写入 Linear Proof Packet。
 - `human-acceptance`：记录用户显式给出的人工验收通过或拒绝；全量验收时合并 PR、更新 Linear 最终状态、运行 insights，并通过 `skill-builder` 应用已确认的 skill 更新，归档已验收需求文档，最后在安全时清理任务 worktree。
-- `insights`：从已验收工作中生成保守的经验候选项。
+- `insights`：从已验收工作中生成保守的经验候选项，并路由 skill library curation proposals。
+- `skillos-lite`：基于已验收工作提出 SkillOS 风格的 `insert`、`update`、`deprecate` 或 `noop` skill curation 操作；已确认的变更仍然必须通过 `skill-builder`。
 - `subagent-routing`：选择并 brief 专用 subagent，同时保证 context-mode 和 Linear 更新只在主 agent 中发生。
 - `agent-creator`：帮助创建或更新项目本地 Codex custom subagents。
 - `agent-sop`：编排分阶段实现、验证、QA 和基于证据的 rework。
@@ -102,5 +103,5 @@ Skills：
 2. 使用 `brainstorm` 发现和结构化需求；审查 `.vibeRig/requirements/<requirement-id>/` 下生成的本地文件。
 3. 使用 `write-plan` 把已确认的计划转成 Linear issues。
 4. 使用 `task-runner` 执行 Linear issue；VibeRig 默认在项目内 `.worktrees/<issue-key>-<short-slug>/` worktree 中执行，验证结果，提交或更新 PR，把 Proof Packet 写到 Linear，并让 issue 进入人工验收或 review 状态。
-5. 人工 review 后，显式调用 `human-acceptance`。全量验收会先把 PR 合并到目标 base branch，再更新 Linear 最终状态，随后运行验收后 insights，并通过 `skill-builder` 应用已确认的 skill 更新，归档已验收需求文档，最后在安全时移除任务 worktree。
-6. 只有在用户明确确认，或本次验收请求已预授权时，才应用 insights 提出的 skill 或 workflow 更新。
+5. 人工 review 后，显式调用 `human-acceptance`。全量验收会先把 PR 合并到目标 base branch，再更新 Linear 最终状态，随后运行验收后 insights 和 SkillOS-lite curation，并通过 `skill-builder` 应用已确认的 skill 更新，归档已验收需求文档，最后在安全时移除任务 worktree。
+6. 只有在用户明确确认，或本次验收请求已预授权时，才应用 insights 提出的 skill、workflow 或 curation 更新。

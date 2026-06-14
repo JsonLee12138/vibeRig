@@ -78,6 +78,12 @@ Do not learn from:
 Classify each candidate as:
 project_note, workflow_rule, skill_update, or user_preference.
 
+When the accepted evidence suggests a reusable skill-library change, also run
+`skillos-lite` to emit curation proposals. Classify each proposal as
+`insert`, `update`, `deprecate`, or `noop`. Do not apply curation proposals
+without explicit user confirmation, and route confirmed skill changes through
+`skill-builder`.
+
 Auto-apply only low-risk high-confidence project notes.
 For workflow rules, skill updates, and user preferences, produce a proposal unless the policy explicitly allows automatic application.
 

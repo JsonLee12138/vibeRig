@@ -99,7 +99,7 @@ Return and, when tools are available, write to Linear:
 - Manual checks and risk decision.
 - PR merge result or blocker.
 - Linear status update result.
-- Post-acceptance insights result and any skill-builder update result or pending confirmation.
+- Post-acceptance insights result, SkillOS-lite curation proposals, and any skill-builder update result or pending confirmation.
 - Requirement docs archive result or blocker.
 - Worktree cleanup result or blocker.
 
@@ -146,9 +146,9 @@ Do not invent workflow states that do not exist in the Linear team. If no close 
 5. Write one Linear comment with `_save_comment`, including acceptance, merge result, and any blocker details.
 6. Update the Linear issue with `_save_issue` according to the Status Mapping. Only use a terminal success state after any required PR merge succeeds.
 7. If the issue is fully accepted, any required PR merge succeeded, and Linear is already in the terminal success state, run the post-acceptance insights flow:
-   - use `insights` to generate conservative learning candidates from the accepted issue, proof packet, and source docs
+   - use `insights` to generate conservative learning candidates and SkillOS-lite curation proposals from the accepted issue, proof packet, and source docs
    - write the retrospective or learning candidates as a Linear comment when useful
-   - for every confirmed or explicitly pre-authorized `skill_update`, invoke `skill-builder` and let it update the corresponding `skills/*/SKILL.md`
+   - for every confirmed or explicitly pre-authorized `skill_update` or SkillOS-lite `insert`/`update`/`deprecate` proposal, invoke `skill-builder` and let it update the corresponding `skills/*/SKILL.md`
 8. Archive the accepted requirement docs using the Requirement Document Archival policy. If archival is blocked, record the source, intended destination, and blocker.
 9. If the merge and terminal Linear status update succeeded and the work used a project-local task worktree, clean up the worktree after confirming it is safe to remove.
 10. Report the acceptance decision, PR merge result, status update, insights result, any skill-builder updates or pending confirmations, requirement docs archive result, and worktree cleanup result.
@@ -180,6 +180,7 @@ Accepted by: <user-provided name or current user>
 ## Follow-up
 - Insights: <generated | skipped with reason>
 - Skill updates: <applied through skill-builder | proposed | none>
+- Skill curation proposals: <insert/update/deprecate/noop | none>
 - Requirement docs archive: <moved source -> destination | skipped | blocked: reason>
 - Worktree cleanup: <removed | skipped | blocked: reason>
 ```
@@ -195,7 +196,7 @@ Before final reporting, verify:
 - Required PR merge succeeded before any terminal success status.
 - Merge preflight (CI status, conflicts, approvals) was checked before the merge attempt; if any check failed, the issue was moved to a non-terminal state and merge was skipped.
 - Insights ran only after any required PR merge succeeded and the Linear issue reached a terminal success status.
-- Any accepted skill update was applied through `skill-builder`, not by hand inside `human-acceptance` or `insights`.
+- Any accepted skill update or SkillOS-lite curation proposal was applied through `skill-builder`, not by hand inside `human-acceptance` or `insights`.
 - Requirement docs archival ran after insights, or was skipped with a recorded reason.
 - Archived docs moved only the accepted requirement directory and did not overwrite unrelated docs.
 - Worktree cleanup only touched a safe task worktree and was skipped when uncommitted files remained.
