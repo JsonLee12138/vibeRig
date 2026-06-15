@@ -33,6 +33,4 @@ subagents:
   default_qa: "qa"
   default_review: "code_review"
   default_integration: "integrator"
-context_mode:
-  main_agent_only: true
 ```

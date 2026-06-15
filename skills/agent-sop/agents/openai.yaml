@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent SOP"
   short_description: "Route subagents through a staged delivery SOP"
-  default_prompt: "Use $agent-sop to execute this implementation task with capability-routed subagents, test gating, validation, QA acceptance, and evidence-based rework loops. Keep context-mode and Linear/status updates in the main agent; subagents return bounded evidence only."
+  default_prompt: "Use $agent-sop to execute this implementation task with capability-routed subagents, test gating, validation, QA acceptance, and evidence-based rework loops. Keep Linear/status updates in the main agent; subagents return bounded evidence only."

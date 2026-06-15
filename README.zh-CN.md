@@ -82,7 +82,7 @@ Skills：
 - `human-acceptance`：记录用户显式给出的人工验收通过或拒绝；全量验收时合并 PR、更新 Linear 最终状态、运行 insights，并通过 `skill-builder` 应用已确认的 skill 更新，归档已验收需求文档，最后在安全时清理任务 worktree。
 - `insights`：从已验收工作中生成保守的经验候选项，并路由 skill library curation proposals。
 - `skillos-lite`：基于已验收工作提出 SkillOS 风格的 `insert`、`update`、`deprecate` 或 `noop` skill curation 操作；已确认的变更仍然必须通过 `skill-builder`。
-- `subagent-routing`：选择并 brief 专用 subagent，同时保证 context-mode 和 Linear 更新只在主 agent 中发生。
+- `subagent-routing`：选择并 brief 专用 subagent，同时保证 Linear 更新和最终流程决策只在主 agent 中发生。
 - `agent-creator`：帮助创建或更新项目本地 Codex custom subagents。
 - `agent-sop`：编排分阶段实现、验证、QA 和基于证据的 rework。
 - `blocker-resume`：检查被阻塞的 Linear work，并决定恢复执行或请求缺失决策。
@@ -95,7 +95,7 @@ Skills：
 - `Subagent Routing`
 - `Task Runner`
 
-具体的实现、QA、review、调研或集成 subagent 是项目或用户自己的 agents。VibeRig 通过 `subagent-routing` 路由到它们；subagents 不应使用 context-mode、不应更新 Linear、不应做最终验收判断。
+具体的实现、QA、review、调研或集成 subagent 是项目或用户自己的 agents。VibeRig 通过 `subagent-routing` 路由到它们；subagents 不应更新 Linear、不应做最终验收判断。
 
 ## 运行流程
 

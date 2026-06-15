@@ -48,9 +48,6 @@ validation:
 review:
   acceptance_notes: ""
   code_review_notes: ""
-context_mode:
-  main_agent_only: true
-  available: false
 ```
 
 ## Finalizer Prompt
@@ -64,7 +61,6 @@ Use the provided evidence:
 - implementation diff
 - validation results
 - review notes
-- context-mode evidence gathered by the main agent, if available
 
 Extract durable learnings only if they are proven by the accepted outcome.
 

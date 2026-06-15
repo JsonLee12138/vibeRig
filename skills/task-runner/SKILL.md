@@ -58,9 +58,8 @@ Do not claim a task is ready for human acceptance unless validation is sufficien
 - Every Linear task execution must declare and use a suitable subagent through `subagent-routing`.
 - Default to an isolated git worktree for all task execution work. Direct development in the current main workspace is allowed only when the user explicitly asks to modify the main/current workspace.
 - A branch is not an execution workspace. Creating or switching to a task branch in the main checkout does not satisfy worktree mode.
-- Subagents must not use context-mode.
 - Subagents must not update Linear, project status, acceptance status, or final proof.
-- The main agent owns context-mode, final validation, acceptance mapping, Linear comments, and status updates.
+- The main agent owns final validation, acceptance mapping, Linear comments, and status updates.
 - Do not call `codex-cli-mcp`, `codex mcp-server`, shell-launched Codex, or local backend automatic execution.
 - Do not call VibeRig dashboard/task-engine MCP tools or HTTP routes.
 - Do not create or rely on `tasks.yaml`.
@@ -183,10 +182,9 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing executio
    - use `_get_issue` for issue details
    - use `_list_comments` for proof packets, blockers, and prior handoff notes
 5. Read only the referenced local docs needed for the task.
-6. Main agent may use context-mode to summarize prior context, docs, and code search results.
-7. Decide the workspace using the Worktree Policy and prepare the worktree when selected.
-8. Resolve branch and PR policy, including provider, base branch, draft setting, and whether PR submission is required.
-9. Build a compact Task Brief for the subagent.
+6. Decide the workspace using the Worktree Policy and prepare the worktree when selected.
+7. Resolve branch and PR policy, including provider, base branch, draft setting, and whether PR submission is required.
+8. Build a compact Task Brief for the subagent.
 
 ## Task Brief
 
@@ -205,7 +203,6 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing executio
 ## Constraints
 - <scope boundaries>
 - do not revert unrelated user changes
-- no context-mode inside subagent
 - no Linear updates inside subagent
 
 ## Validation

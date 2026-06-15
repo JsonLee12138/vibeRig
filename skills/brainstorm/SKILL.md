@@ -143,7 +143,7 @@ Use `subagent-routing` whenever a specialized perspective improves the result:
 - QA/security/compliance for adversarial review
 - planner for acceptance matrix consistency
 
-Subagents must not use context-mode and must not update Linear. The main agent owns context gathering, file writes, and final stage approval.
+Subagents must not update Linear. The main agent owns context gathering, file writes, and final stage approval.
 
 ## Validation
 

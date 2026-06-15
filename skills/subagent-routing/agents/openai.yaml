@@ -1,4 +1,4 @@
 interface:
   display_name: "Subagent Routing"
   short_description: "Choose and brief specialized subagents"
-  default_prompt: "Use $subagent-routing to decide whether specialized subagent delegation is warranted, choose the best available capability, prepare a bounded Subagent Brief, and enforce that subagents do not use context-mode or update Linear/status."
+  default_prompt: "Use $subagent-routing to decide whether specialized subagent delegation is warranted, choose the best available capability, prepare a bounded Subagent Brief, and enforce that subagents do not update Linear/status or make final acceptance decisions."

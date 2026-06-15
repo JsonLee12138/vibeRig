@@ -60,7 +60,6 @@ The main agent must:
 - choose the best available subagent by capability, not by a fixed name
 - prepare a compact Subagent Brief
 - provide only the required docs, code paths, constraints, and expected output
-- keep context-mode usage in the main-agent boundary
 - review the subagent result before using it
 - make final decisions, write local docs, update Linear, and report to the user
 
@@ -82,7 +81,6 @@ Every Linear task execution must use a subagent. The main agent may work directl
 Subagents must:
 
 - use only the Subagent Brief, referenced local docs, and provided code context
-- must not use context-mode tools
 - must not update Linear or project status
 - must not make final acceptance decisions
 - must not do broad refactors unless explicitly in scope
@@ -102,7 +100,6 @@ Subagents must:
 - Validation: <commands/manual checks>
 
 ## Boundaries
-- no context-mode
 - no Linear/status updates
 - do not revert unrelated user changes
 - keep changes within scope
@@ -132,7 +129,7 @@ If no suitable subagent exists for a non-task phase, the main agent may proceed 
 Before using a subagent result, verify:
 
 - The brief had one bounded objective and explicit boundaries.
-- The subagent did not use context-mode, update Linear, or make final acceptance decisions.
+- The subagent did not update Linear or make final acceptance decisions.
 - The returned evidence covers the requested output.
 - The main agent inspected changed files or recommendations before acting on them.
 - Any missing capability or validation gap is reported.

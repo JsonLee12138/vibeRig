@@ -58,7 +58,6 @@ def build_checks() -> list[Check]:
         "schemas/tasks.schema.json",
         "scripts/validate_tasks.py",
         "scripts/render_linear_children.py",
-        "scripts/check_context_mode.py",
         "scripts/generate_insights_report.py",
         "scripts/apply_learning_candidates.py",
         "scripts/find_free_port.py",
@@ -113,9 +112,8 @@ def build_checks() -> list[Check]:
                 "worktrees_root: {quote_yaml(worktrees_root)}",
                 "pull_request:",
                 "subagents:",
-                "main_agent_only: true",
             ),
-            "scripts/init_project.py writes docs root, worktrees root, PR policy, Linear ids, subagents, and main-agent-only context-mode",
+            "scripts/init_project.py writes docs root, worktrees root, PR policy, Linear ids, and subagents",
         ),
         Check(
             "project worktrees stay inside ignored .worktrees directory",
@@ -253,11 +251,10 @@ def build_checks() -> list[Check]:
             contains(
                 "skills/subagent-routing/SKILL.md",
                 "Every Linear task execution must use a subagent",
-                "must not use context-mode tools",
                 "must not update Linear or project status",
                 "must not make final acceptance decisions",
             ),
-            "subagent-routing forbids context-mode, Linear updates, and final acceptance for subagents",
+            "subagent-routing forbids Linear updates and final acceptance for subagents",
         ),
         Check(
             "proof packets stay in Linear comments",

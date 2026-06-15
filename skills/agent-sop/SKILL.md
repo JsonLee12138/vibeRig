@@ -11,9 +11,9 @@ Use this skill as the main-agent execution protocol. Keep the main agent respons
 
 Do not outsource the whole task and wait. Delegate bounded phases only. If subagent tooling is unavailable, or no suitable subagent exists for a phase, execute that phase directly and record the reason.
 
-Do not require tests for every task. Always make an explicit test decision. Use current MCP and local tools for verification. The main agent may use context-mode-style tools for large outputs and return only conclusions plus key evidence.
+Do not require tests for every task. Always make an explicit test decision. Use current MCP and local tools for verification.
 
-Subagents must not use context-mode, mutate Linear status, mutate VibeRig task/run/acceptance status, or make final acceptance calls. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent writes the proof packet and status update to Linear when the task is Linear-backed, using `_save_comment` for proof comments and `_save_issue` for issue status or metadata updates.
+Subagents must not mutate Linear status, mutate VibeRig task/run/acceptance status, or make final acceptance calls. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent writes the proof packet and status update to Linear when the task is Linear-backed, using `_save_comment` for proof comments and `_save_issue` for issue status or metadata updates.
 
 ## Input Contract
 
@@ -54,7 +54,7 @@ For each delegation, provide:
 - task goal and phase
 - relevant files, modules, or ownership boundary
 - constraints, including not reverting unrelated user changes
-- constraints that subagents do not use context-mode and do not update Linear
+- constraints that subagents do not update Linear
 - expected artifact
 - required evidence or return format
 

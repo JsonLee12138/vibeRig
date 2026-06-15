@@ -82,7 +82,7 @@ Skills:
 - `human-acceptance`: records explicit human acceptance or rejection; on full acceptance it merges the PR, updates Linear final status, runs insights with any confirmed skill updates through `skill-builder`, archives accepted requirement docs, and cleans the task worktree when safe.
 - `insights`: generates conservative post-acceptance learning candidates and routes skill-library curation proposals.
 - `skillos-lite`: proposes SkillOS-style `insert`, `update`, `deprecate`, or `noop` skill curation operations from accepted work; confirmed changes still go through `skill-builder`.
-- `subagent-routing`: chooses and briefs specialized subagents while keeping context-mode and Linear updates in the main agent.
+- `subagent-routing`: chooses and briefs specialized subagents while keeping Linear updates and final workflow decisions in the main agent.
 - `agent-creator`: helps create or update project-local Codex custom subagents.
 - `agent-sop`: runs staged implementation, validation, QA, and rework orchestration.
 - `blocker-resume`: inspects blocked Linear work and either resumes through task execution or asks for the missing decision.
@@ -95,7 +95,7 @@ Bundled subagent prompt entries:
 - `Subagent Routing`
 - `Task Runner`
 
-Specialized implementation, QA, review, research, or integration subagents are project/user agents. VibeRig routes to them through `subagent-routing`; subagents must not use context-mode, update Linear, or make final acceptance decisions.
+Specialized implementation, QA, review, research, or integration subagents are project/user agents. VibeRig routes to them through `subagent-routing`; subagents must not update Linear or make final acceptance decisions.
 
 ## Workflow
 

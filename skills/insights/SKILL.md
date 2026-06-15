@@ -63,7 +63,6 @@ Prefer explicit evidence over conversation memory:
 7. `.vibeRig/requirements/{requirement-id}/validation.md`
 8. Git diff, commits, PR description, and changed files
 9. Validation output, CI URLs, screenshots, logs, and manual review notes
-10. context-mode evidence only from the main agent when available
 
 ## Language Policy
 

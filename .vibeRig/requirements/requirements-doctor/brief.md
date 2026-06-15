@@ -35,7 +35,7 @@ The command should help users catch missing required files, invalid JSON, schema
 - The implementation should be a script or lightweight module that can be tested with `pytest`.
 - The command must not mutate requirement files.
 - Error messages should be deterministic enough for tests.
-- Subagents used during SOP execution must not use context-mode or update Linear.
+- Subagents used during SOP execution must not update Linear or make final acceptance decisions.
 
 ## Decisions
 

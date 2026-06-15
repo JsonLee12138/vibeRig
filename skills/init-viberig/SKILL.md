@@ -12,7 +12,7 @@ VibeRig is a Codex plugin protocol, not a local dashboard or local task engine. 
 - Local `.vibeRig/requirements/`: versioned requirement, contract, architecture, acceptance, validation, and Mermaid documents.
 - Local `.vibeRig/project.yaml`: machine-readable project registration, workflow policy, and project output language.
 - Linear Project, issues, sub-issues, and comments: task state, ownership, execution status, acceptance conclusion, and proof packets.
-- Codex main agent: context summary, subagent routing, validation, and Linear updates.
+- Codex main agent: subagent routing, validation, and Linear updates.
 - Git worktrees: isolated task execution directories under the project `.worktrees/` root.
 
 ## Contract
@@ -103,8 +103,6 @@ subagents:
   default_qa: "qa"
   default_review: "code_review"
   default_integration: "integrator"
-context_mode:
-  main_agent_only: true
 ```
 
 ## Linear Registration
@@ -167,7 +165,7 @@ Use both `.vibeRig/project.yaml` and the Linear Project Document. The YAML is fo
 
 Before reporting complete initialization, verify:
 
-- `.vibeRig/project.yaml` exists and contains project, docs, output, workspace, pull request, Linear, gate policy, subagent, and context-mode sections.
+- `.vibeRig/project.yaml` exists and contains project, docs, output, workspace, pull request, Linear, gate policy, and subagent sections.
 - `.vibeRig/project.yaml` records `output.language` as a stable BCP 47-style language tag such as `zh-CN` or `en-US`.
 - Root `AGENTS.md` exists and tells agents to use `.vibeRig/project.yaml` `output.language` for VibeRig human-facing records.
 - `.vibeRig/requirements/` exists.
@@ -186,4 +184,4 @@ Report partial initialization when only local files were created.
 - Do not generate `tasks.yaml`.
 - Do not make CI mandatory for all projects. Record the target project's chosen gate policy instead.
 - Do not report initialization as complete if Linear tools were available but `_save_project` or `_save_document` was skipped.
-- Main agent may use context-mode for discovery and summarization. Subagents must not use context-mode.
+- Subagents must not update Linear or make final acceptance decisions.

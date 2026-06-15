@@ -55,7 +55,7 @@ Do not claim an issue is unblocked unless the blocking evidence is resolved and 
 - Validation logs or CI URLs referenced from Linear comments.
 - Prior subagent handoff notes.
 
-The main agent may use context-mode to summarize large histories or logs. Subagents must not use context-mode.
+Read Linear comments, blocker comments, proof packet comments, and linked validation or CI evidence before classifying whether the blocker is resolved.
 
 ## Language Policy
 
@@ -111,4 +111,4 @@ Before reporting recovery, verify:
 - Do not edit SQLite files, local runtime state, or generated dashboard data.
 - Do not create a local proof packet directory.
 - Do not mark an issue unblocked or done unless the blocker evidence is resolved.
-- Do not let subagents update Linear or use context-mode.
+- Do not let subagents update Linear.

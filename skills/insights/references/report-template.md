@@ -29,7 +29,7 @@ keys, and code symbols unchanged.
 - Task contract:
 - Acceptance notes:
 - Code review notes:
-- Context-mode evidence:
+- Linear comment evidence:
 
 ## Friction
 

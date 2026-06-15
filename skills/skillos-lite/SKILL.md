@@ -28,7 +28,7 @@ Required:
 Optional:
 
 - Requirement docs under `.vibeRig/requirements/{requirement-id}/`.
-- Git diff, changed files, CI links, screenshots, logs, and context-mode summaries gathered by the main agent.
+- Linear comments, proof packet comments, review comments, git diff, changed files, CI links, screenshots, and logs.
 - Related skill paths under `skills/`.
 
 If required evidence is missing, return a `noop` proposal explaining the missing acceptance boundary.
@@ -66,8 +66,8 @@ Never propose physical deletion from a single accepted task.
    - accepted AC ids and residual risk decision
    - validation commands and results
    - PR, commit, and changed files
-   - review comments and proof packet findings
-   - relevant requirement docs and context-mode summaries
+   - Linear review comments and proof packet findings
+   - relevant requirement docs
 4. Identify related skills by matching evidence against `skills/*/SKILL.md` names, descriptions, contracts, and validation sections.
 5. Classify the curation need as `insert`, `update`, `deprecate`, or `noop`.
 6. Score confidence and risk:

@@ -66,18 +66,6 @@
       },
       "additionalProperties": true
     },
-    "context_mode": {
-      "type": "object",
-      "properties": {
-        "available": { "type": "boolean" },
-        "summary": { "type": "string" },
-        "queries": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
-      },
-      "additionalProperties": true
-    },
     "learning_candidates": {
       "type": "array",
       "items": {

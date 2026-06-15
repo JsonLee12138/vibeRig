@@ -90,8 +90,6 @@ subagents:
   default_qa: "qa"
   default_review: "code_review"
   default_integration: "integrator"
-context_mode:
-  main_agent_only: true
 """
 
 
@@ -143,8 +141,6 @@ def ensure_project_yaml(path: Path, content: str) -> bool:
             "  default_review: \"code_review\"\n"
             "  default_integration: \"integrator\"\n"
         )
-    if "\ncontext_mode:" not in f"\n{updated}":
-        updated += "\ncontext_mode:\n  main_agent_only: true\n"
     if updated == existing:
         return False
     path.write_text(updated, encoding="utf-8")

@@ -158,7 +158,7 @@ When delegating to `agent-sop`, provide:
 - Bug description and root cause from Phase 1.
 - Confirmed fix approach from the user.
 - Affected files and modules.
-- Constraints: follow local patterns, protect unrelated changes, no context-mode inside subagent.
+- Constraints: follow local patterns, protect unrelated changes, no Linear/status updates inside subagent.
 - Expected artifact: the fix implementation with validation evidence.
 
 When delegating root cause analysis, provide:

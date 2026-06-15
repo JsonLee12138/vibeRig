@@ -82,7 +82,7 @@ url = "https://stitch.googleapis.com/mcp"
             self.assertIn('project_id: "project-123"', project_yaml)
             self.assertIn('ci_required: "project_decides"', project_yaml)
             self.assertIn('- "npm test"', project_yaml)
-            self.assertIn("main_agent_only: true", project_yaml)
+            self.assertNotIn("context_mode:", project_yaml)
             self.assertNotIn("codex-cli-mcp", project_yaml)
             self.assertFalse((project_root / ".vibeRig" / "config.yaml").exists())
             self.assertTrue((project_root / ".vibeRig" / "requirements").is_dir())
@@ -105,7 +105,7 @@ url = "https://stitch.googleapis.com/mcp"
             self.assertIn("linear:", content)
             self.assertIn("gate_policy:", content)
             self.assertIn("subagents:", content)
-            self.assertIn("context_mode:", content)
+            self.assertNotIn("context_mode:", content)
 
     def test_linear_native_plan_audit_passes(self) -> None:
         result = subprocess.run(

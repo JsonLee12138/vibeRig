@@ -211,5 +211,5 @@ Before final reporting, verify:
 - Do not remove worktrees outside the configured project `.worktrees/` directory.
 - Do not archive active requirement docs for partial, rejected, blocked, or unverified acceptance.
 - Do not overwrite existing archived requirement docs.
-- Do not use context-mode inside subagents. The main agent may use context-mode to summarize large evidence before writing the acceptance comment.
+- Before running insights, read the Linear acceptance comment, proof packet comments, review notes, and linked PR/validation evidence.
 - Do not update skills from weak evidence, failed work, or unaccepted work.

@@ -135,4 +135,4 @@ Before reporting plan sync complete, verify:
 - Do not force English Linear issue content. Use `.vibeRig/project.yaml` `output.language` for human-facing issue text and comments.
 - If Linear tools are unavailable, produce a concise issue-draft summary in the chat and stop before pretending issues were created.
 - Do not claim plan sync is complete when `_save_issue` or `_save_comment` was skipped despite available Linear tools.
-- Main agent may use context-mode for summarizing docs and history. Subagents must not use context-mode.
+- Subagents must not update Linear or status unless explicitly routed by the main agent through this workflow.
