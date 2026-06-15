@@ -57,6 +57,7 @@ Do not claim a task is ready for human acceptance unless validation is sufficien
 
 - Every Linear task execution must declare and use a suitable subagent through `subagent-routing`.
 - Default to an isolated git worktree for all task execution work. Direct development in the current main workspace is allowed only when the user explicitly asks to modify the main/current workspace.
+- A branch is not an execution workspace. Creating or switching to a task branch in the main checkout does not satisfy worktree mode.
 - Subagents must not use context-mode.
 - Subagents must not update Linear, project status, acceptance status, or final proof.
 - The main agent owns context-mode, final validation, acceptance mapping, Linear comments, and status updates.
@@ -68,16 +69,46 @@ Do not claim a task is ready for human acceptance unless validation is sufficien
 - When `pull_request.required` is true or absent, do not finish a successful implementation without creating or updating a PR and recording its URL.
 - Do not merge the PR or remove the task worktree from this skill. Merge and cleanup belong to `human-acceptance` after explicit user acceptance.
 
-## Worktree Policy
+## Workspace And Worktree Policy
 
-Before implementation, explicitly decide where the task will run:
+Before implementation, explicitly decide where the task will run. This workspace decision is separate from the branch decision.
 
-- Default: create or reuse an isolated git worktree for the Linear issue.
+Workspace modes:
+
+- `worktree`: default. Create or reuse an isolated git worktree for the Linear issue.
+- `current-workspace`: explicit exception. Use only when the user explicitly asks to work in the main/current workspace, or explicitly authorizes it after worktree creation fails.
+
+For `worktree` mode:
+
 - Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to the project `.worktrees/` directory.
 - Worktree directory pattern: project `.worktrees/` plus issue key and short slug.
 - Preferred branch naming: `codex/{issue-key}-{short-slug}` when a branch is needed.
-- Use the current main workspace only when the user explicitly asks to work in the main/current workspace.
-- When using the current workspace, inspect dirty files first and protect unrelated user changes.
+- Create or reuse the task branch inside the selected worktree.
+- Verify the selected path appears in `git worktree list` before implementation.
+
+Use these command templates for worktree setup:
+
+```bash
+git worktree list
+git worktree add -b codex/<issue-key>-<short-slug> <worktree-path> <base-ref>
+git worktree list
+```
+
+If the task branch already exists and is not checked out by another worktree, use:
+
+```bash
+git worktree add <worktree-path> codex/<issue-key>-<short-slug>
+git worktree list
+```
+
+For `current-workspace` mode:
+
+- Use the current project checkout path.
+- Inspect dirty files first and protect unrelated user changes.
+- Creating or switching to a task branch in the current checkout is allowed only as a branch decision; it does not make the workspace a worktree.
+
+For all modes:
+
 - Record the worktree/main-workspace decision and reason in the Proof Packet.
 - Pass the selected workspace path to the subagent in the Task Brief.
 

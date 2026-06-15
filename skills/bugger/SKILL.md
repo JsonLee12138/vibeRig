@@ -98,7 +98,7 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing bug reco
    - **On `main`**: fix and commit directly. Do not create a new branch unless the user explicitly asks.
 2. Mark the bug issue as actively being fixed:
    - use `_save_issue` to move the issue to the mapped in-progress equivalent before code changes begin
-3. Delegate the fix to `agent-sop`:
+3. Delegate the fix to `agent-sop` with a required implementation subagent:
    - provide the confirmed root cause, fix approach, and affected files
    - agent-sop handles the multi-phase execution: test decision, implementation, verification
    - agent-sop must follow local patterns and protect unrelated changes
