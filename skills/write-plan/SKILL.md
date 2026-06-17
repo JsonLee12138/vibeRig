@@ -71,19 +71,48 @@ Linear issue titles, descriptions, sub-issue names, plan-sync comments, and chat
 
 Read [references/linear-child-issue-template.md](./references/linear-child-issue-template.md) when composing Linear sub-issues. Each task must include: goal, source doc paths, AC references, validation command/gate, recommended subagent, and a proof packet placeholder.
 
+## Task Sizing Guidelines
+
+Size every task before creating it. Prefer S and M tasks — agents and humans perform best on focused, well-scoped work.
+
+| Size | Files touched | Scope | Example |
+|------|--------------|-------|---------|
+| XS | 1 | Single function or config change | Add a validation rule |
+| S | 1–2 | One endpoint or component | New API route |
+| M | 3–5 | One feature slice | User registration flow |
+| L | 5–8 | Multi-component feature | Search with filtering and pagination |
+| XL | 8+ | **Too large — break down further** | — |
+
+Break down further when: the task would take more than one focused session, acceptance criteria need more than 3 bullet points, it touches two independent subsystems, or the title contains "and" (a sign it is two tasks).
+
+## Task Dependency Order
+
+Before writing tasks, map the dependency graph from `architecture.md`:
+
+```
+Database schema → Models/Types → API endpoints → Frontend client → UI components
+```
+
+Implementation order follows the dependency graph bottom-up. Build foundations first so later tasks have a stable base.
+
+**Vertical slicing (preferred):** Build one complete user-facing path per task rather than all-DB then all-API then all-UI. Each task should deliver working, testable functionality.
+
 ## Workflow
 
 1. Resolve the target project root and `.vibeRig/project.yaml`.
 2. Resolve the requirement directory and validate all required Docs as Code inputs exist.
-3. Validate `contract.json` against `contract.schema.json` and `acceptance.json` against `acceptance.schema.json` when a local JSON Schema validator is available. If validation cannot run, report the skipped check.
-4. Check consistency:
+3. Map the dependency graph from `architecture.md` before writing tasks (see Task Dependency Order above).
+4. Validate `contract.json` against `contract.schema.json` and `acceptance.json` against `acceptance.schema.json` when a local JSON Schema validator is available. If validation cannot run, report the skipped check.
+5. Check consistency:
    - every goal/non-goal in `brief.md` has contract coverage or is explicitly out of scope
    - every acceptance item has source, precondition, action, expected result, evidence, and validation mode
    - every implementation task maps to at least one acceptance ID
    - validation gates match `.vibeRig/project.yaml`
    - risks from `research.md` or `architecture.md` are represented in tasks or validation
-5. Use `subagent-routing` to choose recommended subagent capabilities for research follow-up, implementation, QA, review, and integration tasks.
-6. Use the `linear` skill/plugin to create or update the parent issue and child issues with concrete Linear app tools:
+6. Use `subagent-routing` to choose recommended subagent capabilities for research follow-up, implementation, QA, review, and integration tasks.
+7. Apply task sizing (see guidelines above): size every task as XS/S/M/L/XL before creating it. Break down any XL task. Aim for S and M tasks.
+8. Add explicit checkpoint tasks after every 2–3 implementation tasks. A checkpoint task requires: all tests pass, build is clean, and the core user flow works end-to-end before proceeding to the next phase.
+9. Use the `linear` skill/plugin to create or update the parent issue and child issues with concrete Linear app tools:
    - `_list_issue_statuses` to resolve valid workflow states for the target team
    - `_list_issue_labels` and `_create_issue_label` to reuse or create VibeRig labels
    - `_list_issues` to detect existing parent/child issues before creating duplicates
@@ -99,6 +128,8 @@ Read [references/linear-child-issue-template.md](./references/linear-child-issue
 - A Linear issue description contains the full local doc instead of a reference path → descriptions must link to paths, not paste documents.
 - `_save_issue` was skipped and a chat summary was substituted for Linear output → if Linear tools are available, use them; a chat summary is not a plan sync.
 - A task was created without mapping to at least one AC id → every sub-issue must trace to acceptance criteria.
+- `subagent-routing` was called without reading the requirement docs first → subagent selection requires knowing the task's domain and risk; select after reading docs, not before.
+- An implementation task was created without a recommended subagent capability field → `task-runner` uses this field for routing; omitting it forces re-analysis at execution time.
 
 ## Anti-Rationalization
 
@@ -107,8 +138,9 @@ Read [references/linear-child-issue-template.md](./references/linear-child-issue
 | "I'll create the issues and check for duplicates afterward" | Creating duplicates is a destructive Linear operation. The check must come before creation — `_list_issues` is the gate. |
 | "The description is easier to understand with the full doc pasted in" | Full docs in Linear descriptions diverge from local docs the moment either is edited. Reference the path; the local doc is the contract. |
 | "Schema validation is slow, I'll skip it and trust the JSON looks right" | JSON that looks right can still violate required fields or AC-id consistency. Run validation or explicitly document why it was skipped. |
+| "I'll pick a generic subagent since the specific capability doesn't matter much" | Capability matching matters for execution quality. Use the most specific available capability; fall back to generic only when nothing closer is available and record the routing risk. |
 
-## Validation
+## Verification Checklist
 
 ```bash
 # Confirm required docs exist before plan sync
@@ -120,9 +152,11 @@ done
 - [ ] All required Docs as Code files exist.
 - [ ] `contract.json` and `acceptance.json` were schema-validated or the skipped validation reason is reported.
 - [ ] Each Linear task maps to at least one acceptance ID and validation expectation.
+- [ ] Each Linear sub-issue includes a recommended subagent capability field.
 - [ ] Existing Linear issues were checked with `_list_issues` before creation.
 - [ ] `_save_issue` and `_save_comment` ran successfully when Linear tools were available.
 - [ ] Any local docs updates only add stable Linear references, not full document content.
+- [ ] Linear issue descriptions reference doc paths, not pasted doc content.
 
 ## Hard Rules
 

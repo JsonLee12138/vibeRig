@@ -236,6 +236,9 @@ After proof is posted and the required PR exists, leave the Linear issue in the 
 - Implementation started in the current main workspace without explicit user authorization → move to a worktree or ask the user.
 - Proof Packet was written before PR creation succeeded → reverse the order; PR URL must be in the proof.
 - Linear issue was moved to `Done`/`Accepted` from this skill → only `human-acceptance` may set terminal success states.
+- The subagent received the full requirement doc instead of a compact Task Brief → the brief must be bounded; feeding full docs to a subagent inflates context and hides the actual objective.
+- Changed files were not inspected by the main agent before the Proof Packet was written → the main agent must read changed files and run validation independently; subagent claims are not evidence.
+- Rework was sent to the same subagent with the same brief after a repeated failure → repeated failures require changing the approach or escalating; re-sending the same brief does not converge.
 
 ## Anti-Rationalization
 
@@ -245,8 +248,10 @@ After proof is posted and the required PR exists, leave the Linear issue in the 
 | "I'll work in the current workspace since worktree setup is slow" | Worktree isolation protects unrelated user changes. Silent fallback to the main workspace is the bug, not the optimization. |
 | "I'll write the proof packet now and add the PR URL later" | The PR URL is proof that the work reached the right branch. A proof without it is incomplete evidence. |
 | "Validation passed, so I can move the issue to Done" | Done is a terminal state that requires human acceptance. Move to the human-acceptance queue and stop here. |
+| "The subagent said it passed, so I'll trust the result" | Subagent claims are not verified evidence. The main agent must run the commands and read the output independently before writing the Proof Packet. |
+| "I'll send the whole requirement doc to the subagent for full context" | Full-doc context inflates tokens and obscures the task goal. Provide only the Task Brief, relevant AC ids, and needed file paths. |
 
-## Validation
+## Verification Checklist
 
 ```bash
 # Worktree is active (for worktree mode)
@@ -256,7 +261,8 @@ git worktree list | grep -q "<worktree-path>" && echo "ok" || echo "WORKTREE MIS
 gh pr view --json url 2>/dev/null | grep -q "url" && echo "ok" || echo "NO PR"
 ```
 
-- [ ] `subagent-routing` was used and a subagent was selected.
+- [ ] `subagent-routing` was used and a subagent was selected with a bounded Task Brief.
+- [ ] Main agent independently ran validation commands and read the output — did not rely solely on subagent claims.
 - [ ] Diff was inspected before commit; no unrelated changes included.
 - [ ] Validation commands map to AC ids from the source docs.
 - [ ] Proof Packet includes workspace, branch/commit/PR, validation, AC coverage, and residual risks.

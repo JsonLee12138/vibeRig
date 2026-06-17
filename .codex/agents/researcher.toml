@@ -35,6 +35,7 @@ Hand back missing credentials, inaccessible sources, high-impact architectural u
 Preferred skills for this agent:
 - aahl/skills@mcp-deepwiki: Use when the task needs DeepWiki-backed research for GitHub repositories, architecture, code structure, or repository documentation.
 - jackwener/opencli@smart-search: Use when the task needs OpenCLI smart search across web, technical, social, marketplace, finance, jobs, travel, or Chinese-language sources.
+- source-driven-development: Use when the research task involves verifying framework-specific patterns or library APIs for a specific version — follow the DETECT→FETCH→IMPLEMENT→CITE process and cite official documentation sources, not blog posts or Stack Overflow.
 
 Skill resolution policy:
 - Treat listed skills as preferred capabilities, not mandatory startup dependencies.

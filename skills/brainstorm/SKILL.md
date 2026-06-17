@@ -72,6 +72,16 @@ Read `.vibeRig/project.yaml` when present and use `output.language` for every hu
 
 Run one approved stage at a time unless the user explicitly asks for a full draft. Even in full-draft mode, stop for document-blocking unknowns.
 
+0. Intent Clarification (when the ask is underspecified)
+   - Check if the requirement is missing any of: who it's for, why now, what success looks like, what the binding constraint is.
+   - If underspecified, run clarification before drafting any file:
+     - State a hypothesis + confidence number (0–100%) in one sentence: "I think you want X. Confidence: ~40% — missing: why now and what success looks like."
+     - Ask one question at a time, each with your best guess attached. Wait for a response before the next question.
+     - When the user gives convention-signaling answers ("scalable", "clean", "modern"), probe: "If you didn't have to justify this to anyone, what would you actually want?"
+     - Continue until you can predict the user's reaction to the next three questions you'd ask.
+   - Produce a confirmed statement of intent (Outcome / User / Why now / Success / Constraint / Out of scope) before proceeding to Stage 1.
+   - Skip this stage only when: the requirement is already concrete with all dimensions stated, or the user explicitly asks for speed over verification.
+
 1. Intake Brief
    - Output: `brief.md`
    - Read `references/brief-template.md` first and follow its structure exactly; downstream `write-plan` parses these sections.
@@ -93,6 +103,7 @@ Run one approved stage at a time unless the user explicitly asks for a full draf
    - Read `references/architecture-template.md` first and follow its structure exactly.
    - Document selected approach, affected modules, data/state flow, boundaries, failure modes, migration notes, and integration points.
    - Use Mermaid diagrams for state, sequence, or flow when they clarify execution or acceptance.
+   - **Mandatory adversarial review**: after the `architecture.md` draft is ready, spawn an independent adversarial subagent with the sole mandate to attack the design. Brief it with: "Find every flaw, hidden assumption, missing failure mode, scalability cliff, security hole, and integration gap. Do NOT validate what works—your ONLY job is to disprove." Incorporate valid findings into `architecture.md` and record rejected findings with the rejection reason. Do not proceed to Stage 5 until this review is complete.
 5. Acceptance Matrix
    - Output: `acceptance.schema.json`, `acceptance.json`, and `acceptance.md`
    - Read `references/acceptance-template.md` first; `write-plan` maps these AC IDs into Linear issues.
@@ -151,6 +162,9 @@ Subagents must not update Linear. The main agent owns context gathering, file wr
 - `write-plan` was called directly from inside `brainstorm` instead of being invoked as a separate skill → brainstorm only prepares the docs; write-plan owns Linear writes.
 - `research.md` or `diagrams/` were skipped for a complex requirement → record the omission and reason; `write-plan` will fail without `architecture.md` and `acceptance.md`.
 - A fact in `contract.json` or `acceptance.json` was invented to fill a gap instead of being blocked → stop and ask the single most important blocking question.
+- `architecture.md` was drafted and Stage 4 was marked complete without invoking the adversarial review subagent → the review is mandatory; skipping it lets untested assumptions reach Linear as facts.
+- An acceptance criterion in `acceptance.json` lacks a `validation_mode` or `evidence` field → untestable criteria cause `task-runner` to fail validation at execution time; fix before proceeding to `write-plan`.
+- Multiple stages were written in a single pass without presenting intermediate drafts → each stage requires its own draft-and-approve cycle; batch-writing removes the user's ability to redirect before effort is wasted.
 
 ## Anti-Rationalization
 
@@ -159,8 +173,11 @@ Subagents must not update Linear. The main agent owns context gathering, file wr
 | "I'll write the file now and show the user afterward" | The Stage Gate requires approval before writing. Writing first removes the user's ability to redirect before effort is spent. |
 | "The requirement is simple, I can skip the adversarial review stage" | Skipping adversarial review is how untestable acceptance criteria reach Linear. A 5-minute score against the rubric catches ambiguity before it costs a full task cycle. |
 | "I'll infer the missing product decision from context" | Inferred product decisions that are wrong generate invalid contracts that fail late, during task execution. Ask the blocking question instead. |
+| "The architecture is obvious, adversarial review is overkill" | The bugs that hurt most hide in architectures that seem straightforward. An adversarial subagent costs one exchange; a missed failure mode costs a full task cycle. |
+| "The user described the requirement in detail, so research is unnecessary" | Even precise requirements have implicit integration constraints, runtime risks, and gaps the user doesn't know to mention. `research.md` surfaces what affects architecture and acceptance. |
+| "I'll skip schema validation since the JSON looks right" | JSON that looks right can still violate required fields or AC-id consistency. Run validation or explicitly document why it was skipped. |
 
-## Validation
+## Verification Checklist
 
 ```bash
 # Confirm required docs exist
@@ -172,7 +189,9 @@ done
 - [ ] `brief.md` has goals, non-goals, success signals, constraints, and decisions.
 - [ ] `contract.json` validates against `contract.schema.json` or skipped validation is documented with reason.
 - [ ] `architecture.md` covers affected modules, data/state flow, errors, and integration boundaries.
+- [ ] Adversarial architecture subagent was invoked for Stage 4; valid findings incorporated; rejected findings recorded with reason.
 - [ ] `acceptance.json` validates against `acceptance.schema.json` or skipped validation is documented with reason.
 - [ ] `acceptance.md` contains stable AC IDs matching `acceptance.json`.
+- [ ] Every AC item has `evidence` and `validation_mode` fields specified.
 - [ ] `validation.md` names required commands, manual checks, CI/gate policy references, and evidence expectations.
 - [ ] Human-readable docs use `output.language` from `.vibeRig/project.yaml`.

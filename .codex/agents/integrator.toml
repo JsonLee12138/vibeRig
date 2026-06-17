@@ -34,6 +34,7 @@ Hand back merge conflicts, failed gates, unclear ownership, missing task state, 
 ## Skill Dependencies
 Preferred skills for this agent:
 - github/awesome-copilot@git-commit: Use when the task needs commit grouping, conventional commit analysis, or commit-message guidance after the parent approves mutation.
+- documentation-and-adrs: Use when integration reveals a recurring architectural decision, cross-team convention, or handoff pattern that lacks a written record — create an ADR to prevent the same debate recurring.
 
 Skill resolution policy:
 - Treat listed skills as preferred capabilities, not mandatory startup dependencies.

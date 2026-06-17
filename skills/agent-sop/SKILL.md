@@ -15,6 +15,33 @@ Do not require tests for every task. Always make an explicit test decision. Use 
 
 Subagents must not mutate Linear status, mutate VibeRig task/run/acceptance status, or make final acceptance calls. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent writes the proof packet and status update to Linear when the task is Linear-backed, using `_save_comment` for proof comments and `_save_issue` for issue status or metadata updates.
 
+## Core Behaviors
+
+These apply at all times, to the main agent and any subagent brief. They are non-negotiable.
+
+**1. Surface assumptions explicitly.** Before any non-trivial implementation, write down assumptions:
+```
+ASSUMPTIONS I'M MAKING:
+1. [assumption about scope]
+2. [assumption about architecture]
+→ Correct me now or I'll proceed with these.
+```
+Do not silently fill in ambiguous requirements. Surface uncertainty early — it's cheaper than rework.
+
+**2. Manage confusion actively.** When encountering inconsistencies, conflicting requirements, or unclear specs:
+- STOP. Do not proceed with a guess.
+- Name the specific confusion.
+- Present the tradeoff or ask the clarifying question.
+- Wait for resolution before continuing.
+
+**3. Push back when warranted.** When an approach has clear problems: point out the issue directly, explain the concrete downside (quantify when possible — "this adds ~200ms latency"), propose an alternative, then accept the human's decision if they override with full information. Sycophancy ("Of course!") followed by implementing a bad idea helps no one.
+
+**4. Enforce simplicity.** Before finishing any implementation, ask: Can this be done in fewer lines? Are these abstractions earning their complexity? Would a staff engineer say "why didn't you just..."? Prefer the boring, obvious solution. Three similar lines is better than a premature abstraction.
+
+**5. Maintain scope discipline.** Touch only what the task requires. Do NOT remove comments you don't understand, "clean up" code orthogonal to the task, refactor adjacent systems, delete seemingly unused code without approval, or add features not in the spec. Surgical precision, not unsolicited renovation.
+
+**6. Verify, don't assume.** A task is not complete until verification passes. "Seems right" is never sufficient — there must be evidence (passing tests, build output, runtime data).
+
 ## Input Contract
 
 Required:
@@ -86,8 +113,22 @@ Run the SOP in this order:
 7. Delegate final QA acceptance.
    - Provide requirement summary, changes, skipped items, and verification evidence.
    - Require a PASS, REWORK, or BLOCKED verdict with reasons.
-8. Deliver the final response.
-   - Include completed work, verification results, skipped tests or checks with reasons, QA verdict, and residual risks.
+8. Run parallel quality review (when the task involves non-trivial code changes).
+   - Read `.vibeRig/project.yaml` `subagents` to resolve the three review roles:
+     - **Code reviewer**: use `subagents.default_review`; if unset, find the closest code-review capability in `.codex/agents/`.
+     - **Security auditor**: use `subagents.default_security_audit`; if unset, find the closest security capability in `.codex/agents/`.
+     - **Test engineer**: use `subagents.default_test_engineer`; if unset, find the closest test/coverage capability in `.codex/agents/`.
+   - Issue all three subagent briefs in a single turn so they run concurrently. For each role, brief the resolved agent with its expected output:
+     - Code reviewer: review the diff across five dimensions (correctness, readability, architecture, security, performance). Return an APPROVE / REQUEST CHANGES verdict with Critical / Important / Suggestion findings; no fixes applied.
+     - Security auditor: scan the same diff for vulnerabilities, injection risks, auth gaps, and data exposure. Return findings with Critical / High / Medium / Low / Info severity and proof-of-concept descriptions for Critical issues; no fixes applied.
+     - Test engineer: assess whether the changed behavior has adequate test coverage. Follow the Prove-It Pattern for bug fixes. Return coverage gaps with severity; no production code changes.
+   - After all three return, synthesize findings into a single quality report.
+   - Block delivery on any Critical finding from any reviewer. Fix all Critical issues and re-run affected checks before proceeding.
+   - Include Important / High findings and residual risks in the final response even when not blocking.
+   - If a role is not configured and no capable agent exists, execute that review phase directly as main agent and record the missing capability.
+   - Skip this step for documentation-only changes, trivial config edits, or when the task explicitly scopes out code changes.
+9. Deliver the final response.
+   - Include completed work, verification results, skipped tests or checks with reasons, QA verdict, parallel review summary, and residual risks.
 
 ## Rework Loop
 
@@ -172,6 +213,8 @@ Return: fix summary, evidence, remaining risk.
 - The main agent accepted a subagent result without running any verification → main-agent verification (step 6) is not optional.
 - The rework loop ran more than 3 rounds on the same issue family without escalating → escalate after 2 repetitions of the same failure; more loops do not fix direction errors.
 - A subagent updated Linear, changed issue status, or wrote proof packets → subagents return phase evidence only; all Linear writes belong to the main agent.
+- The parallel quality review (step 8) was skipped for a non-trivial code change → Critical findings from code review, security, or test coverage that reach `accept` or `accept-bug` are more expensive to fix than catching them here.
+- A Critical finding from the parallel review was noted but delivery proceeded anyway → Critical findings must be fixed before the final response is delivered.
 
 ## Anti-Rationalization
 
@@ -194,6 +237,8 @@ Minimum validation is a main-agent decision covering:
 - [ ] Whether tests are required and why (explicit decision recorded).
 - [ ] Which targeted tests, build, lint, typecheck, smoke, manual, or MCP-backed checks ran and their pass/fail.
 - [ ] Whether a QA/review capability returned PASS, REWORK, or BLOCKED when one was available.
+- [ ] For non-trivial code changes: parallel quality review ran (roles resolved from `.vibeRig/project.yaml` subagents or `.codex/agents/` fallback) and all Critical findings were resolved.
+- [ ] Parallel review summary (notable findings, residual risks) is included in the final response.
 - [ ] Which checks were skipped and what risk remains.
 
 If validation fails, run the Rework Loop before final reporting unless the failure requires user input, credentials, or external state.

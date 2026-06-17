@@ -134,6 +134,7 @@ dir=$(basename $(pwd)); grep "^name:" SKILL.md | grep -q "$dir" && echo "ok" || 
 
 # 3. No unresolved placeholders outside example blocks
 grep -n "<[a-z]" SKILL.md | grep -v "^\s*[-*].*example\|fenced\|template"
+
 ```
 
 - Confirm the skill has a clear contract, input contract, output contract, workflow, and validation guidance, or document why local convention intentionally differs.
