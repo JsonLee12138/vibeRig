@@ -48,10 +48,23 @@ Read `.vibeRig/project.yaml` and use `output.language` for all human-facing Line
 - Do not translate: stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, AC IDs, schema field names, code symbols, or existing Linear status names.
 - If the user provides acceptance text in another language, preserve exact quoted wording as evidence, then summarize the record in `output.language`.
 
+## Default Parameter
+
+The skill accepts exactly one of the following as its entry point:
+
+| Parameter form | Example |
+|---|---|
+| Task ID | `VB-42` |
+| Task title (partial match) | `"implement login flow"` |
+| Requirement ID | `REQ-007` |
+| Requirement title (partial match) | `"user authentication"` |
+
+When the argument resolves to a **requirement** (parent issue with subtasks), the skill applies the same acceptance decision to **all subtasks** in addition to the parent issue. List each subtask and its resulting status in the acceptance comment.
+
 ## Input Contract
 
 Required:
-- Linear issue key or URL.
+- **Entry point**: task ID, task title, requirement ID, or requirement title (see Default Parameter above).
 - Acceptance decision: accepted, partially accepted, rejected, or blocked.
 - Accepted AC ids and rejected/unverified AC ids.
 
@@ -76,23 +89,31 @@ Do not invent states that do not exist in the Linear team. If no close status ex
 ## Workflow
 
 1. Read `.vibeRig/project.yaml` for output language and Linear context.
-2. Read the target Linear issue, comments, and Proof Packet. Resolve PR URL, branch, commit, base branch, workspace path, and validation status.
-3. Confirm the human decision covers relevant AC ids.
-4. Run merge preflight (full acceptance with PR only):
+2. Resolve the entry point (task ID/title or requirement ID/title):
+   - use `_get_issue` for a named ID; use `_search` or `_list_issues` for title-based lookup
+   - if the resolved issue is a **requirement/parent issue**, use `_list_issues` (filtered by `parent`) to enumerate all subtasks — these form the acceptance queue
+   - if the resolved issue is a single task (no children), the queue contains only that one issue
+3. Read the target issue(s), comments, and Proof Packets. Resolve PR URL, branch, commit, base branch, workspace path, and validation status for each task in the queue.
+4. Confirm the human decision covers relevant AC ids.
+5. Run merge preflight for each task with a PR (full acceptance only):
    - **CI status**: all required checks must pass. If any required check is failing, pending, or missing, stop before merge.
    - **Conflicts**: PR branch must have no merge conflicts with the target base branch.
    - **Approvals**: PR must have required review approvals when branch protection is active.
-   - If any check fails, record the blocker in Linear and stop; do not move to a terminal state.
-5. Write the Linear acceptance comment with `_save_comment` (using [acceptance-comment-template.md](./assets/acceptance-comment-template.md)) before any status update.
-6. Update Linear issue status with `_save_issue` according to Status Mapping. Only use a terminal success state after PR merge succeeds.
-7. On full acceptance and successful PR merge: run `insights` → `skill-builder` for confirmed proposals. Write retrospective as a Linear comment.
-8. Archive requirement docs: move `.vibeRig/requirements/{id}/` to `.vibeRig/archive/requirements/{id}/`. Record source, destination, and any blocker.
-9. Clean the task worktree:
-   - **Confirm all commits are pushed**: run `git -C <worktree-path> log --oneline origin/<branch>..<branch>`. If any unpushed commits are listed, do NOT remove the worktree — push them first or ask the user.
-   - **Confirm clean state**: run `git -C <worktree-path> status --short`. If uncommitted or untracked files remain, do not remove unless the user explicitly authorizes discarding them.
-   - Only when both checks pass: run `git worktree remove <path>` with the verified task worktree path.
-   - Remove the local task branch only after the PR is merged and the worktree is removed.
-10. Report: acceptance decision, PR merge result, status update, insights summary, archival result, cleanup result.
+   - If any check fails, record the blocker in Linear and stop; do not move that task (or the parent) to a terminal state.
+6. Write the Linear acceptance comment with `_save_comment` (using [acceptance-comment-template.md](./assets/acceptance-comment-template.md)) before any status update.
+   - When the entry point is a requirement, write one comment on the parent issue listing all subtask outcomes.
+7. Update Linear status for **each subtask** in the queue with `_save_issue` according to Status Mapping. Only use a terminal success state after PR merge succeeds for that task.
+8. After all subtasks are updated, update the **parent requirement issue** status with `_save_issue`:
+   - Full acceptance of all subtasks → same terminal success state (Done/Accepted/Completed).
+   - Any subtask partial/blocked/rejected → closest non-terminal working state (In Progress / Blocked).
+9. On full acceptance and successful PR merge: run `insights` → `skill-builder` for confirmed proposals. Write retrospective as a Linear comment.
+10. Archive requirement docs: move `.vibeRig/requirements/{id}/` to `.vibeRig/archive/requirements/{id}/`. Record source, destination, and any blocker.
+11. Clean each task worktree (for worktree-mode tasks):
+    - **Confirm all commits are pushed**: run `git -C <worktree-path> log --oneline origin/<branch>..<branch>`. If any unpushed commits are listed, do NOT remove the worktree — push them first or ask the user.
+    - **Confirm clean state**: run `git -C <worktree-path> status --short`. If uncommitted or untracked files remain, do not remove unless the user explicitly authorizes discarding them.
+    - Only when both checks pass: run `git worktree remove <path>` with the verified task worktree path.
+    - Remove the local task branch only after the PR is merged and the worktree is removed.
+12. Report: acceptance decision, list of subtasks and their outcomes, PR merge results, status updates, insights summary, archival result, cleanup result.
 
 ## Red Flags
 

@@ -48,10 +48,23 @@ Read `.vibeRig/project.yaml` and use `output.language` for all human-facing Line
 - If `output.language` is missing, infer from the user's current working language and state the fallback.
 - Do not translate: stable IDs, file paths, commands, branch names, commit hashes, Linear keys, or existing Linear status names.
 
+## Default Parameter
+
+The skill accepts exactly one of the following as its entry point:
+
+| Parameter form | Example |
+|---|---|
+| Bug task ID | `VB-55` |
+| Bug task title (partial match) | `"login crash on empty password"` |
+| Requirement/parent ID | `REQ-003` |
+| Requirement/parent title (partial match) | `"auth bugs"` |
+
+When the argument resolves to a **parent issue with bug subtasks**, the skill applies the same acceptance decision to **all subtasks** and then updates the parent issue status to reflect the combined outcome.
+
 ## Input Contract
 
 Required:
-- Linear bug issue key or URL.
+- **Entry point**: bug task ID, task title, parent/requirement ID, or parent/requirement title (see Default Parameter above).
 - Explicit acceptance decision from the current user.
 
 Optional:
@@ -70,13 +83,21 @@ Do not invent states that do not exist in the Linear team.
 ## Workflow
 
 1. Read `.vibeRig/project.yaml` for output language and Linear context when available.
-2. Load the bug issue and fix evidence comments with `_get_issue` and `_list_comments`.
-3. Confirm the user has explicitly stated acceptance in the current turn.
-4. Write the acceptance comment with `_save_comment`:
-   - Include: user's acceptance statement, commit hash from fix evidence, manual checks performed, residual risks.
-5. Update the bug issue to Done/Accepted/Completed with `_save_issue`.
-6. Run lightweight insights if the fix reveals a reusable pattern worth capturing (optional, not default — use when the fix uncovers a non-obvious recurring failure mode, not routinely).
-7. Report: acceptance recorded, Linear status updated, any insights summary.
+2. Resolve the entry point (bug task ID/title or parent ID/title):
+   - use `_get_issue` for a named ID; use `_search` or `_list_issues` for title-based lookup
+   - if the resolved issue is a **parent with bug subtasks**, use `_list_issues` (filtered by `parent`) to enumerate all subtasks — these form the acceptance queue
+   - if the resolved issue is a single bug task (no children), the queue contains only that one issue
+3. Load each issue in the queue and its fix evidence comments with `_get_issue` and `_list_comments`.
+4. Confirm the user has explicitly stated acceptance in the current turn.
+5. Write the acceptance comment with `_save_comment`:
+   - When accepting a single bug: include user's acceptance statement, commit hash from fix evidence, manual checks performed, residual risks.
+   - When accepting a parent with subtasks: write one comment on the parent issue listing each subtask and its outcome (commit hash, manual checks, residual risks per subtask).
+6. Update **each bug subtask** to Done/Accepted/Completed with `_save_issue`.
+7. After all subtasks are updated, update the **parent issue** status with `_save_issue`:
+   - All subtasks accepted → Done/Accepted/Completed.
+   - Any subtask rejected or blocked → closest non-terminal working state (In Progress / Blocked).
+8. Run lightweight insights if the fix reveals a reusable pattern worth capturing (optional, not default — use when the fix uncovers a non-obvious recurring failure mode, not routinely).
+9. Report: acceptance recorded, list of subtasks and their final statuses, parent issue status, any insights summary.
 
 ## Red Flags
 

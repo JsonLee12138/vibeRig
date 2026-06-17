@@ -17,11 +17,26 @@ Do not use this skill for requirement discovery, Linear plan synthesis, final hu
 
 Stop and report when the Linear issue, source docs, subagent capability, workspace safety, required credentials, or PR path cannot be resolved.
 
+## Default Parameter
+
+The skill requires exactly one of the following as its entry point:
+
+| Parameter form | Example |
+|---|---|
+| Task ID | `VB-42` |
+| Task title (partial match) | `"implement login flow"` |
+| Requirement ID | `REQ-007` |
+| Requirement title (partial match) | `"user authentication"` |
+
+When the argument resolves to a **requirement** (parent issue), the skill runs **all its subtasks** in sequence before finishing. When it resolves to a single **task**, only that task is executed.
+
+If the argument is ambiguous (multiple matches), list candidates and ask the user to choose before starting work.
+
 ## Input Contract
 
 Required:
 
-- Target Linear issue key/url or enough project context to locate the next actionable issue.
+- **Entry point**: task ID, task title, requirement ID, or requirement title (see Default Parameter above).
 - `.vibeRig/project.yaml` or equivalent project registration.
 - Referenced requirement docs and acceptance IDs.
 - Validation expectations from docs, Linear, or project gate policy.
@@ -173,15 +188,15 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing executio
 2. Resolve Linear project/team ids from YAML or Linear search:
    - use `_list_projects` or `_search` when `.vibeRig/project.yaml` is missing project identifiers or the recorded project cannot be trusted
    - use `_list_issue_statuses` to understand the team's workflow states before moving issues
-3. Resolve the target Linear issue:
-   - use the issue named by the user when provided
-   - otherwise find the next actionable issue in the registered Linear Project
-   - if multiple plausible issues exist, ask the user to choose
-   - use `_get_issue` for a named issue and `_list_issues` for project/team queues
-4. Read the Linear issue description and comments for source doc paths, acceptance IDs, validation expectations, and recommended subagent:
+3. Resolve the entry point (task ID/title or requirement ID/title):
+   - use `_get_issue` for a named ID; use `_search` or `_list_issues` for title-based lookup
+   - if multiple plausible issues match, list them and ask the user to choose before proceeding
+   - if the resolved issue is a **requirement/parent issue**, use `_list_issues` (filtered by `parent`) to enumerate all sub-tasks; these form the execution queue
+   - if the resolved issue is a single **task** (no children), the queue contains only that one issue
+4. For each issue in the queue, read its description and comments for source doc paths, acceptance IDs, validation expectations, and recommended subagent:
    - use `_get_issue` for issue details
    - use `_list_comments` for proof packets, blockers, and prior handoff notes
-5. Read only the referenced local docs needed for the task.
+5. Read only the referenced local docs needed for the current task.
 6. Decide the workspace using the Worktree Policy and prepare the worktree when selected.
 7. Resolve branch and PR policy, including provider, base branch, draft setting, and whether PR submission is required.
 8. Build a compact Task Brief for the subagent.
@@ -191,6 +206,10 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing executio
 Read `assets/task-brief-template.md` before delegation and fill it with the resolved Linear issue, source docs, acceptance IDs, validation expectations, workspace decision, and pull request policy.
 
 ## Workflow
+
+The workflow runs once per task in the execution queue. When the entry point is a requirement, repeat steps 1–10 for each subtask in order. Complete all subtasks before writing the final summary.
+
+**Per-task loop** (repeat for each task in the queue):
 
 1. Select the appropriate subagent capability using `subagent-routing`.
    - If no suitable subagent exists or subagent tooling is unavailable, stop before implementation and report the missing capability instead of silently executing the Linear task directly.
@@ -210,11 +229,15 @@ Read `assets/task-brief-template.md` before delegation and fill it with the reso
    - push the task branch
    - create or update the PR
    - capture PR URL, branch, commit, base branch, and any CI/check URL
-9. If PR submission is required and fails, write a Linear blocker/comment with `_save_comment`, move/update the Linear issue to the closest blocked/waiting state with `_save_issue`, and stop before requesting human acceptance.
+9. If PR submission is required and fails, write a Linear blocker/comment with `_save_comment`, move/update the Linear issue to the closest blocked/waiting state with `_save_issue`, and stop the entire queue — do not continue to the next subtask until the blocker is resolved.
 10. When validation and required PR submission are sufficient, write a Linear proof packet comment and move/update the Linear issue to the closest `Human Acceptance`, waiting-for-review, or QA state:
-   - use `_save_comment` for the Proof Packet comment
-   - use `_save_issue` for issue status, labels, assignee, links, project, or relation updates
-11. Tell the user that final acceptance requires explicitly invoking `human-acceptance` with the accepted/rejected AC ids or an "all accepted" decision. Tell the user that PR merge and worktree cleanup happen only in `human-acceptance` after full acceptance.
+    - use `_save_comment` for the Proof Packet comment
+    - use `_save_issue` for issue status, labels, assignee, links, project, or relation updates
+
+**After all tasks in the queue are complete:**
+
+11. If the entry point was a requirement (parent issue), update the parent issue status to the closest `Human Acceptance` or waiting-for-review state to reflect that all subtasks have been submitted.
+12. Tell the user which tasks were completed, which (if any) are blocked, and that final acceptance for each task (and the parent requirement) requires explicitly invoking `accept` or `accept-bug` with the accepted/rejected AC ids. Tell the user that PR merge and worktree cleanup happen only in `accept` after full acceptance.
 
 ## Proof Packet Comment
 

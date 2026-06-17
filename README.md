@@ -4,6 +4,30 @@ VibeRig is a Codex plugin for Linear-native software delivery. It turns rough re
 
 Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
+```mermaid
+flowchart TD
+    S([▶ Start]) --> Init["vb-init\nInitialize project · once per project"]
+    Init --> Brainstorm["brainstorm\nDiscover & structure requirement"]
+    Brainstorm --> WritePlan["write-plan\nCreate Linear Issues from ACs"]
+    WritePlan --> TaskRunner["task-runner\nExecute a Linear task"]
+    TaskRunner --> Review{"Human\nReview"}
+    Review -->|"All ACs pass"| Accept["accept\nMerge PR · update Linear · archive docs"]
+    Review -->|"Needs rework"| TaskRunner
+    Review -->|"Blocked"| Blocker["blocker-resume\nUnblock & resume"]
+    Blocker --> TaskRunner
+    Accept --> Done([✅ Done])
+    Accept -."auto".-> Insights[/"insights\nPost-acceptance learning"/]
+
+    BugEntry(["🐛 Bug found"]) --> Bugger
+
+    subgraph BugFlow ["Bug Fix Flow"]
+        direction LR
+        Bugger["bugger\nRecord & analyze"] --> Bugfix["bugfix\nImplement fix"] --> AcceptBug["accept-bug\nClose Linear bug issue"]
+    end
+
+    AcceptBug --> Done
+```
+
 ## Contents
 
 1. [Prerequisites](#prerequisites)
@@ -136,7 +160,16 @@ Specialized implementation, QA, review, research, or integration subagents are p
 ## Workflow
 
 1. Initialize the project with `vb-init`.
-2. Discover and structure a requirement with `brainstorm`; review the generated files under `.vibeRig/requirements/<requirement-id>/`.
+2. Discover and structure a requirement with `brainstorm`. The skill produces a local Docs as Code contract under `.vibeRig/requirements/<requirement-id>/`:
+   - `brief.md` — requirement title and background
+   - `research.md` — optional technical research notes
+   - `contract.json` / `contract.schema.json` — structured feature contract
+   - `architecture.md` — design decisions and component boundaries
+   - `acceptance.json` / `acceptance.md` — acceptance criteria
+   - `validation.md` — validation approach and edge cases
+   - `diagrams/main-flow.mmd`, `diagrams/states.mmd` — optional Mermaid diagrams
+
+   Review and adjust these files before moving to the next step.
 3. Convert accepted planning output into Linear issues with `write-plan`.
 4. Execute a Linear issue with `task-runner`; VibeRig defaults to a project-local `.worktrees/<issue-key>-<short-slug>/` worktree, validates the result, submits or updates a PR, writes the proof packet to Linear, and moves the issue to a human-acceptance/review state.
 5. Manually call `accept` after reviewing the work. Full acceptance merges the PR into the target base branch, updates the final Linear status, runs post-acceptance insights and SkillOS-lite curation, applies any confirmed skill updates through `skill-builder`, archives the accepted requirement docs, and then removes the task worktree when safe.
