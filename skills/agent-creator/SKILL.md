@@ -11,9 +11,13 @@ Create Codex custom agents using the official custom agent TOML schema. Keep the
 
 Use this skill to create, update, or review one Codex custom subagent TOML file.
 
-Do not use this skill for normal `SKILL.md` packages; use `skill-builder` for skill creation or skill edits. Do not install skills, publish agents, or change global Codex settings unless the user explicitly asks.
+Do not use this skill for normal `SKILL.md` packages; redirect to `skill-builder` mid-task if this comes up during execution. Do not install skills, publish agents, or change global Codex settings unless the user explicitly asks.
 
 Stop and ask when the target agent job, write location, destructive permission, or required credentials cannot be inferred safely.
+
+Stop and ask when:
+- The user requests `sandbox_mode = "workspace-write"` but the described agent responsibility is read-only or analytical — confirm intent before writing.
+- Skill dependencies are requested but no skill identifiers are given and `find-skills` returns ambiguous candidates.
 
 ## Input Contract
 
@@ -56,7 +60,8 @@ Do not claim completion unless the TOML uses supported fields only and the agent
 4. Use `find-skills` to identify useful skills for the agent's job when skill dependencies are relevant.
 5. Ask the user which recommended skills should be listed as preferred skills.
 6. Add selected skill guidance only inside the `Skill Dependencies` section of `developer_instructions`.
-7. Create or update the TOML file, then check that it contains no custom schema fields.
+7. Copy [agent-template.toml](./assets/agent-template.toml) as the starting point, fill each section, then remove inapplicable sections. Keep `Mission`, `Scope`, and `Output` for every agent.
+8. Verify the TOML contains no custom schema fields before finishing.
 
 ## Field Rules
 
@@ -72,7 +77,7 @@ Do not claim completion unless the TOML uses supported fields only and the agent
 
 ## Developer Instructions Contract
 
-Write `developer_instructions` with these sections when applicable:
+Write `developer_instructions` with these sections when applicable. Use [agent-template.toml](./assets/agent-template.toml) as the base — fill each section and remove sections that do not apply. Always keep `Mission`, `Scope`, and `Output`.
 
 ```text
 ## Mission
@@ -110,8 +115,6 @@ Skill resolution policy:
 - If the skill cannot be installed or found, report the limitation and continue best-effort.
 ```
 
-Omit sections that do not apply, but keep `Mission`, `Scope`, and `Output` for every agent.
-
 ## Skill Dependency Guidance
 
 Use `find-skills` before adding preferred skills unless the user already gave exact skill identifiers. Present candidate skills with:
@@ -122,59 +125,42 @@ Use `find-skills` before adding preferred skills unless the user already gave ex
 
 After the user confirms selections, list them in `developer_instructions` under `Skill Dependencies`. Do not install missing skills during creation unless the user explicitly asks. Do not write `[[skills.config]]` by default; this skill favors instruction-level compatibility over hard binding.
 
-## TOML Template
+## Red Flags
 
-```toml
-name = "agent_name"
-description = "Use for a narrow, specific subagent responsibility."
-sandbox_mode = "read-only"
+Observable signs the agent being built has a quality problem — fix before finishing:
 
-developer_instructions = """
-## Mission
-Own one narrow responsibility.
+- `developer_instructions` has no `Not allowed:` list under `Scope` → the agent has no boundary enforcement.
+- `Mission` is more than two sentences → the agent has more than one job; split it.
+- `sandbox_mode = "workspace-write"` is set but `Not allowed:` does not explicitly name files or paths the agent must not touch.
+- `Output` section is absent or vague ("return the result") → the parent agent cannot reliably summarize or consume it.
+- Custom TOML fields appear (e.g., `[skills]`, `boundaries`, `scope`) → Codex will ignore or error on them.
+- `Skill Dependencies` lists skills the user did not confirm → remove unconfirmed suggestions.
 
-## Scope
-Allowed:
-- Do the assigned work.
+## Anti-Rationalization
 
-Not allowed:
-- Do adjacent work outside this role.
-- Spawn additional agents unless the parent explicitly asks.
-
-## Inputs
-Expect the parent agent to provide the task, relevant files or context, and expected output.
-
-## Output
-Return concise findings, file references when relevant, validation performed, and remaining risks.
-
-## Stop Conditions
-Stop and report when the task is complete, blocked, out of scope, or requires approval.
-
-## Escalation
-Hand back destructive operations, broad scope changes, missing credentials, production impact, or unclear requirements.
-
-## Skill Dependencies
-Preferred skills for this agent:
-- owner/repo@skill-name: Use when the task needs that capability.
-
-Skill resolution policy:
-- Treat listed skills as preferred capabilities, not mandatory startup dependencies.
-- Do not install skills during agent creation.
-- When a task requires a listed skill and it is not available locally, use find-skills to locate it.
-- Runtime installation is allowed only at project level.
-- Never perform global skill installation from this subagent.
-- If the skill cannot be installed or found, report the limitation and continue best-effort.
-"""
-```
+| Rationalization | Reality |
+|---|---|
+| "The Mission is clear, I don't need a Scope section" | Mission says what the agent does. Scope says what it must refuse. Without `Not allowed:`, any adjacent task can bleed in at runtime. |
+| "The agent only does one simple thing, Stop Conditions are obvious" | If they are obvious, write them in one line. If you skip them, the parent agent has no signal to stop delegating when the subagent is blocked. |
+| "workspace-write is fine — the agent is smart enough not to touch wrong files" | Smart is not a safety boundary. List the paths or patterns the agent must not touch explicitly in `Not allowed:`. |
+| "I'll add a few extra skills in Skill Dependencies just in case" | Only list skills the user confirmed. Unconfirmed skills mislead the runtime about actual capabilities and create false dependencies. |
+| "Output doesn't need a format — the parent will figure it out" | The parent agent summarizes subagent output. Without a defined format, summaries drift, evidence gets dropped, and the handoff breaks silently. |
+| "This TOML has no unsupported fields, I can see that visually" | Visual review misses subtle cases. Run the validation check — grep for known-invalid keys — before claiming the file is clean. |
 
 ## Validation
 
 Before finishing, verify:
 
-- The agent has one clear job.
-- Read-only agents cannot edit code.
-- Editing agents are scoped to small, defensible changes.
+```bash
+# No custom/unsupported fields in the TOML
+grep -En "^\[skills\]|^recommended_skills|^scope\s*=|^inputs\s*=|^outputs\s*=|^boundaries" *.toml && echo "INVALID FIELDS FOUND" || echo "ok"
+```
+
+- The agent has one clear job (Mission is ≤2 sentences).
+- Read-only agents have `sandbox_mode = "read-only"` and no file-edit instructions in `developer_instructions`.
+- Editing agents are scoped to small, defensible changes with explicit path exclusions in `Not allowed:`.
 - `developer_instructions` includes explicit allowed and not-allowed work.
 - Output expectations are concrete enough for the parent agent to summarize.
 - Skill dependencies are only instructions, not custom TOML fields.
 - Missing skills are resolved at runtime, project-level only, never globally by default.
+- Every listed skill was confirmed by the user before being added.

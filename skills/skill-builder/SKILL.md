@@ -13,7 +13,7 @@ Use this skill when creating, updating, reviewing, or troubleshooting an Agent S
 
 Do not use this skill for:
 - General prompt writing that will not become a reusable skill.
-- Creating custom subagent TOML files; use an agent-specific creator skill instead.
+- Creating custom subagent TOML files mid-task; redirect to `agent-creator` if this comes up during execution.
 - Installing, publishing, or globally syncing skills unless the user explicitly asks.
 
 Stop and ask only when the skill's target job, target location, or required proprietary/source material cannot be inferred safely. Otherwise make conservative assumptions and proceed.
@@ -50,11 +50,12 @@ Literal placeholders are allowed only inside fenced examples or templates that a
 2. Define the reusable job.
    - State one primary responsibility.
    - Identify clear exclusions so the skill does not become a catch-all workflow.
-3. Write the trigger first.
+3. **Write and validate the trigger first — before writing the body.**
    - Put all activation guidance in frontmatter `description`.
    - Describe user intent, task contexts, symptoms, file types, tools, and risk signals.
    - Include key terms users naturally say.
    - Do not summarize the whole internal workflow in the description.
+   - Mentally test against Trigger Quality Checks (see below) before moving on.
 4. Choose the resource plan.
    - Keep core workflow, critical gotchas, and validation rules in `SKILL.md`.
    - Put detailed API docs, framework variants, schemas, and long examples in one-level `references/` files.
@@ -68,11 +69,17 @@ Literal placeholders are allowed only inside fenced examples or templates that a
    - Prefer concrete procedures, defaults, and checklists over broad principles.
    - Match specificity to risk: flexible guidance for judgement tasks, exact commands/scripts for fragile operations.
 6. Validate.
-   - Check frontmatter has `name` and `description`.
-   - Confirm `name` matches the directory and uses lowercase hyphenated naming.
-   - Confirm no unresolved placeholders remain outside clearly marked example templates.
-   - Confirm all referenced files exist and are linked directly from `SKILL.md`.
-   - Confirm any bundled scripts are non-interactive and have clear usage or `--help`.
+   - Run the Validation checklist below before reporting completion.
+
+## Trigger Quality Checks
+
+Test the `description` against these before writing the body:
+
+**Should trigger** — mentally run 3-5 prompts that clearly need this skill and confirm the description would catch them.
+
+**Should not trigger** — mentally run 3-5 adjacent prompts that belong elsewhere and confirm the description would not capture them.
+
+Revise the description if it is too broad, too vague, or missing words users would naturally say.
 
 ## Recommended SKILL.md Shape
 
@@ -89,38 +96,49 @@ For skills that guide coding agents:
 - Prefer scoped changes over opportunistic refactors.
 - For high-risk work, use plan-validate-execute: write a short plan or mapping, validate it against the source of truth, then execute.
 
-## Trigger Quality Checks
+## Red Flags
 
-Before finishing, test the `description` mentally against:
-- Should trigger: 3-5 realistic user prompts that need this skill.
-- Should not trigger: 3-5 adjacent prompts that should stay with another skill or normal agent behavior.
+Observable signs that the skill being built is violating good practice — fix before finishing:
 
-Revise the description if it is too broad, too vague, or missing words users would naturally say.
+- `SKILL.md` exceeds ~200 lines → extract to `references/` or split into two skills.
+- `description` exceeds 3 lines → it is describing the workflow, not the trigger; trim to intent signals only.
+- The body says "see references for details" but no `references/` file exists.
+- A reusable template (>20 lines) is inlined in `SKILL.md` instead of living in `assets/`.
+- Validation section has only "confirm X" phrasing with no commands or exit criteria.
+- The skill handles more than one primary responsibility (two unrelated `##` workflow branches).
+- `references/` files link to other `references/` files (deep chain).
+
+## Anti-Rationalization
+
+Common shortcuts you might reach for — and why they fail:
+
+| Rationalization | Reality |
+|---|---|
+| "The description is clear enough to me" | If it is clear to you now, test it against what a new user would type in 3 months. Generic words like "create", "manage", or "handle" do not survive that test. |
+| "This SKILL.md is a bit long but it covers everything" | Length is a signal the skill has multiple jobs or the references are not extracted. A 300-line SKILL.md is two skills or one skill plus a missing `references/` file. |
+| "The template is short enough to inline" | Inline templates grow. The moment anyone edits `SKILL.md` to fix the template, the skill and template diverge. Move it to `assets/` now. |
+| "I'll skip Validation — the file looks fine" | Looking fine and being discoverable, placeholder-free, and linked correctly are different things. The checklist catches the class of errors you cannot see by reading. |
+| "The user didn't give me trigger examples, I'll skip that check" | Trigger quality is the single most important property of a skill. Without examples, draft 3-5 from the goal and test the description against them before writing anything else. |
+| "Common Mistakes covers the pitfalls, I don't need Red Flags" | Common Mistakes are for skill users at runtime. Red Flags are for you, right now, during authoring. They are different audiences. |
 
 ## Validation
 
 Minimum validation for every skill change:
 
-- Parse frontmatter and confirm `name` plus `description` are present.
-- Confirm the directory name matches `name`.
+```bash
+# 1. Frontmatter has name and description
+grep -E "^name:|^description:" SKILL.md | wc -l   # must be 2
+
+# 2. Directory name matches skill name
+dir=$(basename $(pwd)); grep "^name:" SKILL.md | grep -q "$dir" && echo "ok" || echo "MISMATCH"
+
+# 3. No unresolved placeholders outside example blocks
+grep -n "<[a-z]" SKILL.md | grep -v "^\s*[-*].*example\|fenced\|template"
+```
+
 - Confirm the skill has a clear contract, input contract, output contract, workflow, and validation guidance, or document why local convention intentionally differs.
 - Confirm references, scripts, and assets mentioned from `SKILL.md` exist.
 - Confirm placeholders exist only inside explicitly marked examples/templates.
 - Confirm every referenced template file exists and is directly linked from `SKILL.md`.
 - Confirm `SKILL.md` states when each template should be read, copied, or filled.
-- Confirm placeholders appear only in external template files or clearly marked inline examples.
 - Mentally test 3 should-trigger and 3 should-not-trigger prompts against the description.
-
-## Common Anti-Patterns
-
-- Generic descriptions such as `Helps with coding`.
-- A description that contains the whole workflow instead of activation guidance.
-- A `SKILL.md` that explains common concepts the model already knows.
-- One skill covering unrelated domains such as coding, deployment, design, PRs, and sales.
-- Missing input contract, output contract, stop conditions, or validation rules.
-- Deep reference chains where `SKILL.md` links to a file that links to another file.
-- Embedding long reusable templates directly in `SKILL.md` instead of moving them to `assets/` or `references/`.
-- Moving a template to `assets/` but leaving no instruction in `SKILL.md` for when to use it.
-- Rewriting repeated fragile logic in prose instead of providing a tested script.
-- Presenting many equal options without a default.
-- Claiming completion without verification evidence.
