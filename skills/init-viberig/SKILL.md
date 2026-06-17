@@ -68,42 +68,7 @@ Required rule:
 
 ## Required Project YAML
 
-`.vibeRig/project.yaml` is the machine-readable registration file. The canonical template is `references/project-config-template.md`; read it before writing the file and keep the inline copy below in sync with it. It should contain only stable project policy and pointers:
-
-```yaml
-version: 1
-project:
-  name: "<project-name>"
-  root: "."
-  repo_url: ""
-docs:
-  root: ".vibeRig/requirements"
-output:
-  language: "zh-CN"
-workspace:
-  worktrees_root: ".worktrees"
-pull_request:
-  required: "true"
-  provider: "auto"
-  base_branch: ""
-  draft: "false"
-linear:
-  team_id: ""
-  project_id: ""
-  project_document_id: ""
-  project_document_title: "VibeRig Project Registration"
-gate_policy:
-  ci_required: "project_decides"
-  required_commands: []
-  manual_checks: []
-subagents:
-  default_research: "researcher"
-  default_planning: "planner"
-  default_implementation: "implementation"
-  default_qa: "qa"
-  default_review: "code_review"
-  default_integration: "integrator"
-```
+`.vibeRig/project.yaml` is the machine-readable registration file. Read [references/project-config-template.md](./references/project-config-template.md) before writing the file and use it as the authoritative field set.
 
 ## Linear Registration
 
@@ -161,17 +126,37 @@ Use both `.vibeRig/project.yaml` and the Linear Project Document. The YAML is fo
 9. Check whether recommended project-level subagents exist under `.codex/agents/` only if the user wants project-local agents. Missing agents are handled through `subagent-routing`; do not block initialization.
 10. Report the project YAML path, AGENTS.md path/status, docs root, output language, Linear Project id/status, Linear Project Document id/status, and gate policy.
 
+## Red Flags
+
+- `.vibeRig/project.yaml` was created without Linear registration (when Linear tools are available) → report partial initialization; do not claim complete registration.
+- `_save_project` was called before checking for existing projects with `_search` or `_list_projects` → duplicate Linear projects corrupt the registration; search first.
+- The inline YAML template in this file was edited to fix a field rather than updating `references/project-config-template.md` → the canonical template is the reference file; keep them in sync.
+- `AGENTS.md` was not updated to include the VibeRig output language rule → downstream skills cannot reliably infer `output.language` without it.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "Linear registration failed, but the local files are done so I'll call it complete" | Registration is complete only when both local files and Linear (Project + Project Document) are reconciled. Partial initialization must be reported as partial. |
+| "I'll create the Linear project now and search for existing ones later" | Creating duplicates requires manual Linear cleanup. Search first, create only when no match exists. |
+| "The `output.language` field is optional, I'll skip it if the user doesn't mention it" | Missing `output.language` causes downstream skills to fall back to inference, which can produce mixed-language records in Linear. Set it explicitly — ask once if ambiguous. |
+
 ## Validation
 
-Before reporting complete initialization, verify:
+```bash
+# Confirm local files exist
+ls .vibeRig/project.yaml .vibeRig/requirements/ .worktrees/ AGENTS.md 2>&1
 
-- `.vibeRig/project.yaml` exists and contains project, docs, output, workspace, pull request, Linear, gate policy, and subagent sections.
-- `.vibeRig/project.yaml` records `output.language` as a stable BCP 47-style language tag such as `zh-CN` or `en-US`.
-- Root `AGENTS.md` exists and tells agents to use `.vibeRig/project.yaml` `output.language` for VibeRig human-facing records.
-- `.vibeRig/requirements/` exists.
-- `.worktrees/` exists or its absence is explained.
-- Linear Project and Project Document were created, found, or explicitly skipped because tools/auth were unavailable.
-- `.vibeRig/project.yaml` records resolved Linear ids after successful registration.
+# Confirm output.language is set
+grep "output:" .vibeRig/project.yaml && grep "language:" .vibeRig/project.yaml
+```
+
+- [ ] `.vibeRig/project.yaml` exists and has project, docs, output, workspace, pull request, Linear, gate policy, and subagent sections.
+- [ ] `output.language` is a BCP 47-style tag (`zh-CN`, `en-US`).
+- [ ] Root `AGENTS.md` includes the VibeRig output language rule.
+- [ ] `.vibeRig/requirements/` exists.
+- [ ] Linear Project and Project Document were reconciled, or partial initialization is explicitly reported.
+- [ ] `.vibeRig/project.yaml` records resolved Linear ids after successful registration.
 
 Report partial initialization when only local files were created.
 

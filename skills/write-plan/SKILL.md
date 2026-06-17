@@ -69,29 +69,7 @@ Linear issue titles, descriptions, sub-issue names, plan-sync comments, and chat
 
 ## Linear Issue Template
 
-The canonical template lives in `references/linear-child-issue-template.md`; keep the inline copy below in sync with it. Each Linear task should include:
-
-```markdown
-## Task
-<short task goal>
-
-## Source Docs
-- .vibeRig/requirements/<requirement-id>/brief.md#...
-- .vibeRig/requirements/<requirement-id>/architecture.md#...
-- .vibeRig/requirements/<requirement-id>/acceptance.md#...
-
-## Acceptance References
-- AC-...
-
-## Validation
-- <command/manual gate from validation.md or project.yaml>
-
-## Subagent
-Recommended: <subagent capability>
-
-## Proof Packet
-Post final validation as a Linear comment with commands, logs/CI links, changed files, commit/branch, AC coverage, and residual risks.
-```
+Read [references/linear-child-issue-template.md](./references/linear-child-issue-template.md) when composing Linear sub-issues. Each task must include: goal, source doc paths, AC references, validation command/gate, recommended subagent, and a proof packet placeholder.
 
 ## Workflow
 
@@ -115,16 +93,36 @@ Post final validation as a Linear comment with commands, logs/CI links, changed 
 9. Add a final Linear comment with `_save_comment` summarizing the plan sync. Read `references/plan-template.md` first and follow its structure: source docs revision, issue list, acceptance coverage, validation gates, and unresolved risks.
 10. Report Linear issue URLs/keys and any local docs updated with references.
 
+## Red Flags
+
+- A Linear issue was created without checking for existing issues with `_list_issues` → duplicate issues corrupt the plan; always check first.
+- A Linear issue description contains the full local doc instead of a reference path → descriptions must link to paths, not paste documents.
+- `_save_issue` was skipped and a chat summary was substituted for Linear output → if Linear tools are available, use them; a chat summary is not a plan sync.
+- A task was created without mapping to at least one AC id → every sub-issue must trace to acceptance criteria.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "I'll create the issues and check for duplicates afterward" | Creating duplicates is a destructive Linear operation. The check must come before creation — `_list_issues` is the gate. |
+| "The description is easier to understand with the full doc pasted in" | Full docs in Linear descriptions diverge from local docs the moment either is edited. Reference the path; the local doc is the contract. |
+| "Schema validation is slow, I'll skip it and trust the JSON looks right" | JSON that looks right can still violate required fields or AC-id consistency. Run validation or explicitly document why it was skipped. |
+
 ## Validation
 
-Before reporting plan sync complete, verify:
+```bash
+# Confirm required docs exist before plan sync
+for f in brief.md contract.json architecture.md acceptance.json acceptance.md validation.md; do
+  [ -f ".vibeRig/requirements/<req-id>/$f" ] && echo "ok: $f" || echo "MISSING: $f"
+done
+```
 
-- All required Docs as Code files exist.
-- `contract.json` and `acceptance.json` were schema-validated or the skipped validation reason is reported.
-- Each Linear task maps to at least one acceptance ID and validation expectation.
-- Existing Linear issues were checked to avoid duplicates.
-- `_save_issue` and `_save_comment` ran successfully when Linear tools were available.
-- Any local docs updates only add stable Linear references.
+- [ ] All required Docs as Code files exist.
+- [ ] `contract.json` and `acceptance.json` were schema-validated or the skipped validation reason is reported.
+- [ ] Each Linear task maps to at least one acceptance ID and validation expectation.
+- [ ] Existing Linear issues were checked with `_list_issues` before creation.
+- [ ] `_save_issue` and `_save_comment` ran successfully when Linear tools were available.
+- [ ] Any local docs updates only add stable Linear references, not full document content.
 
 ## Hard Rules
 

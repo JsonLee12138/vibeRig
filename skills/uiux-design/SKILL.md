@@ -1,6 +1,6 @@
 ---
 name: uiux-design
-description: Unified design workflow router for new UI design, redesign, critique, accessibility review, developer handoff, design system work, UI flow specs, DESIGN.md/UIFLOW.md readiness, UI-to-code implementation, visual QA, UX copy, user research, and research synthesis. Use when users ask naturally for design feedback, mockup review, a11y audit, handoff specs, UI implementation, design-to-code, UX writing, research planning, research synthesis, or mention Figma, Pencil, HTML, DESIGN.md, or UIFLOW.md workflows and should not need to invoke separate sub-skills manually.
+description: Design workflow router for UI design, redesign, critique, a11y review, handoff, design system, visual QA, UX copy, user research, and research synthesis. Use when the user asks for design feedback, mockup review, a11y audit, handoff specs, UI implementation, design-to-code, UX writing, research planning, or mentions Figma, Pencil, HTML, DESIGN.md, or UIFLOW.md.
 ---
 
 # UIUX Design
@@ -63,6 +63,25 @@ Examples:
 - Research synthesis + next-round planning → `references/research-synthesis.md` + `references/user-research.md`
 
 Other multi-stage pairings follow the same pattern when the request warrants it.
+
+## Red Flags
+
+- Implementation or code was produced before both `UIFLOW.md` and `DESIGN.md` readiness gates passed → only critique, a11y review, visual QA, UX copy, and research may bypass the gate.
+- Multiple references were loaded for a single-stage request → default to one best-matching reference; combination requires a clearly multi-stage user request.
+- A design tool was switched mid-task without the user asking (e.g., started in Pencil, switched to HTML) → lock to the chosen tool and do not auto-fallback.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "The user asked for a mockup, so I'll skip the readiness gate to save time" | The readiness gate prevents building the wrong thing. A missing `UIFLOW.md` means the navigation or state model is undefined — any mockup built on that is throwaway work. |
+| "I'll load two references since the request touches design and accessibility" | Default to one. Combining references is justified only when the request clearly spans multiple design stages. When in doubt, ask one clarifying question. |
+
+## Validation
+
+- [ ] Readiness gate was checked (both `UIFLOW.md` and `DESIGN.md` present) before producing any new UI design, mockup, or code — or the request is confirmed as gate-exempt (critique, a11y review, visual QA, UX copy, or research).
+- [ ] The correct reference(s) were loaded from the route map; no reference was loaded speculatively.
+- [ ] The chosen design tool (Pencil/HTML) was locked for the session and not switched without user request.
 
 When combining, keep this order:
 1. Evaluate or synthesize first

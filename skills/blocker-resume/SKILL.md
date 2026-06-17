@@ -94,16 +94,33 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing blocker 
    - remaining risks or user decisions
 7. Move/update Linear status with `_save_issue` according to the team's workflow only after evidence supports it.
 
+## Red Flags
+
+- The blocker was classified without reading Linear comments or local docs → classification must be evidence-based, not assumed.
+- Resumed implementation happened directly in `blocker-resume` instead of going through `task-runner` → any implementation work must route through `task-runner`.
+- Linear status was changed to unblocked before evidence was resolved → issue stays blocked until the blocking condition is removed.
+- A subagent updated Linear during investigation → subagents must return findings only; the main agent owns all Linear writes.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "The blocker is obvious from the description, I don't need to read Linear comments" | Prior analysis comments, proof packet comments, and review notes are the exact place where the blocker details and prior attempts are recorded. Reading them takes 30 seconds. Missing them causes wrong classifications. |
+| "I'll resume implementation directly here to save time" | `blocker-resume` classifies and unblocks; `task-runner` executes. Mixing execution into `blocker-resume` bypasses the worktree policy, subagent routing, and proof packet requirements. |
+
 ## Validation
 
-Before reporting recovery, verify:
+```bash
+# Confirm the Linear issue key resolves (placeholder — replace with actual key)
+# Use _get_issue in the Linear plugin to verify the issue exists and read its current status
+```
 
-- The target issue and requirement docs were resolved.
-- The blocker classification is backed by Linear comments, local docs, git state, validation output, or CI evidence.
-- Any resumed implementation went through `task-runner`.
-- Any Linear status change used an existing team status.
-- Human-facing Linear comments and summaries use `output.language` when configured.
-- Remaining user decisions, credentials, or external blockers are stated explicitly.
+- [ ] The target issue and requirement docs were resolved.
+- [ ] The blocker classification is backed by Linear comments, local docs, git state, validation output, or CI evidence.
+- [ ] Any resumed implementation went through `task-runner`.
+- [ ] Any Linear status change used an existing team status, not an invented one.
+- [ ] Human-facing Linear comments and summaries use `output.language` when configured.
+- [ ] Remaining user decisions, credentials, or external blockers are stated explicitly.
 
 ## Guardrails
 

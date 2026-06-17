@@ -169,27 +169,37 @@ When delegating root cause analysis, provide:
 - Constraints: analyze only, do not modify files.
 - Expected artifact: root cause hypothesis, affected code locations, proposed fix approach.
 
+## Red Flags
+
+- Implementation started before the user confirmed the fix direction → Phase 1 must end with explicit user confirmation; never start Phase 2 otherwise.
+- The commit includes unrelated files or changes → inspect `git diff --staged` before committing; include only bug-related changes.
+- A new Linear issue was created when the user already provided a valid issue key → use `_get_issue` first; only create when no existing issue is found.
+- Issue status was changed to done or closed directly from this skill → only `human-acceptance` may set terminal statuses.
+- Status was changed without mapping the team's workflow states first → call `_list_issue_statuses` before any status transition.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "The fix is obvious from the root cause — I'll skip asking the user and implement directly" | Users often have context about constraints, related in-progress work, or preferred approaches that are not visible in the code. Confirmation takes one exchange and prevents implementing the wrong fix. |
+| "I'll write the analysis comment after the fix to save time" | The analysis comment is the record of what was decided before the fix. Writing it after makes it a post-hoc rationalization, not a decision record. |
+| "The branch already has unrelated changes, but I'll commit them with the bug fix" | Unrelated changes in a bug-fix commit complicate revert, cherry-pick, and audit. Protect unrelated changes; commit only the bug-related diff. |
+
 ## Validation
 
-Before reporting completion, verify:
+```bash
+# Confirm only bug-related files are staged
+git diff --staged --name-only
 
-- The bug was recorded as a Linear issue with a valid status.
-- Newly created issue titles and human-facing Linear comments use `output.language` when configured.
-- The team-specific equivalents for triage/backlog, in-progress, and ready-for-acceptance were resolved before status changes.
-- Root cause analysis was written to a Linear comment before the fix started.
-- The user confirmed the fix direction before implementation.
-- The fix was delegated to `agent-sop` and validated by the main agent.
-- The commit includes only bug-related changes and references the Linear issue.
-- Fix evidence was written back to Linear after the commit.
-- The bug issue status reflects the current state using the mapped workflow states.
-- The user was informed that `human-acceptance` is required for final sign-off.
+# Confirm Linear issue key is referenced in commit message
+git log -1 --pretty="%s" | grep -q "<issue-key>" && echo "ok" || echo "MISSING ISSUE KEY"
+```
 
-## Common Mistakes
-
-- Skipping user confirmation on the fix direction and implementing a wrong fix.
-- Committing unrelated changes along with the bug fix.
-- Updating Linear status to done without going through `human-acceptance`.
-- Creating a duplicate Linear issue when the user already supplied a valid issue key.
-- Creating a new branch on `main` without the user explicitly asking.
-- Changing issue statuses without first mapping the team's actual workflow states.
-- Writing the analysis comment after the fix instead of before.
+- [ ] Bug was recorded as a Linear issue with a valid status.
+- [ ] Team workflow states were resolved with `_list_issue_statuses` before any status change.
+- [ ] Root cause analysis was written to a Linear comment before the fix started.
+- [ ] The user explicitly confirmed the fix direction before Phase 2.
+- [ ] The fix was delegated to `agent-sop` and validated by the main agent.
+- [ ] The commit includes only bug-related changes and references the Linear issue key.
+- [ ] Fix evidence was written back to Linear after the commit.
+- [ ] The user was informed that `human-acceptance` is required for final sign-off.

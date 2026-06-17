@@ -155,52 +155,41 @@ Do not invent workflow states that do not exist in the Linear team. If no close 
 
 ## Comment Template
 
-Render this template in `.vibeRig/project.yaml` `output.language`; the English headings below are structural examples, not required literal text.
+Fill [acceptance-comment-template.md](./assets/acceptance-comment-template.md) and post it via `_save_comment`.
 
-```markdown
-## Human Acceptance
+## Red Flags
 
-Decision: <accepted | partially accepted | rejected | blocked>
-Accepted by: <user-provided name or current user>
+- The acceptance decision came from a passing test or automated QA result, not the current user → stop; auto-signals cannot replace explicit human acceptance.
+- PR merge was attempted before CI status, conflicts, and approvals were checked → merge preflight must pass before any merge attempt.
+- Linear issue was moved to a terminal done state before the PR merge succeeded → revert to a non-terminal blocked state.
+- `insights` ran before the Linear issue reached a terminal success state → insights must follow, not precede, the terminal status update.
+- Worktree was removed without checking for uncommitted files → always run `git status --short` in the worktree before removal.
 
-## AC Coverage
-- Accepted: AC-...
-- Rejected/unverified: AC-...
+## Anti-Rationalization
 
-## Manual Checks
-- <check/result>
-
-## Risk Decision
-- <accepted residual risks or rejection reasons>
-
-## PR And Linear
-- PR: <merged | not merged | not required | blocked: reason>
-- Linear status: <done | accepted | completed | unchanged | blocked: reason>
-
-## Follow-up
-- Insights: <generated | skipped with reason>
-- Skill updates: <applied through skill-builder | proposed | none>
-- Skill curation proposals: <insert/update/deprecate/noop | none>
-- Requirement docs archive: <moved source -> destination | skipped | blocked: reason>
-- Worktree cleanup: <removed | skipped | blocked: reason>
-```
+| Rationalization | Reality |
+|---|---|
+| "Tests passed and QA approved, that's effectively human acceptance" | Human acceptance is an explicit decision from the current user, not an inference from automation. Skipping it removes the final human gate. |
+| "I'll merge the PR and then check if CI passed" | Merging before CI passes can land broken code on the base branch. The merge preflight exists to prevent exactly this. |
+| "I'll move the issue to Done and run insights, then write the comment" | The acceptance comment must be written before the terminal status update so the record exists in case insights fails. |
+| "The worktree is probably clean since the task is done" | "Probably" is not evidence. Run `git status --short` in the worktree path — any uncommitted files must be resolved before cleanup. |
 
 ## Validation
 
-Before final reporting, verify:
+```bash
+# Verify worktree is clean before removal (run in the task worktree path)
+git -C <worktree-path> status --short   # expected: empty output (clean)
 
-- The acceptance decision came explicitly from the current user or a quoted user instruction.
-- The AC ids in the comment match the issue/proof packet.
-- Linear issue status was mapped from `_list_issue_statuses`; no invented status was used.
-- The human acceptance or rejection record was written in `output.language` when configured.
-- Required PR merge succeeded before any terminal success status.
-- Merge preflight (CI status, conflicts, approvals) was checked before the merge attempt; if any check failed, the issue was moved to a non-terminal state and merge was skipped.
-- Insights ran only after any required PR merge succeeded and the Linear issue reached a terminal success status.
-- Any accepted skill update or SkillOS-lite curation proposal was applied through `skill-builder`, not by hand inside `human-acceptance` or `insights`.
-- Requirement docs archival ran after insights, or was skipped with a recorded reason.
-- Archived docs moved only the accepted requirement directory and did not overwrite unrelated docs.
-- Worktree cleanup only touched a safe task worktree and was skipped when uncommitted files remained.
-- `insights` ran or was skipped with a reason after full acceptance.
+# Verify PR merged into base branch
+gh pr view <PR-URL> --json mergedAt,state | grep -q '"mergedAt"' && echo "merged" || echo "not merged"
+```
+
+- [ ] Acceptance decision is an explicit statement from the current user, not inferred from automation.
+- [ ] Merge preflight (CI, conflicts, approvals) passed before any merge attempt.
+- [ ] Acceptance comment was written before the terminal Linear status update.
+- [ ] Insights ran only after PR merge and terminal Linear status were confirmed.
+- [ ] Archived docs are only from the accepted requirement directory, not unrelated active requirements.
+- [ ] Worktree removal only proceeded after `git status --short` confirmed a clean state.
 
 ## Hard Rules
 

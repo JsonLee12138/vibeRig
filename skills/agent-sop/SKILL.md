@@ -166,14 +166,35 @@ Do not change: <protected areas>.
 Return: fix summary, evidence, remaining risk.
 ```
 
+## Red Flags
+
+- A subagent was given the entire task ("implement everything") instead of one bounded phase → each delegation must be one phase with a specific expected artifact.
+- The main agent accepted a subagent result without running any verification → main-agent verification (step 6) is not optional.
+- The rework loop ran more than 3 rounds on the same issue family without escalating → escalate after 2 repetitions of the same failure; more loops do not fix direction errors.
+- A subagent updated Linear, changed issue status, or wrote proof packets → subagents return phase evidence only; all Linear writes belong to the main agent.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "The task is clear, I can skip the explicit test decision" | Skipping the test decision means tests either get added by default (unnecessary cost) or skipped silently (missed safety net). Make the decision explicitly and record the reason. |
+| "The subagent said it passed, so I'll trust the result" | Subagent claims are not verified evidence. The main agent runs the commands, reads the output, and makes the verification decision independently. |
+| "Three rework rounds failed — I'll try one more" | Repeating the same rework without changing the approach does not converge. After 2 identical failures, escalate with the failed evidence and what external decision or context is needed. |
+
 ## Validation
+
+```bash
+# Run the relevant test/lint command and capture pass/fail
+# Example: npm test -- --testPathPattern=<scope> 2>&1 | tail -5
+# Example: python -m pytest <test-file> -v 2>&1 | tail -10
+```
 
 Minimum validation is a main-agent decision covering:
 
-- Whether tests are required and why.
-- Which targeted tests, build, lint, typecheck, smoke, manual, or MCP-backed checks ran.
-- Whether a QA/review capability returned PASS, REWORK, or BLOCKED when one was available.
-- Which checks were skipped and what risk remains.
+- [ ] Whether tests are required and why (explicit decision recorded).
+- [ ] Which targeted tests, build, lint, typecheck, smoke, manual, or MCP-backed checks ran and their pass/fail.
+- [ ] Whether a QA/review capability returned PASS, REWORK, or BLOCKED when one was available.
+- [ ] Which checks were skipped and what risk remains.
 
 If validation fails, run the Rework Loop before final reporting unless the failure requires user input, credentials, or external state.
 

@@ -145,14 +145,34 @@ Use `subagent-routing` whenever a specialized perspective improves the result:
 
 Subagents must not update Linear. The main agent owns context gathering, file writes, and final stage approval.
 
+## Red Flags
+
+- A stage file was written without first presenting the draft for user approval → reverse to the approval step.
+- `write-plan` was called directly from inside `brainstorm` instead of being invoked as a separate skill → brainstorm only prepares the docs; write-plan owns Linear writes.
+- `research.md` or `diagrams/` were skipped for a complex requirement → record the omission and reason; `write-plan` will fail without `architecture.md` and `acceptance.md`.
+- A fact in `contract.json` or `acceptance.json` was invented to fill a gap instead of being blocked → stop and ask the single most important blocking question.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "I'll write the file now and show the user afterward" | The Stage Gate requires approval before writing. Writing first removes the user's ability to redirect before effort is spent. |
+| "The requirement is simple, I can skip the adversarial review stage" | Skipping adversarial review is how untestable acceptance criteria reach Linear. A 5-minute score against the rubric catches ambiguity before it costs a full task cycle. |
+| "I'll infer the missing product decision from context" | Inferred product decisions that are wrong generate invalid contracts that fail late, during task execution. Ask the blocking question instead. |
+
 ## Validation
 
-Before handing off to `write-plan`, confirm:
+```bash
+# Confirm required docs exist
+for f in brief.md contract.json architecture.md acceptance.json acceptance.md validation.md; do
+  [ -f ".vibeRig/requirements/<req-id>/$f" ] && echo "ok: $f" || echo "MISSING: $f"
+done
+```
 
-- `brief.md` has goals, non-goals, success signals, constraints, and decisions.
-- `contract.json` validates against `contract.schema.json` or validation was explicitly skipped with reason.
-- `architecture.md` covers affected modules, data/state flow, errors, and integration boundaries.
-- `acceptance.json` validates against `acceptance.schema.json` or validation was explicitly skipped with reason.
-- `acceptance.md` contains stable AC IDs matching `acceptance.json`.
-- `validation.md` follows `references/validation-template.md` and names required commands, manual checks, CI/gate policy references, and evidence expectations.
-- Human-readable docs and generated summaries use `output.language` from `.vibeRig/project.yaml` when it exists.
+- [ ] `brief.md` has goals, non-goals, success signals, constraints, and decisions.
+- [ ] `contract.json` validates against `contract.schema.json` or skipped validation is documented with reason.
+- [ ] `architecture.md` covers affected modules, data/state flow, errors, and integration boundaries.
+- [ ] `acceptance.json` validates against `acceptance.schema.json` or skipped validation is documented with reason.
+- [ ] `acceptance.md` contains stable AC IDs matching `acceptance.json`.
+- [ ] `validation.md` names required commands, manual checks, CI/gate policy references, and evidence expectations.
+- [ ] Human-readable docs use `output.language` from `.vibeRig/project.yaml`.

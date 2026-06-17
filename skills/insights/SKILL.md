@@ -129,14 +129,32 @@ Do not write proof packets into `.vibeRig/`.
 
 For skill changes and confirmed SkillOS-lite curation proposals, invoke `skill-builder` and report its result: changed file paths, the trigger intent captured in the updated description, any resources added or omitted, validation performed, and remaining gaps. If skill-builder reports validation failures, surface them to the user as pending follow-up.
 
+## Red Flags
+
+- A learning candidate was applied without explicit user confirmation → only `project_note` auto-apply is allowed; all others require confirmation.
+- A skill file was edited directly from `insights` without routing through `skill-builder` → stop; hand off to `skill-builder` for all `skill_update` and curation proposals.
+- Evidence is sourced from a failed, abandoned, or unmerged attempt → stop; generate `noop` and explain the missing acceptance boundary.
+- A retrospective was generated before checking the issue's accepted/done status → validate the acceptance gate first.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "The implementation worked well, I'll capture it as a workflow rule now" | A workflow rule requires accepted work. If the PR is not merged or the issue is not in a terminal done state, the evidence is not accepted. |
+| "I'll hand-edit the skill file since the change is tiny" | Even tiny skill edits require `skill-builder` to validate frontmatter, confirm references, and ensure the description still passes trigger quality checks. |
+| "The user confirmed the work, so I can skip asking about the learning candidate" | Accepting the work is not the same as confirming the learning candidate. Ask explicitly before applying workflow rules, skill updates, or user preferences. |
+
 ## Validation
 
-Before reporting completion, verify:
+```bash
+# Confirm acceptance boundary exists before generating candidates
+grep -q "Done\|Accepted\|Completed" <(echo "<Linear issue status>") && echo "ok" || echo "NOT ACCEPTED"
+```
 
-- Evidence is tied to accepted work or the user explicitly authorized retrospective generation.
-- Each candidate has a type, evidence source, confidence, and risk.
-- Durable project notes are high-confidence and low-risk.
-- Workflow rules, skill updates, and user preferences were not applied without explicit user confirmation.
-- Any skill file creation or modification was performed through `skill-builder`.
-- Any SkillOS-lite `insert`, `update`, or `deprecate` proposal was explicitly confirmed and applied through `skill-builder`.
-- Human-facing retrospectives, Linear comments, documents, and summaries use `output.language` when configured.
+- [ ] Evidence is tied to accepted work or the user explicitly authorized retrospective generation.
+- [ ] Each candidate has a type, evidence source, confidence, and risk.
+- [ ] Durable project notes are high-confidence and low-risk.
+- [ ] Workflow rules, skill updates, and user preferences were not applied without explicit user confirmation.
+- [ ] Any skill file creation or modification was performed through `skill-builder`.
+- [ ] Any SkillOS-lite `insert`, `update`, or `deprecate` proposal was explicitly confirmed and applied through `skill-builder`.
+- [ ] Human-facing retrospectives, Linear comments, documents, and summaries use `output.language` when configured.

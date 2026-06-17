@@ -124,12 +124,30 @@ Subagents must:
 
 If no suitable subagent exists for a non-task phase, the main agent may proceed directly and must report the missing capability as a routing risk. If no suitable subagent exists for Linear task execution, stop and report the missing capability before implementation.
 
+## Red Flags
+
+- A subagent was given broad "figure it out" context instead of a single bounded objective → the brief must have one objective, explicit boundaries, and a defined output format.
+- The subagent result was used directly without main-agent review → the main agent must inspect evidence before acting on it.
+- A subagent updated Linear or changed issue status → only the main agent may write to Linear.
+- A VibeRig Linear task was executed directly by the main agent without declaring a subagent → stop and route through `subagent-routing` before implementation.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "The task is straightforward, I can skip subagent routing for this Linear task" | Every Linear task execution must use a subagent. Straightforward tasks still benefit from the bounded-context separation — the main agent reviews, not implements. |
+| "The subagent returned results, so I'll use them directly" | Subagent results are evidence, not decisions. The main agent must inspect changed files or recommendations before acting on them. |
+| "I'll use a generic worker since the specific capability name doesn't matter" | Capability matching matters for quality. Use the most specific available capability — `frontend`, `security`, `QA` — and fall back to generic only when nothing closer is available. |
+
 ## Validation
 
-Before using a subagent result, verify:
+```bash
+# Verify no Linear writes happened inside the subagent (post-run check)
+# Confirm the subagent output contains the required fields: summary, files, validation, risks
+```
 
-- The brief had one bounded objective and explicit boundaries.
-- The subagent did not update Linear or make final acceptance decisions.
-- The returned evidence covers the requested output.
-- The main agent inspected changed files or recommendations before acting on them.
-- Any missing capability or validation gap is reported.
+- [ ] The brief had one bounded objective and explicit boundaries.
+- [ ] The subagent did not update Linear or make final acceptance decisions.
+- [ ] The returned evidence covers the requested output fields (summary, files, validation, risks, blockers).
+- [ ] The main agent inspected changed files or recommendations before acting on them.
+- [ ] Any missing capability or validation gap is reported explicitly.

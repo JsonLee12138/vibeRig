@@ -86,19 +86,32 @@ Read only when needed:
 
 Avoid reading unrelated skill packages. Inspect only skills that plausibly match the accepted evidence.
 
+## Red Flags
+
+- A non-`noop` proposal was generated without accepted-work evidence → all non-`noop` operations require evidence tied to accepted, merged, or user-authorized work.
+- `confidence: high` was assigned to a proposal based on a single task → high confidence requires direct and narrow evidence; one task is usually medium.
+- A proposal directly edits a skill file instead of returning a structured proposal → `skillos-lite` is proposal-only; hand confirmed proposals to `skill-builder`.
+- An `insert` proposal duplicates a capability that already exists in an existing skill → inspect `skills/*/SKILL.md` names, descriptions, and contracts before proposing a new skill.
+
+## Anti-Rationalization
+
+| Rationalization | Reality |
+|---|---|
+| "The accepted task is clear evidence for a broad workflow change" | Broad workflow changes require repeated accepted evidence across multiple tasks, not a single success. Narrow the scope or lower the confidence. |
+| "The skill edit is small, I'll apply it directly and skip skill-builder" | Any skill edit — small or large — must go through `skill-builder` for frontmatter validation, reference checks, and trigger quality validation. Direct edits bypass all of those. |
+| "I'll propose a new skill since the pattern was useful in this task" | Ask: does this fit an existing skill? Check contracts and descriptions first. A new skill that duplicates existing guidance fragments the trigger space. |
+
 ## Validation
 
 Before reporting proposals, verify:
 
-- Every non-`noop` proposal is tied to accepted work.
-- Every non-`noop` proposal has evidence, target, confidence, risk, and validation plan.
-- `requires_confirmation` is `true` for `insert`, `update`, and `deprecate`.
-- No proposal directly applies a skill update.
-- Human-facing prose follows `.vibeRig/project.yaml` `output.language` when configured.
+```bash
+# Confirm related skill directories exist for update/deprecate proposals
+ls /skills/<target_skill>/SKILL.md 2>/dev/null && echo "ok" || echo "SKILL NOT FOUND"
+```
 
-## Common Mistakes
-
-- Treating one successful implementation detail as a durable workflow rule.
-- Proposing broad workflow changes from one task.
-- Learning from abandoned attempts instead of the accepted solution.
-- Directly editing skills instead of routing confirmed updates through `skill-builder`.
+- [ ] Every non-`noop` proposal is tied to accepted work.
+- [ ] Every non-`noop` proposal has evidence, target, confidence, risk, and validation plan.
+- [ ] `requires_confirmation` is `true` for `insert`, `update`, and `deprecate`.
+- [ ] No proposal directly applies a skill update.
+- [ ] Human-facing prose follows `.vibeRig/project.yaml` `output.language` when configured.
