@@ -188,45 +188,7 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing executio
 
 ## Task Brief
 
-```markdown
-## Goal
-<task goal from Linear>
-
-## Source Docs
-- .vibeRig/requirements/<requirement-id>/brief.md#...
-- .vibeRig/requirements/<requirement-id>/architecture.md#...
-- .vibeRig/requirements/<requirement-id>/acceptance.md#...
-
-## Acceptance
-- AC-...: <expected result>
-
-## Constraints
-- <scope boundaries>
-- do not revert unrelated user changes
-- no Linear updates inside subagent
-
-## Validation
-- <commands/manual checks>
-
-## Workspace
-- mode: <worktree | current-workspace>
-- path: <absolute path>
-- reason: <why this mode was selected>
-
-## Pull Request
-- required: <true | false>
-- provider: <auto | github | other>
-- branch: <codex/<issue-key>-<short-slug>>
-- base: <base branch or repository default>
-- draft: <true | false>
-
-## Output Contract
-- changed files
-- validation attempted
-- acceptance coverage
-- residual risks
-- handoff notes
-```
+Read `assets/task-brief-template.md` before delegation and fill it with the resolved Linear issue, source docs, acceptance IDs, validation expectations, workspace decision, and pull request policy.
 
 ## Workflow
 

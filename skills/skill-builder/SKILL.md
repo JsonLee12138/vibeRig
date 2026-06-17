@@ -35,6 +35,7 @@ Produce the skill files directly when the user asks to create or update a skill.
 - Changed file paths.
 - The trigger intent captured in `description`.
 - Any resources intentionally added or omitted.
+- Template files added, reused, or intentionally kept inline, with the reason.
 - Validation performed and remaining gaps.
 
 Do not claim the skill is complete unless the `SKILL.md` frontmatter is valid, the body has no unresolved placeholders, and the skill can be discovered from the requested location.
@@ -59,6 +60,8 @@ Literal placeholders are allowed only inside fenced examples or templates that a
    - Put detailed API docs, framework variants, schemas, and long examples in one-level `references/` files.
    - Put deterministic or repeatedly rewritten logic in `scripts/`.
    - Put output templates, boilerplate, images, fonts, or copied files in `assets/`.
+   - Move reusable Markdown/YAML/JSON templates longer than a short illustrative snippet into `assets/` or `references/`.
+   - In `SKILL.md`, link the template and explain when to read or fill it; do not inline the whole reusable artifact.
    - Do not add README, install guides, changelogs, or process notes unless the user explicitly requires them.
 5. Write `SKILL.md`.
    - Keep it concise and imperative.
@@ -73,70 +76,7 @@ Literal placeholders are allowed only inside fenced examples or templates that a
 
 ## Recommended SKILL.md Shape
 
-Use this structure for development-oriented skills unless local convention suggests a better fit:
-
-```markdown
----
-name: <skill-name>
-description: Use when <specific user intents, task contexts, symptoms, file types, tools, or risk signals>. Include key terms, but do not summarize the whole workflow.
----
-
-# <Skill Name>
-
-## Contract
-Use this skill to <single responsibility>.
-Do not use this skill for <clear exclusions>.
-Stop and report when <blocking conditions>.
-
-## Input Contract
-Required:
-- <file/path/tool/context>
-- <acceptance criteria or target behavior>
-
-Optional:
-- <logs, diffs, screenshots, configs>
-
-If required inputs are missing, <inspect, infer, or stop>.
-
-## Output Contract
-Return or produce:
-- <artifact/change/report>
-- <verification evidence>
-- <residual risks or skipped checks>
-
-Do not claim completion unless <minimum evidence> exists.
-
-## Workflow
-1. Inspect current state and local patterns.
-2. Identify scope, constraints, and protected files.
-3. Choose the path; read only the needed reference files.
-4. Execute the smallest scoped change or analysis.
-5. Validate with tests, scripts, build, lint, smoke checks, or manual checks.
-6. If validation fails, loop through error, hypothesis, fix, and rerun.
-7. Report concise evidence.
-
-## Context Loading
-Read only when needed:
-- `references/<topic>.md`: read when <condition>.
-- `assets/<template>/`: use when creating <artifact>.
-
-Avoid loading all references at once.
-
-## Scripts
-Available scripts:
-- `scripts/<name>.py`: <purpose>. Run `python scripts/<name>.py --help`.
-
-Prefer executing scripts over reimplementing their logic.
-
-## Validation
-Minimum checks:
-- <unit test/lint/build/typecheck/smoke/manual>
-
-If a check cannot run, report why and what risk remains.
-
-## Common Mistakes
-- <bad shortcut> -> <correct behavior>.
-```
+Use this structure for development-oriented skills unless local convention suggests a better fit: [skill template](./assets/skill-template.md)
 
 ## Development Skill Rules
 
@@ -166,6 +106,9 @@ Minimum validation for every skill change:
 - Confirm the skill has a clear contract, input contract, output contract, workflow, and validation guidance, or document why local convention intentionally differs.
 - Confirm references, scripts, and assets mentioned from `SKILL.md` exist.
 - Confirm placeholders exist only inside explicitly marked examples/templates.
+- Confirm every referenced template file exists and is directly linked from `SKILL.md`.
+- Confirm `SKILL.md` states when each template should be read, copied, or filled.
+- Confirm placeholders appear only in external template files or clearly marked inline examples.
 - Mentally test 3 should-trigger and 3 should-not-trigger prompts against the description.
 
 ## Common Anti-Patterns
@@ -176,6 +119,8 @@ Minimum validation for every skill change:
 - One skill covering unrelated domains such as coding, deployment, design, PRs, and sales.
 - Missing input contract, output contract, stop conditions, or validation rules.
 - Deep reference chains where `SKILL.md` links to a file that links to another file.
+- Embedding long reusable templates directly in `SKILL.md` instead of moving them to `assets/` or `references/`.
+- Moving a template to `assets/` but leaving no instruction in `SKILL.md` for when to use it.
 - Rewriting repeated fragile logic in prose instead of providing a tested script.
 - Presenting many equal options without a default.
 - Claiming completion without verification evidence.
