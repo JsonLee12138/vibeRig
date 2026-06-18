@@ -72,17 +72,58 @@ Do not create a local dashboard registration, local task database, `.vibeRig/bin
 
 ## Required Project AGENTS.md
 
-Create or update the target project's root `AGENTS.md` with a VibeRig output language rule. Preserve existing project-specific rules and append or reconcile only the VibeRig section.
+Create or update the target project's root `AGENTS.md`. Preserve existing project-specific rules and append or reconcile only the VibeRig sections. Each section is wrapped in inject tags so it can be identified and updated independently without touching other content.
 
-Required rule:
+Required sections:
 
 ```markdown
+<!-- inject:viberig:start -->
 ## VibeRig Output Language
 
 - Read `.vibeRig/project.yaml` before creating or updating VibeRig human-facing records.
 - Use `.vibeRig/project.yaml` `output.language` for VibeRig issue titles, issue descriptions, comments, requirement documents, validation notes, proof packets, human acceptance records, retrospectives, and final summaries.
 - If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `.vibeRig/project.yaml` through `vb-init`.
 - Do not translate stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, acceptance IDs, schema field names, code symbols, or existing external labels/status names.
+
+## Output
+
+Choose one primary format per reply. Up to two lines of context (purpose, assumption, or constraint) are allowed in addition to the primary format; do not append full prose or extra code blocks.
+
+Evaluate in order, stop at first match:
+
+**1. Content involves structure / relationships / flow / state → Mermaid diagram**
+
+| Trigger | Diagram type | Constraint |
+|---|---|---|
+| Database table relationships, schema design | `erDiagram` | Include entity attributes (field names, types, PK/FK annotations); no SQL DDL in chat |
+| API call chains, auth, microservice interactions, message flows | `sequenceDiagram` | — |
+| Business flows, conditional branches (retry/fallback/circuit-breaker), CI/CD, ETL | `flowchart` | — |
+| State machines (orders/approvals), connection/session/component lifecycle | `stateDiagram-v2` | — |
+| Domain models, class inheritance/composition, module dependencies | `classDiagram` | — |
+| System/deployment/microservice architecture | `flowchart` / `architecture-beta` | — |
+| Branch strategy, release/hotfix flows | `gitGraph` | — |
+| Requirement breakdown, brainstorming, knowledge structure | `mindmap` | — |
+| Technology selection, priority matrix | `quadrantChart` | — |
+
+When generating a code file at the same time: **two steps** — ① output the Mermaid diagram in chat first (let the user preview the design), ② write code to file; no code blocks in chat, do not substitute a checklist or other format for the diagram.
+Discussion only / no file generation: output diagram only, no code blocks.
+
+**2. Multi-dimensional comparison → Table**
+
+**3. Ordered steps / task progress → Checklist**
+
+**4. Reasoning / tradeoffs / explanation (no visual structure) → 3W1H**
+
+| **What** | Conclusion first |
+|---|---|
+| **Why** | Rationale, tradeoff basis |
+| **How** | How to implement |
+| **When** | Applicable boundary |
+
+Simple questions: What + Why only.
+
+**5. Fallback → One sentence**
+<!-- inject:viberig:end -->
 ```
 
 ## Required Project YAML
