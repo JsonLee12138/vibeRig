@@ -85,19 +85,21 @@ Do not claim a task is ready for human acceptance unless validation is sufficien
 
 ## Workspace And Worktree Policy
 
-Before implementation, explicitly decide where the task will run. This workspace decision is separate from the branch decision.
+Before implementation, explicitly decide where the task will run. This workspace decision is separate from the branch decision. **The worktree is created once before the per-task loop and shared by all subtasks in the queue — do not create a new worktree per subtask.**
 
 Workspace modes:
 
-- `worktree`: default. Create or reuse an isolated git worktree for the Linear issue.
+- `worktree`: default. Create or reuse a single isolated git worktree for the entire execution run.
 - `current-workspace`: explicit exception. Use only when the user explicitly asks to work in the main/current workspace, or explicitly authorizes it after worktree creation fails.
+
+**Shared worktree rule:** When the entry point is a requirement (parent issue), name the worktree and branch after the **parent issue key**. All subtasks in the queue execute in this one worktree and commit to the same branch sequentially. When the entry point is a single task, name the worktree and branch after that task's issue key.
 
 For `worktree` mode:
 
 - Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to the project `.worktrees/` directory.
-- Worktree directory pattern: project `.worktrees/` plus issue key and short slug.
+- Worktree directory pattern: project `.worktrees/` plus issue key and short slug (parent issue key for requirement runs).
 - Preferred branch naming: `codex/{issue-key}-{short-slug}` when a branch is needed.
-- Create or reuse the task branch inside the selected worktree.
+- Create or reuse the branch inside the selected worktree.
 - Verify the selected path appears in `git worktree list` before implementation.
 
 Use these command templates for worktree setup:
@@ -197,7 +199,7 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing executio
    - use `_get_issue` for issue details
    - use `_list_comments` for proof packets, blockers, and prior handoff notes
 5. Read only the referenced local docs needed for the current task.
-6. Decide the workspace using the Worktree Policy and prepare the worktree when selected.
+6. Decide the workspace once for the entire execution queue using the Worktree Policy. For requirement-level entry points, use the parent issue key to name the worktree and branch. Prepare the worktree before the per-task loop starts — do not re-create or re-decide per subtask.
 7. Resolve branch and PR policy, including provider, base branch, draft setting, and whether PR submission is required.
 8. Build a compact Task Brief for the subagent.
 
@@ -207,7 +209,7 @@ Read `assets/task-brief-template.md` before delegation and fill it with the reso
 
 ## Workflow
 
-The workflow runs once per task in the execution queue. When the entry point is a requirement, repeat steps 1–10 for each subtask in order. Complete all subtasks before writing the final summary.
+The workflow runs once per task in the execution queue. When the entry point is a requirement, repeat steps 1–10 for each subtask in order using the **shared worktree** prepared in Preflight. Each subtask commits its changes to the shared branch when done. Push and PR creation happen once after all subtasks complete.
 
 **Per-task loop** (repeat for each task in the queue):
 
@@ -223,21 +225,27 @@ The workflow runs once per task in the execution queue. When the entry point is 
    - acceptance coverage review against AC ids
 6. If validation fails, send a bounded rework brief to the same or better subagent. Include failed evidence and expected correction.
 7. Stop and ask the user when the same issue family fails repeatedly, external credentials are missing, scope conflicts with docs, or product decisions are required.
-8. When validation is sufficient, submit the PR:
+8. When validation is sufficient, commit the task-scoped changes to the shared branch:
    - inspect `git status` and `git diff` from the selected workspace
-   - commit only task-scoped changes
-   - push the task branch
-   - create or update the PR
-   - capture PR URL, branch, commit, base branch, and any CI/check URL
-9. If PR submission is required and fails, write a Linear blocker/comment with `_save_comment`, move/update the Linear issue to the closest blocked/waiting state with `_save_issue`, and stop the entire queue — do not continue to the next subtask until the blocker is resolved.
-10. When validation and required PR submission are sufficient, write a Linear proof packet comment and move/update the Linear issue to the closest `Human Acceptance`, waiting-for-review, or QA state:
-    - use `_save_comment` for the Proof Packet comment
-    - use `_save_issue` for issue status, labels, assignee, links, project, or relation updates
+   - commit only task-scoped changes with a descriptive message referencing the Linear issue key
+   - capture the commit hash for the Proof Packet
+   - **do not push or create a PR here for requirement-level runs** — push and PR creation happen after all subtasks complete (see post-loop step 11)
+   - for single-task runs: push the branch and create or update the PR immediately; capture PR URL, branch, commit, base branch, and any CI/check URL
+9. (Single-task runs only) If PR submission is required and fails, write a Linear blocker/comment with `_save_comment`, move/update the Linear issue to the closest blocked/waiting state with `_save_issue`, and stop before reporting completion.
+10. Write a Linear Proof Packet comment with `_save_comment` and move the Linear issue to the closest `In Review` or `QA` state with `_save_issue`:
+    - include workspace, branch, commit hash, validation results, AC coverage, and residual risks
+    - for requirement-level runs: PR URL is not yet available; it will be added after all subtasks complete in post-loop step 11
+    - for single-task runs: include the PR URL
+    - do not move requirement-level subtasks to `Human Acceptance` here — that state is set on the parent issue after the PR is created
 
 **After all tasks in the queue are complete:**
 
-11. If the entry point was a requirement (parent issue), update the parent issue status to the closest `Human Acceptance` or waiting-for-review state to reflect that all subtasks have been submitted.
-12. Tell the user which tasks were completed, which (if any) are blocked, and that final acceptance for each task (and the parent requirement) requires explicitly invoking `accept` or `accept-bug` with the accepted/rejected AC ids. Tell the user that PR merge and worktree cleanup happen only in `accept` after full acceptance.
+11. For requirement-level runs: push the shared branch and create ONE PR covering all subtask changes:
+    - include all Linear sub-issue keys, combined AC coverage, and validation evidence in the PR body
+    - capture the PR URL; add it to each subtask's existing Proof Packet comment via `_save_comment`
+    - if push or PR creation fails, write a blocker comment on the parent issue with `_save_comment` and stop before reporting completion
+12. Update the parent issue status to the closest `Human Acceptance` or waiting-for-review state to reflect that all subtasks have been submitted.
+13. Tell the user which tasks were completed, which (if any) are blocked, and that final acceptance for each task (and the parent requirement) requires explicitly invoking `accept` or `accept-bug` with the accepted/rejected AC ids. Tell the user that PR merge and worktree cleanup happen only in `accept` after full acceptance.
 
 ## Proof Packet Comment
 
@@ -269,6 +277,7 @@ After proof is posted and the required PR exists, leave the Linear issue in the 
 |---|---|
 | "The task is simple enough that I can skip the subagent" | Simplicity is not the criterion. Every Linear task execution must declare and use a subagent through `subagent-routing`. |
 | "I'll work in the current workspace since worktree setup is slow" | Worktree isolation protects unrelated user changes. Silent fallback to the main workspace is the bug, not the optimization. |
+| "Each subtask needs its own worktree for isolation" | Subtasks within a requirement have dependencies — they must build on each other's commits. One shared worktree per run, named after the parent issue key. Per-subtask worktrees break the dependency chain and create multiple PRs where one suffices. |
 | "I'll write the proof packet now and add the PR URL later" | The PR URL is proof that the work reached the right branch. A proof without it is incomplete evidence. |
 | "Validation passed, so I can move the issue to Done" | Done is a terminal state that requires human acceptance. Move to the human-acceptance queue and stop here. |
 | "The subagent said it passed, so I'll trust the result" | Subagent claims are not verified evidence. The main agent must run the commands and read the output independently before writing the Proof Packet. |
