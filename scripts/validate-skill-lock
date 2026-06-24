@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""
+Validate ~/.vb-skills/vb-skill-lock.json integrity.
+
+Usage:
+  validate-skill-lock                   validate all skills in lock
+  validate-skill-lock --compute <name>  print sha256:<hash> for a skill directory
+
+Exit codes: 0 = ok, 1 = drift/error.
+"""
+import hashlib
+import json
+import os
+import sys
+
+STORE = os.path.expanduser("~/.vb-skills")
+LOCK_PATH = os.path.join(STORE, "vb-skill-lock.json")
+
+
+def _hash_dir(skill_dir: str) -> str:
+    """Compute SHA-256 over all files in skill_dir (sorted by relative path)."""
+    manifest_parts: list[str] = []
+    for dirpath, _, filenames in os.walk(skill_dir):
+        for fname in sorted(filenames):
+            full = os.path.join(dirpath, fname)
+            rel = os.path.relpath(full, skill_dir)
+            file_hash = hashlib.sha256(open(full, "rb").read()).hexdigest()
+            manifest_parts.append(f"{rel}:{file_hash}")
+    manifest_parts.sort()
+    digest = hashlib.sha256("\n".join(manifest_parts).encode()).hexdigest()
+    return f"sha256:{digest}"
+
+
+def cmd_compute(skill_name: str) -> None:
+    skill_dir = os.path.join(STORE, skill_name)
+    if not os.path.isdir(skill_dir):
+        print(f"ERROR: skill directory not found: {skill_dir}", file=sys.stderr)
+        sys.exit(1)
+    print(_hash_dir(skill_dir))
+
+
+def cmd_validate() -> None:
+    if not os.path.isfile(LOCK_PATH):
+        print(f"ERROR: lock file not found: {LOCK_PATH}", file=sys.stderr)
+        sys.exit(1)
+
+    with open(LOCK_PATH) as f:
+        lock = json.load(f)
+
+    skills = lock.get("skills", {})
+    errors: list[str] = []
+
+    for name, entry in skills.items():
+        skill_dir = os.path.join(STORE, name)
+        if not os.path.isdir(skill_dir):
+            errors.append(f"  {name}: directory missing ({skill_dir})")
+            continue
+        expected = entry.get("computedHash", "")
+        actual = _hash_dir(skill_dir)
+        if actual != expected:
+            errors.append(f"  {name}: hash mismatch\n    expected {expected}\n    actual   {actual}")
+
+    if errors:
+        print("FAIL: skill lock integrity check failed", file=sys.stderr)
+        for e in errors:
+            print(e, file=sys.stderr)
+        sys.exit(1)
+
+    print(f"OK: {len(skills)} skill(s) verified")
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    if len(args) == 2 and args[0] == "--compute":
+        cmd_compute(args[1])
+    elif len(args) == 0:
+        cmd_validate()
+    else:
+        print(__doc__, file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

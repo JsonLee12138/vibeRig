@@ -96,8 +96,8 @@ Do not invent states that do not exist in the Linear team.
 7. After all subtasks are updated, update the **parent issue** status with `_save_issue`:
    - All subtasks accepted → Done/Accepted/Completed.
    - Any subtask rejected or blocked → closest non-terminal working state (In Progress / Blocked).
-8. Run lightweight insights if the fix reveals a reusable pattern worth capturing (optional, not default — use when the fix uncovers a non-obvious recurring failure mode, not routinely).
-9. Report: acceptance recorded, list of subtasks and their final statuses, parent issue status, any insights summary.
+8. If the fix reveals a non-obvious, recurring failure mode, **after** steps 6–7 have moved all issues to Done: invoke `vb-learn <PARENT-OR-TASK-KEY>`. Pass only the Linear key — `vb-learn` reads the issue and all sub-tasks from Linear autonomously. Optional — skip for routine fixes; state reason in report.
+9. Report: acceptance recorded, list of subtasks and their final statuses, parent issue status, `vb-learn` result or reason for skipping.
 
 ## Red Flags
 
@@ -105,7 +105,7 @@ Do not invent states that do not exist in the Linear team.
 - Linear moved to Done before the user explicitly accepted → terminal state requires explicit human confirmation.
 - A PR was created or merged from this skill → bug fixes use commits only; PR workflows belong in `accept`.
 - `accept` was used instead of `accept-bug` for a bug → use `accept-bug` for bugs; `accept` carries PR merge and worktree cleanup logic that does not apply.
-- `insights` was run for every bug fix by default → lightweight insights are optional; use them when the fix reveals a reusable pattern, not routinely.
+- `vb-learn` was run for every bug fix by default → it is optional; invoke only when the fix reveals a non-obvious reusable pattern.
 
 ## Anti-Rationalization
 
@@ -113,7 +113,7 @@ Do not invent states that do not exist in the Linear team.
 |---|---|
 | "The fix passed all tests — the bug is effectively accepted" | Automated validation proves the code changed, not that the fix matches user intent. Acceptance requires explicit sign-off from the user. |
 | "I need to create a PR to close this bug properly" | Bug fixes committed by `bugfix` go directly to the branch. No PR is required or expected. Creating one adds unnecessary ceremony. |
-| "I'll run insights for every bug fix since learning is always good" | Insights add noise when the fix is routine. Reserve them for fixes that reveal a non-obvious pattern worth preserving in a skill. |
+| "I'll run vb-learn for every bug fix since learning is always good" | `vb-learn` adds noise when the fix is routine. Reserve it for fixes that reveal a non-obvious pattern worth preserving in a skill. |
 | "The fix was already validated by agent-sop, so I can skip reading the evidence" | Read the fix evidence comment before writing the acceptance comment — it is the record that the acceptance references. |
 
 ## Verification Checklist
@@ -123,5 +123,5 @@ Do not invent states that do not exist in the Linear team.
 - [ ] Acceptance comment written to Linear (including commit hash from fix evidence).
 - [ ] No PR was created or merged — bug fix is commit-only.
 - [ ] Linear issue is in a terminal success state (Done/Accepted/Completed).
-- [ ] If insights ran, only non-obvious pattern-level learnings were captured (not routine fix details).
+- [ ] If `vb-learn` ran, only non-obvious pattern-level learnings were captured; `validate-skill-lock` exited 0.
 - [ ] Human-facing Linear content uses `output.language`.

@@ -106,7 +106,7 @@ Do not invent states that do not exist in the Linear team. If no close status ex
 8. After all subtasks are updated, update the **parent requirement issue** status with `_save_issue`:
    - Full acceptance of all subtasks → same terminal success state (Done/Accepted/Completed).
    - Any subtask partial/blocked/rejected → closest non-terminal working state (In Progress / Blocked).
-9. On full acceptance and successful PR merge: run `insights` → `skill-builder` for confirmed proposals. Write retrospective as a Linear comment.
+9. On full acceptance and successful PR merge, **after** steps 7–8 have moved all issues to a terminal state: invoke `vb-learn <PARENT-OR-TASK-KEY>`. Pass only the Linear key — `vb-learn` reads the issue and all sub-tasks from Linear autonomously. Write retrospective as a Linear comment after `vb-learn` returns its report.
 10. Archive requirement docs: move `.vibeRig/requirements/{id}/` to `.vibeRig/archive/requirements/{id}/`. Record source, destination, and any blocker.
 11. Clean each task worktree (for worktree-mode tasks):
     - **Confirm all commits are pushed**: run `git -C <worktree-path> log --oneline origin/<branch>..<branch>`. If any unpushed commits are listed, do NOT remove the worktree — push them first or ask the user.
@@ -122,7 +122,7 @@ Do not invent states that do not exist in the Linear team. If no close status ex
 - Linear was moved to Done before the PR merge succeeded → revert to a non-terminal blocked state.
 - Worktree was removed without checking for unpushed commits → run `git log --oneline origin/<branch>..<branch>` first; unpushed commits mean work would be lost.
 - Worktree was removed without `git status --short` confirmation of clean state → always verify both pushed and clean before removal.
-- `insights` ran before the terminal Linear status was set → insights must follow the terminal update.
+- `vb-learn` ran before the terminal Linear status was set → `vb-learn` must follow the terminal update.
 - `accept` was used for a bug fix → use `accept-bug` for bugs; this skill is for requirement/feature work with PRs and worktrees.
 
 ## Anti-Rationalization
@@ -152,7 +152,7 @@ gh pr view <PR-URL> --json mergedAt,state | grep -q '"mergedAt"' && echo "merged
 - [ ] Merge preflight (CI, conflicts, approvals) passed before any merge attempt.
 - [ ] Acceptance comment written to Linear (using template) before the terminal status update.
 - [ ] PR merge succeeded before the issue moved to a terminal state.
-- [ ] `insights` ran only after PR merge and terminal Linear status were confirmed.
+- [ ] `vb-learn` ran only after PR merge and terminal Linear status were confirmed (or skipped with stated reason).
 - [ ] Requirement docs archived from active to archive directory.
 - [ ] All worktree commits confirmed pushed (`git log --oneline origin/<branch>..<branch>` = empty).
 - [ ] Worktree clean state confirmed (`git status --short` = empty) before removal.

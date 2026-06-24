@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://viberig.local/schemas/vb-skill-lock.schema.json",
+  "title": "VibeRig Learned Skill Lock",
+  "type": "object",
+  "required": ["version", "skills"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Lock file structure version."
+    },
+    "skills": {
+      "type": "object",
+      "description": "Map of learned skill name -> lock entry. Key MUST equal the skill directory name.",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "additionalProperties": { "$ref": "#/$defs/skillEntry" }
+    }
+  },
+  "$defs": {
+    "skillEntry": {
+      "type": "object",
+      "required": ["skillPath", "computedHash"],
+      "additionalProperties": false,
+      "properties": {
+        "skillPath": {
+          "type": "string",
+          "pattern": "^[^/]+/SKILL\\.md$",
+          "description": "Path to SKILL.md relative to the store root, e.g. 'foo/SKILL.md'."
+        },
+        "computedHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "SHA-256 over the skill directory contents; integrity baseline."
+        }
+      }
+    }
+  }
+}
