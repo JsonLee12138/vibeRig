@@ -99,20 +99,13 @@ Report as **partial** when Linear tools are unavailable; do not claim full regis
 
 ### 7. Agent team
 
-For each missing agent, invoke `agent-creator` with the project stack/domain:
+**7a. 安装插件基线 agents**
 
-| Agent | Responsibility | sandbox_mode |
-|---|---|---|
-| `researcher` | Research, read-only analysis | `read-only` |
-| `implementation` | Feature implementation | `workspace-write` |
-| `qa` | QA verification | `workspace-write` |
-| `code_review` | Code quality, style | `read-only` |
-| `security_auditor` | Vulnerability scanning | `read-only` |
-| `test_engineer` | Test authoring | `workspace-write` |
-| `integrator` | Cross-module integration | `workspace-write` |
-| `self_learner` | Post-accept learning via `vb-learn` | `workspace-write` |
+调用 `built-in-agents`，将 vb-plugin 自带的 9 个基线 agent TOML 写入 `.codex/agents/`（已存在的跳过）。
 
-Skip agents that already have a valid TOML. Update `project.yaml` `subagents` section.
+**7b. 调用 `update-team` 分析项目**
+
+调用 `update-team`，基于 `.vibeRig/requirements/` 和 Linear 未执行 issues 推理出项目所需的额外 agent 角色，并完成创建与 `project.yaml` 的 `subagents` 更新。
 
 ### 8. Report
 
