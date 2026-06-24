@@ -1,6 +1,6 @@
 ---
 name: vb-learn
-description: Distil a completed Linear task (status must be Done/Accepted/Completed) into a reusable learned skill in the global ~/.vb-skills store. Pass a Linear key directly: "vb-learn VB-42", "学习 VB-42", "把 VB-42 沉淀成 skill". Also invoked by `accept` and `accept-bug` after they move the issue to Done. Reads all Linear content autonomously — no accept summary required. Do NOT invoke on in-progress, rejected, blocked, or partially-accepted issues.
+description: Distil a completed Linear task into a reusable skill in ~/.vb-skills. Trigger phrases: "vb-learn VB-42", "学习 VB-42", "把 VB-42 沉淀成 skill", "记录这个 pattern". Issue must be in a terminal state (Done / Accepted / Completed / Cancelled / Duplicate).
 ---
 
 # VB Learn
@@ -25,7 +25,6 @@ This skill verifies the state itself and refuses to learn from non-terminal issu
 ### Do NOT invoke
 
 - Issue is in a non-terminal state (In Progress, In Review, Blocked, To Do, etc.) — exit with error.
-- Issue was rejected or cancelled — nothing to learn.
 - `vb-init` has not been run (no `~/.vb-skills` repo or `~/.agents/skills/vb` symlink).
 - The task is purely routine with nothing generalisable — state reason and return `skipped: <reason>`.
 
@@ -43,11 +42,11 @@ _get_issue(id: <LINEAR-KEY>)
 _list_issue_statuses(teamId: <team>)
 ```
 
-Check the issue's current status against the team's terminal states (Done / Accepted / Completed).
+Check the issue's current status against the team's terminal states (Done / Accepted / Completed / Cancelled / Duplicate).
 **If status is not terminal → exit immediately with:**
 ```
 ERROR: VB-42 is not in a terminal state (current: <status>).
-vb-learn requires the issue to be Done/Accepted/Completed before learning.
+vb-learn requires the issue to be Done/Accepted/Completed/Cancelled/Duplicate before learning.
 Run `accept` or `accept-bug` first, or close the issue manually.
 ```
 
@@ -69,53 +68,43 @@ cat ~/.vb-skills/vb-skill-lock.json   # survey existing skills
 ls ~/.vb-skills/
 ```
 
-Invoke `insights` with the full gathered content.
-Ask for **one** concrete, generalizable rule stripped of task-specific detail.
-The pattern from `insights` is the sole input to `skill-builder`.
+Invoke `insights` with the full gathered content and ask for ALL of the following — **When is the most important**:
+
+| Output from insights | Why it matters |
+|---|---|
+| **When** — exact conditions / symptoms / code signals that mean "use this skill now" | Powers the `description` frontmatter and the `## When` block; this is how AI discovers the skill |
+| **When NOT** — adjacent situations that look similar but belong elsewhere | Prevents false triggers; feeds should-NOT-trigger examples |
+| **What** — the one generalizable rule, stripped of task-specific detail | Feeds the skill body |
+| **How** — the solution approach, generalized | Feeds the workflow section |
+| **Verify** — commands or checks that confirm correct application | Feeds the validation section |
+
+If `insights` cannot produce a clear **When**, stop and return `skipped: trigger conditions too vague to write a discoverable skill`.
 
 ### 3. Write the skill — invoke `skill-builder`
-
-Invoke `skill-builder` with:
-- **Target**: `~/.vb-skills/<skill-name>/` (new) or existing dir (refine).
-- **Input**: pattern from `insights`.
-- **Constraints**: trigger-first `description`; body < 200 lines; deterministic logic to `scripts/`; no task-specific references (no Linear keys, dates, names) in the SKILL.md body.
 
 Skill name rule: `^[a-z0-9][a-z0-9-]*$` — derived from the lesson topic, never from the Linear key.
 
 Decision:
-- Semantically close skill already in lock → **refine** it.
+- Semantically close skill already in lock → **refine** it (pass existing dir as target).
 - No close match → **create** new directory.
+
+Fill in [`assets/skill-builder-prompt.md`](assets/skill-builder-prompt.md) with all fields from `insights` output, then pass the entire block to `skill-builder`.
+
+**Trigger Quality Gate** — after `skill-builder` produces the SKILL.md, verify before accepting:
+
+1. Mentally run each should-trigger example against the `description` — all must match.
+2. Mentally run each should-NOT-trigger example against the `description` — none must match.
+3. Confirm `## When` section exists and states both "invoke when" and "do not invoke when".
+
+If any check fails → ask `skill-builder` to revise the `description` and `## When` section before proceeding to step 4.
 
 ### 4. Update lock
 
-```python
-import hashlib, json, os
-
-store      = os.path.expanduser("~/.vb-skills")
-skill_name = "<skill-name>"          # determined in step 3
-skill_dir  = os.path.join(store, skill_name)
-lock_path  = os.path.join(store, "vb-skill-lock.json")
-
-parts = []
-for dp, _, fnames in os.walk(skill_dir):
-    for fn in sorted(fnames):
-        full = os.path.join(dp, fn)
-        rel  = os.path.relpath(full, skill_dir)
-        h    = hashlib.sha256(open(full, "rb").read()).hexdigest()
-        parts.append(f"{rel}:{h}")
-parts.sort()
-computed = "sha256:" + hashlib.sha256("\n".join(parts).encode()).hexdigest()
-
-with open(lock_path) as f:
-    lock = json.load(f)
-lock["skills"][skill_name] = {
-    "skillPath": f"{skill_name}/SKILL.md",
-    "computedHash": computed
-}
-with open(lock_path, "w") as f:
-    json.dump(lock, f, indent=2, ensure_ascii=False)
-    f.write("\n")
+```bash
+python3 <project-root>/scripts/update-skill-lock <skill-name>
 ```
+
+See [`scripts/update-skill-lock`](../../../../scripts/update-skill-lock) — computes SHA-256 of the skill directory and writes the entry to `vb-skill-lock.json`.
 
 ### 5. Validate and commit
 
@@ -153,8 +142,10 @@ git -C ~/.vb-skills log --oneline -1
 
 - [ ] Linear issue status confirmed terminal before any learning began.
 - [ ] All sub-tasks loaded (if parent issue).
-- [ ] `insights` invoked; returned one concrete generalizable pattern.
-- [ ] `skill-builder` invoked with `~/.vb-skills/<name>/` as target.
+- [ ] `insights` invoked; returned When / When NOT / What / How / Verify — not just the rule.
+- [ ] `skill-builder` invoked with `~/.vb-skills/<name>/` as target and full When context.
+- [ ] Trigger Quality Gate passed: all should-trigger hit, all should-NOT-trigger miss.
+- [ ] Learned SKILL.md has a `## When` section as first section after intro.
 - [ ] Exactly one SKILL.md written or updated in `~/.vb-skills/`.
 - [ ] `vb-skill-lock.json` updated with correct `skillPath` and `computedHash`.
 - [ ] `validate-skill-lock` exits 0.
