@@ -61,32 +61,45 @@ If the issue is a **parent (requirement)**: use `_list_issues(filter: {parent: {
 _list_comments(issueId: <id>)   # repeat for each sub-task
 ```
 
-### 2. Surface the pattern — invoke `insights`
+### 2. Full content summary (no information loss)
+
+Before any analysis, produce a **structured summary** of everything gathered. This step must not omit or compress anything — its purpose is to create a lossless intermediate representation.
+
+Fill in [`assets/content-summary-template.md`](assets/content-summary-template.md) — six required fields. Do not skip any field, even if thin — write "none noted" rather than omitting.
+
+### 3. Skill planning — decide what to learn
 
 ```bash
 cat ~/.vb-skills/vb-skill-lock.json   # survey existing skills
 ls ~/.vb-skills/
 ```
 
-Invoke `insights` with the full gathered content and ask for ALL of the following — **When is the most important**:
+Read the content summary from Step 2. Then explicitly reason about how many reusable lessons are present:
 
-| Output from insights | Why it matters |
+1. **List all candidate skills** — each candidate is a distinct, independently triggerable lesson. One issue can yield zero, one, or several candidates.
+2. For each candidate, briefly state:
+   - Proposed skill name (`^[a-z0-9][a-z0-9-]*$`)
+   - One-line **When** (the trigger condition)
+   - Action: `create` (no semantically close skill in lock) or `refine` (close match exists → name the existing skill)
+   - Confidence: `high` / `medium` / `low`
+3. **Drop** any candidate where confidence is `low` or a clear **When** cannot be stated — record reason as `skipped: <reason>`.
+4. Present the final plan as a numbered list before proceeding.
+
+If zero candidates remain after filtering → return `skipped: no generalisable pattern found`.
+
+### 4. Write each skill — invoke `skill-builder` per candidate
+
+For **each** candidate from Step 3 (in order):
+
+Invoke `insights` focused on that candidate's scope, asking for:
+
+| Output | Why it matters |
 |---|---|
-| **When** — exact conditions / symptoms / code signals that mean "use this skill now" | Powers the `description` frontmatter and the `## When` block; this is how AI discovers the skill |
-| **When NOT** — adjacent situations that look similar but belong elsewhere | Prevents false triggers; feeds should-NOT-trigger examples |
-| **What** — the one generalizable rule, stripped of task-specific detail | Feeds the skill body |
-| **How** — the solution approach, generalized | Feeds the workflow section |
-| **Verify** — commands or checks that confirm correct application | Feeds the validation section |
-
-If `insights` cannot produce a clear **When**, stop and return `skipped: trigger conditions too vague to write a discoverable skill`.
-
-### 3. Write the skill — invoke `skill-builder`
-
-Skill name rule: `^[a-z0-9][a-z0-9-]*$` — derived from the lesson topic, never from the Linear key.
-
-Decision:
-- Semantically close skill already in lock → **refine** it (pass existing dir as target).
-- No close match → **create** new directory.
+| **When** — exact conditions / symptoms / code signals | Powers `description` frontmatter and `## When` block |
+| **When NOT** — adjacent situations that look similar but belong elsewhere | Prevents false triggers |
+| **What** — the one generalisable rule, stripped of task-specific detail | Feeds skill body |
+| **How** — the solution approach, generalised | Feeds workflow section |
+| **Verify** — commands or checks that confirm correct application | Feeds validation section |
 
 Fill in [`assets/skill-builder-prompt.md`](assets/skill-builder-prompt.md) with all fields from `insights` output, then pass the entire block to `skill-builder`.
 
@@ -96,15 +109,15 @@ Fill in [`assets/skill-builder-prompt.md`](assets/skill-builder-prompt.md) with 
 2. Mentally run each should-NOT-trigger example against the `description` — none must match.
 3. Confirm `## When` section exists and states both "invoke when" and "do not invoke when".
 
-If any check fails → ask `skill-builder` to revise the `description` and `## When` section before proceeding to step 4.
+If any check fails → ask `skill-builder` to revise before moving on.
 
-### 4. Update lock
+Then immediately update the lock for this skill:
 
 ```bash
 python3 <project-root>/scripts/update-skill-lock <skill-name>
 ```
 
-See [`scripts/update-skill-lock`](../../../../scripts/update-skill-lock) — computes SHA-256 of the skill directory and writes the entry to `vb-skill-lock.json`.
+Repeat for the next candidate.
 
 ### 5. Validate and commit
 
@@ -113,43 +126,52 @@ See [`scripts/update-skill-lock`](../../../../scripts/update-skill-lock) — com
 python3 <project-root>/scripts/validate-skill-lock
 
 git -C ~/.vb-skills add -A
-git -C ~/.vb-skills commit -m "vb-learn: capture <skill-name> (<LINEAR-KEY>)"
+git -C ~/.vb-skills commit -m "vb-learn: capture <skill-names> (<LINEAR-KEY>)"
 ```
 
-Commit format: `vb-learn: capture <skill-name> (<LINEAR-KEY>)` — git history is the traceability record.
+Commit format when multiple skills: list all names comma-separated — `vb-learn: capture foo, bar (<LINEAR-KEY>)`.
 
 ### 6. Return report
 
 ```
-Learned skill : <skill-name>
-Action        : created | refined
-Path          : ~/.vb-skills/<skill-name>/SKILL.md
-insights      : <one-line pattern summary>
-skill-builder : <what changed>
-Lock validated: ok
-Commit        : <short-sha>
+Content summary : done (Step 2)
+Skill plan      : <N> candidates identified, <M> skipped
+─────────────────────────────────────────────────────
+Skill 1 : <skill-name>
+  Action        : created | refined
+  Path          : ~/.vb-skills/<skill-name>/SKILL.md
+  Pattern       : <one-line summary>
+
+Skill 2 : <skill-name>
+  ...
+
+Skipped         : <name> — <reason> (if any)
+─────────────────────────────────────────────────────
+Lock validated  : ok
+Commit          : <short-sha>
 ```
 
-If skipped: `skipped: <reason>`.
+If all skipped: `skipped: <reason>`.
 
 ## Validation
 
 ```bash
-ls ~/.vb-skills/<skill-name>/SKILL.md
+ls ~/.vb-skills/           # confirm written skills exist
 python3 <project-root>/scripts/validate-skill-lock
 git -C ~/.vb-skills log --oneline -1
 ```
 
 - [ ] Linear issue status confirmed terminal before any learning began.
 - [ ] All sub-tasks loaded (if parent issue).
-- [ ] `insights` invoked; returned When / When NOT / What / How / Verify — not just the rule.
-- [ ] `skill-builder` invoked with `~/.vb-skills/<name>/` as target and full When context.
-- [ ] Trigger Quality Gate passed: all should-trigger hit, all should-NOT-trigger miss.
-- [ ] Learned SKILL.md has a `## When` section as first section after intro.
-- [ ] Exactly one SKILL.md written or updated in `~/.vb-skills/`.
-- [ ] `vb-skill-lock.json` updated with correct `skillPath` and `computedHash`.
+- [ ] Step 2 content summary produced — all six fields present, nothing omitted.
+- [ ] Step 3 skill plan listed explicitly before any `skill-builder` call.
+- [ ] `insights` invoked per candidate; returned When / When NOT / What / How / Verify.
+- [ ] `skill-builder` invoked per candidate with `~/.vb-skills/<name>/` as target and full When context.
+- [ ] Trigger Quality Gate passed for every skill: all should-trigger hit, all should-NOT-trigger miss.
+- [ ] Every learned SKILL.md has a `## When` section as first section after intro.
+- [ ] `vb-skill-lock.json` updated for each written skill (correct `skillPath` and `computedHash`).
 - [ ] `validate-skill-lock` exits 0.
-- [ ] Commit message: `vb-learn: capture <name> (<key>)`.
+- [ ] Commit message lists all skill names and the Linear key.
 - [ ] Zero writes outside `~/.vb-skills/`.
 
 ## Hard Rules
@@ -157,5 +179,6 @@ git -C ~/.vb-skills log --oneline -1
 - Write target is `~/.vb-skills/` only — any other path is a bug.
 - Verify terminal state first — never learn from a non-terminal issue.
 - Do not commit when `validate-skill-lock` exits non-zero.
-- Do not create more than one skill per invocation.
+- Always produce the Step 2 content summary before any skill planning — never jump straight from raw data to skill-builder.
+- Always produce the Step 3 skill plan (explicit list) before invoking skill-builder — never skip the planning phase.
 - Do not put Linear key, dates, or task-specific text inside the learned SKILL.md body.
