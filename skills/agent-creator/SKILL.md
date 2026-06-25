@@ -63,6 +63,28 @@ Do not claim completion unless the TOML uses supported fields only and the agent
 7. Copy [agent-template.toml](./assets/agent-template.toml) as the starting point, fill each section, then remove inapplicable sections. Keep `Mission`, `Scope`, and `Output` for every agent.
 8. Verify the TOML contains no custom schema fields before finishing.
 
+## Field Schema
+
+Consolidated reference for the official custom agent TOML fields. Only `name`, `description`, and `developer_instructions` are required; every optional field inherits from the parent session when omitted.
+
+| Field | Type | Required | Purpose |
+|---|---|:--:|---|
+| `name` | string | Yes | Agent identifier Codex uses to spawn or refer to the agent. Source of truth; prefer snake_case, match the filename when practical. |
+| `description` | string | Yes | Human-facing guidance for when Codex should pick this agent. |
+| `developer_instructions` | string | Yes | Core behavior. Holds the `Mission` / `Scope` / `Output` role boundary and skill guidance. |
+| `nickname_candidates` | string[] | No | Display-only nickname pool for spawned instances. Non-empty, unique, ASCII letters/digits/space/hyphen/underscore. Presentation only — Codex still spawns by `name`. |
+| `model` | string | No | Model override for this agent. |
+| `model_reasoning_effort` | string | No | Reasoning effort (e.g. `medium`, `high`). |
+| `sandbox_mode` | string | No | `read-only` for exploration/review/analysis; `workspace-write` only when the agent must edit files. |
+| `mcp_servers` | table | No | Per-agent MCP server config via `[mcp_servers.<name>]` blocks. |
+| `skills.config` | array | No | Hard skill binding via `[[skills.config]]`. This skill **avoids** it — prefer instruction-level guidance in `developer_instructions`. |
+
+Any other supported `config.toml` key is also allowed but rarely needed.
+
+**Not in the agent file:** global `[agents]` settings (`max_threads`, `max_depth`, `job_max_runtime_seconds`) live in `config.toml`, not the per-agent TOML. Do not touch them unless the user explicitly asks.
+
+**Runtime override precedence:** the parent turn's live sandbox/approval choices (e.g. `/permissions`, `--yolo`) override the `sandbox_mode` set in the agent file. Write the safest correct default anyway; do not rely on runtime overrides for safety.
+
 ## Field Rules
 
 - Use `name` as the Codex agent identifier; prefer snake_case.
