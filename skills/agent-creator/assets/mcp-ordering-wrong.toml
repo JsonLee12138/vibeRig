@@ -1,0 +1,26 @@
+# WRONG — DO NOT COPY. The [mcp_servers.*] block is placed BEFORE
+# developer_instructions. In TOML a table header captures every bare key that
+# follows it, so `developer_instructions` below is parsed as
+# `mcp_servers.example.env.developer_instructions`. The file still parses with
+# no error, but the agent ends up with NO instructions and silently misbehaves.
+#
+# Fix: move every [mcp_servers.*] block to the END of the file, after all
+# top-level keys. See mcp-ordering-correct.toml.
+name = "example_agent"
+description = "Use for a narrow subagent responsibility that needs an MCP server."
+sandbox_mode = "read-only"
+
+[mcp_servers.example]
+type = "stdio"
+command = "/usr/local/bin/npx"
+args = [ "-y", "@scope/example-mcp-server" ]
+
+[mcp_servers.example.env]
+EXAMPLE_MODEL = "example-model"
+
+# BUG: this is swallowed by [mcp_servers.example.env] above — it is NOT a
+# top-level key, so the agent has no developer_instructions at runtime.
+developer_instructions = """
+## Mission
+This text never reaches Codex as the agent's instructions.
+"""

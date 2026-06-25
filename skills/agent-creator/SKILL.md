@@ -81,6 +81,8 @@ Consolidated reference for the official custom agent TOML fields. Only `name`, `
 
 Any other supported `config.toml` key is also allowed but rarely needed.
 
+**Field ordering (critical):** in TOML, every `[table]` header (`[mcp_servers.<name>]`, `[[skills.config]]`) captures all bare keys that follow it. Write **all** top-level scalar keys — including the multi-line `developer_instructions` — **before** any table block, and place `mcp_servers` / `skills.config` at the **end** of the file. If `mcp_servers` is placed above `developer_instructions`, Codex reads `developer_instructions` as `mcp_servers.<name>.developer_instructions` and the agent loses its instructions. Compare [mcp-ordering-correct.toml](./assets/mcp-ordering-correct.toml) (correct) against [mcp-ordering-wrong.toml](./assets/mcp-ordering-wrong.toml) (the silent-failure layout).
+
 **Not in the agent file:** global `[agents]` settings (`max_threads`, `max_depth`, `job_max_runtime_seconds`) live in `config.toml`, not the per-agent TOML. Do not touch them unless the user explicitly asks.
 
 **Runtime override precedence:** the parent turn's live sandbox/approval choices (e.g. `/permissions`, `--yolo`) override the `sandbox_mode` set in the agent file. Write the safest correct default anyway; do not rely on runtime overrides for safety.

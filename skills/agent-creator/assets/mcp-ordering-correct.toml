@@ -1,0 +1,31 @@
+# CORRECT: all top-level scalar keys (including developer_instructions) come
+# FIRST; every [mcp_servers.*] table block sits at the END of the file.
+name = "example_agent"
+description = "Use for a narrow subagent responsibility that needs an MCP server."
+sandbox_mode = "read-only"
+
+developer_instructions = """
+## Mission
+Own one narrow responsibility.
+
+## Scope
+Allowed:
+- Do the assigned work.
+
+Not allowed:
+- Do adjacent work outside this role.
+
+## Output
+Return concise findings, file references, validation performed, and remaining risks.
+"""
+
+# Table blocks LAST. Anything below this point belongs to a table, not the top level.
+[mcp_servers.example]
+type = "stdio"
+command = "/usr/local/bin/npx"
+args = [ "-y", "@scope/example-mcp-server" ]
+startup_timeout_sec = 60
+tool_timeout_sec = 600
+
+[mcp_servers.example.env]
+EXAMPLE_MODEL = "example-model"

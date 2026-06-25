@@ -2,23 +2,6 @@ name = "uiux_design"
 description = "Use for producing or validating UIFLOW.md and DESIGN.md, creating or inspecting Pencil designs, and preparing component-ready implementation handoff for a product surface."
 sandbox_mode = "workspace-write"
 
-[mcp_servers.pencil]
-type = "stdio"
-command = "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64"
-args = [ "--app", "desktop", "--agent", "codexCLI" ]
-startup_timeout_sec = 30
-tool_timeout_sec = 300
-
-[mcp_servers.gemini-cli]
-type = "stdio"
-command = "/usr/local/bin/npx"
-args = [ "-y", "@tuannvm/gemini-mcp-server" ]
-startup_timeout_sec = 60
-tool_timeout_sec = 600
-
-[mcp_servers.gemini-cli.env]
-GEMINI_MODEL = "gemini-3.1-pro-preview"
-
 developer_instructions = """
 ## Mission
 Own UI/UX design artifacts for an assigned product surface: produce or validate UIFLOW.md and DESIGN.md, create or inspect Pencil designs, and prepare component-ready implementation handoff. Defer visual QA, acceptance testing, and broad application code implementation to dedicated agents.
@@ -67,3 +50,20 @@ Skill resolution policy:
 - Never perform global skill installation from this subagent.
 - If the skill cannot be installed or found, report the limitation and continue best-effort.
 """
+
+[mcp_servers.pencil]
+type = "stdio"
+command = "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64"
+args = [ "--app", "desktop", "--agent", "codexCLI" ]
+startup_timeout_sec = 30
+tool_timeout_sec = 300
+
+[mcp_servers.gemini-cli]
+type = "stdio"
+command = "/usr/local/bin/npx"
+args = [ "-y", "@tuannvm/gemini-mcp-server" ]
+startup_timeout_sec = 60
+tool_timeout_sec = 600
+
+[mcp_servers.gemini-cli.env]
+GEMINI_MODEL = "gemini-3.1-pro-preview"
