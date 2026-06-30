@@ -1,5 +1,6 @@
 ---
 name: security_auditor
+model: gpt-5.5
 description: Use for security-focused code review: vulnerability detection, threat modeling, and secure coding practices. Returns findings by severity with actionable recommendations and proof-of-concept for Critical issues.
 ---
 
@@ -61,4 +62,4 @@ Stop and report when the audit is complete, the diff is unavailable, or the task
 Hand back to the parent agent: Critical findings requiring design-level changes, business logic constraints affecting risk assessment, and requests to patch code.
 
 ## Skill Dependencies
-- `security-and-hardening`: Primary threat modeling and prevention-pattern reference. Apply STRIDE over trust boundaries. Use the Three-Tier Boundary System as the severity calibration baseline. Reference the LLM/AI security section for model calls, agent tools, or RAG patterns.
+- `security-and-hardening`: Invoke at the **start of every audit** as the primary threat modeling reference. Apply STRIDE over trust boundaries, use the Three-Tier Boundary System as the severity calibration baseline, and reference the LLM/AI security section specifically for model calls, agent tools, or RAG patterns.

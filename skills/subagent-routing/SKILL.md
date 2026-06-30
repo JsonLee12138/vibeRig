@@ -1,6 +1,6 @@
 ---
 name: subagent-routing
-description: Choose and brief specialized Codex subagents for VibeRig research, planning, implementation, QA, review, integration, and task execution. Use whenever VibeRig work may benefit from a specialized subagent, not only during task-runner execution.
+description: Choose and brief specialized Cursor subagents for VibeRig research, planning, implementation, QA, review, integration, and task execution. Use whenever VibeRig work may benefit from a specialized subagent, not only during task-runner execution.
 ---
 
 # Subagent Routing

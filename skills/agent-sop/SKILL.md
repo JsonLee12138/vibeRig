@@ -115,9 +115,9 @@ Run the SOP in this order:
    - Require a PASS, REWORK, or BLOCKED verdict with reasons.
 8. Run parallel quality review (when the task involves non-trivial code changes).
    - Read `.vibeRig/project.yaml` `subagents` to resolve the three review roles:
-     - **Code reviewer**: use `subagents.default_review`; if unset, find the closest code-review capability in `.codex/agents/`.
-     - **Security auditor**: use `subagents.default_security_audit`; if unset, find the closest security capability in `.codex/agents/`.
-     - **Test engineer**: use `subagents.default_test_engineer`; if unset, find the closest test/coverage capability in `.codex/agents/`.
+     - **Code reviewer**: use `subagents.default_review`; if unset, find the closest code-review capability in `agents/` or `.cursor/agents/`.
+     - **Security auditor**: use `subagents.default_security_audit`; if unset, find the closest security capability in `agents/` or `.cursor/agents/`.
+     - **Test engineer**: use `subagents.default_test_engineer`; if unset, find the closest test/coverage capability in `agents/` or `.cursor/agents/`.
    - Issue all three subagent briefs in a single turn so they run concurrently. For each role, brief the resolved agent with its expected output:
      - Code reviewer: review the diff across five dimensions (correctness, readability, architecture, security, performance). Return an APPROVE / REQUEST CHANGES verdict with Critical / Important / Suggestion findings; no fixes applied.
      - Security auditor: scan the same diff for vulnerabilities, injection risks, auth gaps, and data exposure. Return findings with Critical / High / Medium / Low / Info severity and proof-of-concept descriptions for Critical issues; no fixes applied.
@@ -237,7 +237,7 @@ Minimum validation is a main-agent decision covering:
 - [ ] Whether tests are required and why (explicit decision recorded).
 - [ ] Which targeted tests, build, lint, typecheck, smoke, manual, or MCP-backed checks ran and their pass/fail.
 - [ ] Whether a QA/review capability returned PASS, REWORK, or BLOCKED when one was available.
-- [ ] For non-trivial code changes: parallel quality review ran (roles resolved from `.vibeRig/project.yaml` subagents or `.codex/agents/` fallback) and all Critical findings were resolved.
+- [ ] For non-trivial code changes: parallel quality review ran (roles resolved from `.vibeRig/project.yaml` subagents or `agents/`/`.cursor/agents/` fallback) and all Critical findings were resolved.
 - [ ] Parallel review summary (notable findings, residual risks) is included in the final response.
 - [ ] Which checks were skipped and what risk remains.
 

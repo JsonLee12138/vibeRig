@@ -1,19 +1,18 @@
 ---
 name: update-team
-description: Analyze the current project and reconcile the Codex agent team. Use when the user asks to update the agent team, add or remove agents, re-analyze project needs, or refresh agents after requirements change. Also invoked by vb-init after baseline agents are copied. Do not use to copy plugin baseline agents or manage ~/.codex/agents global agents.
+description: Analyze the current project and reconcile the Cursor agent team. Use when the user asks to update the agent team, add or remove agents, re-analyze project needs, or refresh agents after requirements change. Also invoked by vb-init. Do not use to copy plugin baseline agents or manage ~/.cursor/agents global agents.
 ---
 
 # Update Team
 
-分析项目上下文，推理出适合的 agent 角色，并将 `.codex/agents/` 与推理结果对齐。所有操作**幂等**——已存在且推理仍需要的 agent 直接跳过。
+分析项目上下文，推理出适合的 agent 角色，并将项目 `agents/` 目录与推理结果对齐。所有操作**幂等**——已存在且推理仍需要的 agent 直接跳过。
 
 ## Contract
 
-单一职责：基于项目分析结果管理当前项目的 `.codex/agents/` 团队。
+单一职责：基于项目分析结果管理当前项目的 agent 团队。
 
 不允许：
-- 复制插件基线 agents（由 `vb-init` 负责）
-- 操作 `~/.codex/agents/` 全局 agents
+- 操作 `~/.cursor/agents/` 全局 agents
 - 修改 `project.yaml` 的 `subagents` 以外的任何字段
 - 无推理依据地创建 agent
 - 无用户确认地删除 agent
@@ -69,24 +68,26 @@ Linear 不可用时跳过，报告中注明。
 ### 3. Diff 当前团队
 
 ```bash
-ls .codex/agents/*.toml 2>/dev/null
+find agents/ .cursor/agents/ -name "*.md" 2>/dev/null | sort
 ```
 
 建立三个列表：
-- **待创建** — 推理需要但 `.codex/agents/` 中不存在
+- **待创建** — 推理需要但目录中不存在
 - **跳过** — 已存在且推理仍需要（`--force` 则移入待更新）
 - **建议删除** — 已存在但推理判断不再需要
 
 ### 4. 执行变更
 
-**创建/更新**：对每个待创建 agent，调用 `agent-creator`，传入：
+**创建/更新**：对每个待创建 agent，调用 `agent-creator` 技能，传入：
 - agent 名称与职责
-- `sandbox_mode`
-- 项目技术栈与推理依据（用于调优 `developer_instructions`）
+- `readonly` 设置（review/analysis 类型为 `true`）
+- 项目技术栈与推理依据（用于调优 prompt body）
+
+通过 `agent-creator` 间接写文件，而非直接写入目录。
 
 **建议删除**：列出建议删除的 agent 及理由，等待用户确认后执行。
 
-**`--remove <name>`**：确认后删除 TOML，并从 `project.yaml` 移除对应 key。
+**`--remove <name>`**：确认后删除 `.md` 文件，并从 `project.yaml` 移除对应 key。
 
 ### 5. 更新 `project.yaml` subagents 段
 
@@ -112,18 +113,14 @@ Agent 团队变更：
 ## Validation
 
 ```bash
-# 新建的 agent TOML 存在
-ls .codex/agents/
-
-# 无不支持的自定义字段
-grep -En "^\[skills\]|^recommended_skills|^scope\s*=|^inputs\s*=|^boundaries" \
-  .codex/agents/*.toml && echo "INVALID FIELDS" || echo "ok"
+# 新建的 agent 文件存在
+find agents/ .cursor/agents/ -name "*.md" 2>/dev/null
 
 # project.yaml subagents 已更新
 grep "subagents" .vibeRig/project.yaml
 ```
 
-- [ ] 每个新建 agent 有 TOML 且有推理依据
+- [ ] 每个新建 agent 有 `.md` 文件且有推理依据
 - [ ] 无 agent 被静默删除
 - [ ] `project.yaml` `subagents` 与最终团队一致
 - [ ] 报告包含每个 agent 的动作与依据

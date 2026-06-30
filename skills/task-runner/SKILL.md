@@ -1,17 +1,17 @@
 ---
 name: task-runner
-description: Execute or continue a VibeRig task from Linear in the current Codex session. Use when the user asks to run, execute, continue, resume, fix, validate, or complete a VibeRig Linear issue or requirement. The main agent selects an appropriate subagent, validates the result, submits a PR, and updates Linear with a proof packet.
+description: Execute or continue a VibeRig task from Linear. Use when the user asks to run, execute, continue, resume, fix, validate, or complete a VibeRig Linear issue or requirement. The main agent selects an appropriate subagent, validates the result, submits a PR, and updates Linear with a proof packet.
 ---
 
 # Task Runner
 
 Use this skill as the Linear-native execution protocol for VibeRig.
 
-Codex is already running inside the Codex plugin environment. Do not launch another Codex process and do not use a backend runner. The current main agent orchestrates the work, delegates bounded execution to the appropriate subagent, validates the result, and writes status/proof back to Linear.
+The current main agent orchestrates the work, delegates bounded execution to the appropriate subagent, validates the result, and writes status/proof back to Linear.
 
 ## Contract
 
-Use this skill to execute or continue one VibeRig Linear issue or execution task in the current Codex session.
+Use this skill to execute or continue one VibeRig Linear issue or execution task.
 
 Do not use this skill for requirement discovery, Linear plan synthesis, final human acceptance, PR merge, worktree cleanup after acceptance, or post-acceptance learning. Use `brainstorm`, `write-plan`, `human-acceptance`, and `insights` for those phases.
 
@@ -75,7 +75,7 @@ Do not claim a task is ready for human acceptance unless validation is sufficien
 - A branch is not an execution workspace. Creating or switching to a task branch in the main checkout does not satisfy worktree mode.
 - Subagents must not update Linear, project status, acceptance status, or final proof.
 - The main agent owns final validation, acceptance mapping, Linear comments, and status updates.
-- Do not call `codex-cli-mcp`, `codex mcp-server`, shell-launched Codex, or local backend automatic execution.
+- Do not launch external agent processes or local backend automatic execution.
 - Do not call VibeRig dashboard/task-engine MCP tools or HTTP routes.
 - Do not create or rely on `tasks.yaml`.
 - Do not write a local long-term proof packet directory. Proof packets are Linear comments referencing durable logs, CI URLs, commits, branches, changed files, and local docs.
@@ -98,7 +98,7 @@ For `worktree` mode:
 
 - Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to the project `.worktrees/` directory.
 - Worktree directory pattern: project `.worktrees/` plus issue key and short slug (parent issue key for requirement runs).
-- Preferred branch naming: `codex/{issue-key}-{short-slug}` when a branch is needed.
+- Preferred branch naming: `vb/{issue-key}-{short-slug}` when a branch is needed.
 - Create or reuse the branch inside the selected worktree.
 - Verify the selected path appears in `git worktree list` before implementation.
 

@@ -1,6 +1,6 @@
 ---
 name: skill-builder
-description: Create or update Agent Skills/Codex skills with reliable trigger descriptions, concise SKILL.md workflows, progressive disclosure, reusable scripts/references/assets, and validation checklists. Use when the user asks to design, create, refine, audit, or troubleshoot a skill, SKILL.md file, or reusable agent workflow package.
+description: Create or update Cursor Agent Skills with reliable trigger descriptions, concise SKILL.md workflows, progressive disclosure, reusable scripts/references/assets, and validation checklists. Use when the user asks to design, create, refine, audit, or troubleshoot a skill, SKILL.md file, or reusable agent workflow package.
 ---
 
 # Skill Builder
@@ -13,7 +13,7 @@ Use this skill when creating, updating, reviewing, or troubleshooting an Agent S
 
 Do not use this skill for:
 - General prompt writing that will not become a reusable skill.
-- Creating custom subagent TOML files mid-task; redirect to `agent-creator` if this comes up during execution.
+- Creating Cursor subagent `.md` files mid-task; redirect to `agent-creator` if this comes up during execution.
 - Installing, publishing, or globally syncing skills unless the user explicitly asks.
 
 Stop and ask only when the skill's target job, target location, or required proprietary/source material cannot be inferred safely. Otherwise make conservative assumptions and proceed.
@@ -22,7 +22,7 @@ Stop and ask only when the skill's target job, target location, or required prop
 
 Prefer these inputs:
 - Skill name or intended capability.
-- Target directory, such as `skills/`, `.codex/skills/`, or `~/.codex/skills/`.
+- Target directory: `skills/<name>/` within a Cursor plugin, or `~/.vb-skills/<name>/` for the global learned-skill store.
 - Real user requests that should trigger the skill.
 - Real user requests that should not trigger the skill.
 - Existing docs, code, runbooks, templates, scripts, or previous failures to encode.
@@ -45,8 +45,8 @@ Literal placeholders are allowed only inside fenced examples or templates that a
 ## Workflow
 
 1. Inspect local conventions.
-   - Check nearby skills for naming, directory structure, metadata, and optional `agents/openai.yaml` style.
-   - Preserve local conventions unless they conflict with the Agent Skills format.
+   - Check nearby skills for naming, directory structure, and metadata.
+   - Preserve local conventions unless they conflict with the Cursor Agent Skills format.
 2. Define the reusable job.
    - State one primary responsibility.
    - Identify clear exclusions so the skill does not become a catch-all workflow.

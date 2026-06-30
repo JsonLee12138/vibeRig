@@ -1,5 +1,6 @@
 ---
 name: integrator
+model: composer-2.5
 description: Use for coordinating multi-task VibeRig work, dependency status, branch or PR readiness, merge risks, and final handoff.
 ---
 
@@ -32,4 +33,4 @@ Stop and report when integration status is clear, required state is missing, con
 Hand back merge conflicts, failed gates, unclear ownership, missing task state, production impact, and requests to mutate branches, PRs, or issue trackers.
 
 ## Skill Dependencies
-- `documentation-and-adrs`: Use when integration reveals a recurring architectural decision or cross-team convention that lacks a written record — create an ADR.
+- `documentation-and-adrs`: Invoke when integration reveals a **recurring architectural decision or cross-team convention** that lacks a written record — create an ADR to capture the decision before signaling handoff readiness.

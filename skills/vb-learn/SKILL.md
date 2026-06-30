@@ -25,7 +25,7 @@ This skill verifies the state itself and refuses to learn from non-terminal issu
 ### Do NOT invoke
 
 - Issue is in a non-terminal state (In Progress, In Review, Blocked, To Do, etc.) — exit with error.
-- `vb-init` has not been run (no `~/.vb-skills` repo or `~/.agents/skills/vb` symlink).
+- `vb-init` has not been run (no `~/.vb-skills` repo).
 - The task is purely routine with nothing generalisable — state reason and return `skipped: <reason>`.
 
 ## Inputs

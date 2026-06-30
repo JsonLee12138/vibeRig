@@ -7,7 +7,7 @@ description: Use when a VibeRig Linear issue is blocked and the main agent shoul
 
 Use this workflow when a Linear-backed VibeRig task is blocked and the user wants AI-assisted recovery.
 
-VibeRig no longer resumes backend runs or command-mode Codex sessions. Recovery happens in the current Codex main-agent session using Linear issue context, local Docs as Code, and `task-runner`.
+Recovery happens in the current Cursor main-agent session using Linear issue context, local Docs as Code, and `task-runner`.
 
 ## Contract
 
