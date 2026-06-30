@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pencil": {
+      "type": "stdio",
+      "command": "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
+      "args": ["--app", "desktop", "--agent", "cursor"],
+      "startupTimeoutSec": 30,
+      "toolTimeoutSec": 300
+    }
+  }
+}

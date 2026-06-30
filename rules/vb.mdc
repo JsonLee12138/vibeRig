@@ -1,0 +1,18 @@
+---
+description: VibeRig core constraints — hard rules that apply to every VibeRig operation. Activate when running any VibeRig skill or working with .vibeRig/ files.
+alwaysApply: false
+globs:
+  - .vibeRig/**
+  - .worktrees/**
+---
+
+# VibeRig Constraints
+
+Read `.vibeRig/project.yaml` before every VibeRig operation.
+
+## Hard Rules
+
+- Never create Linear issues before a local requirement contract exists under `.vibeRig/requirements/`.
+- Never merge a PR without explicit human acceptance via `accept` or `accept-bug`.
+- Never move a Linear issue to Done without going through In Review first.
+- Subagents must not update Linear or make final acceptance decisions — only the main agent may do so.
