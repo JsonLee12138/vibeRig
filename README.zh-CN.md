@@ -47,7 +47,7 @@ flowchart TD
 将仓库克隆到 Cursor 本地插件目录：
 
 ```sh
-git clone https://github.com/JsonLee12138/vibeRig.git ~/.cursor/plugins/local/vibe-rig
+git clone --branch cursor https://github.com/JsonLee12138/vibeRig.git ~/.cursor/plugins/local/vibe-rig
 ```
 
 克隆完成后重启 Cursor，插件及其 skills 即可生效。
@@ -58,7 +58,7 @@ git clone https://github.com/JsonLee12138/vibeRig.git ~/.cursor/plugins/local/vi
 
 ```sh
 cd ~/.cursor/plugins/local/vibe-rig
-git pull
+git pull origin cursor
 ```
 
 更新后重启 Cursor，让新的 skills 生效。

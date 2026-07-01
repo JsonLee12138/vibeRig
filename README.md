@@ -47,7 +47,7 @@ flowchart TD
 Clone the repository into Cursor's local plugin directory:
 
 ```sh
-git clone https://github.com/JsonLee12138/vibeRig.git ~/.cursor/plugins/local/vibe-rig
+git clone --branch cursor https://github.com/JsonLee12138/vibeRig.git ~/.cursor/plugins/local/vibe-rig
 ```
 
 Restart Cursor after cloning so the plugin and its skills are loaded.
@@ -58,7 +58,7 @@ Pull the latest changes in the plugin directory:
 
 ```sh
 cd ~/.cursor/plugins/local/vibe-rig
-git pull
+git pull origin cursor
 ```
 
 Restart Cursor after updating so newly added skills are loaded.
