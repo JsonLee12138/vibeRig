@@ -39,36 +39,29 @@ flowchart TD
 
 ## Prerequisites
 
-- Codex with plugin support enabled.
+- Cursor with plugin support enabled. See [Cursor Plugins documentation](https://cursor.com/cn/docs/plugins) for details.
 - Linear plugin installed and authenticated. VibeRig uses Linear to create and update projects, documents, issues, comments, and status transitions.
 
 ## Install
 
-Add the VibeRig marketplace and install the plugin:
+Clone the repository into Cursor's local plugin directory:
 
 ```sh
-codex plugin marketplace add JsonLee12138/codex-marketplace --ref main
-codex plugin add vibe-rig@jsonlee
+git clone https://github.com/JsonLee12138/vibeRig.git ~/.cursor/plugins/local/vibe-rig
 ```
 
-Current selector format is `PLUGIN@MARKETPLACE`. In this repository, the marketplace is `jsonlee` and the plugin is `vibe-rig`.
+Restart Cursor after cloning so the plugin and its skills are loaded.
 
 ## Update
 
-Refresh the marketplace snapshot:
+Pull the latest changes in the plugin directory:
 
 ```sh
-codex plugin marketplace upgrade jsonlee
+cd ~/.cursor/plugins/local/vibe-rig
+git pull
 ```
 
-Then reinstall the plugin if your Codex installation does not refresh installed plugin caches automatically:
-
-```sh
-codex plugin remove vibe-rig
-codex plugin add vibe-rig@jsonlee
-```
-
-Restart Codex after updating so newly installed skills are loaded.
+Restart Cursor after updating so newly added skills are loaded.
 
 ## Manual Usage
 

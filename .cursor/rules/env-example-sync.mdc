@@ -1,0 +1,54 @@
+---
+description: "新增或修改环境变量时，必须同步更新对应目录的 .env.example，并为每一项添加注释描述"
+globs: "**/.env*, **/config/**/*.ts, **/config/**/*.js, **/config/**/*.mjs"
+alwaysApply: false
+---
+
+## 核心约定
+
+- 任何新增或修改的环境变量，必须同步更新**同一目录**下的 `.env.example` 文件。
+- `.env.example` 中每一项必须附带行内注释，说明该变量的用途、格式或合法值范围。
+- `.env.example` 中的值只写占位符或示例值，**绝不写真实密钥**。
+- 删除某个环境变量时，同步从 `.env.example` 中移除对应条目。
+- 若目录下还没有 `.env.example`，新建一个（不要留空文件）。
+
+## 示例
+
+### 正确
+
+```dotenv
+# .env.example
+
+# 应用运行端口，默认 3000
+PORT=3000
+
+# 数据库连接字符串，格式: postgresql://user:pass@host:port/db
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+
+# JWT 签名密钥，生产环境请使用至少 32 位随机字符串
+JWT_SECRET=your-secret-here
+
+# 第三方 OAuth 客户端 ID（从 provider 控制台获取）
+OAUTH_CLIENT_ID=your-client-id
+
+# 是否开启调试日志，可选值: true | false
+DEBUG=false
+```
+
+### 错误
+
+```dotenv
+# .env.example
+
+# ❌ 没有注释，无法理解用途
+PORT=
+DATABASE_URL=
+JWT_SECRET=
+
+# ❌ 写了真实密钥（安全风险）
+JWT_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+## 例外情况
+
+- 仅在运行时由基础设施注入、开发者无需手动配置的变量（如 `K8S_NODE_NAME`）可以只写注释说明来源，值留空。

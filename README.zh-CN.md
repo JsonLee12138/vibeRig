@@ -39,36 +39,29 @@ flowchart TD
 
 ## 前置条件
 
-- Codex 已启用 plugin support。
+- Cursor 已启用 plugin support。详见 [Cursor 插件文档](https://cursor.com/cn/docs/plugins)。
 - 已安装并登录 Linear 插件。VibeRig 会使用 Linear 创建和更新 project、document、issue、comment 和状态流转。
 
 ## 安装
 
-添加 VibeRig marketplace，并安装插件：
+将仓库克隆到 Cursor 本地插件目录：
 
 ```sh
-codex plugin marketplace add JsonLee12138/codex-marketplace --ref main
-codex plugin add vibe-rig@jsonlee
+git clone https://github.com/JsonLee12138/vibeRig.git ~/.cursor/plugins/local/vibe-rig
 ```
 
-当前 Codex CLI selector 格式是 `PLUGIN@MARKETPLACE`。本仓库中 marketplace 是 `jsonlee`，plugin 是 `vibe-rig`。
+克隆完成后重启 Cursor，插件及其 skills 即可生效。
 
 ## 更新
 
-刷新 marketplace snapshot：
+在插件目录中拉取最新代码：
 
 ```sh
-codex plugin marketplace upgrade jsonlee
+cd ~/.cursor/plugins/local/vibe-rig
+git pull
 ```
 
-如果当前 Codex 安装不会自动刷新已安装插件缓存，可以重新安装插件：
-
-```sh
-codex plugin remove vibe-rig
-codex plugin add vibe-rig@jsonlee
-```
-
-更新后重启 Codex，让新的 skills 生效。
+更新后重启 Cursor，让新的 skills 生效。
 
 ## 人工使用方法
 
