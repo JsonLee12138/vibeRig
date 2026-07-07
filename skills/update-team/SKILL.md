@@ -18,6 +18,7 @@ description: Analyze the current project and reconcile the agent team across Cod
 - 修改 `project.yaml` 的 `subagents` 以外的任何字段
 - 无推理依据地创建 agent
 - 无用户确认地删除 agent
+- **在 Linear 中定义 agent**——Linear agent = OAuth 应用 + 常驻 webhook 服务，不是可动态创建的实体。本 skill 只同步本地 agents 文件与项目所需的 capability 集合；issue 与 subagent 的匹配由 `task-runner` 执行时经 `subagent-routing` 现场完成
 - 未经用户确认，向共享的 `.cursor/mcp.json` 写入或合并内容
 
 无法定位项目根目录或 `.vibeRig/project.yaml` 时停止并询问。

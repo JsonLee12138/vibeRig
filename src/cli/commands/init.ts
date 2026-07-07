@@ -1,12 +1,12 @@
-import { confirm, intro, isCancel, outro, text } from '@clack/prompts'
-import { defineCommand } from 'citty'
-import { consola } from 'consola'
-import { ensureDir, pathExists } from 'fs-extra/esm'
-import { writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { confirm, intro, isCancel, outro, text } from '@clack/prompts';
+import { defineCommand } from 'citty';
+import { consola } from 'consola';
+import { ensureDir, pathExists } from 'fs-extra/esm';
 
-import { cancelPrompt } from '../utils/prompts.js'
-import { projectYaml } from '../utils/project-yaml.js'
+import { projectYaml } from '../utils/project-yaml.js';
+import { cancelPrompt } from '../utils/prompts.js';
 
 export const initCommand = defineCommand({
   meta: {
@@ -31,60 +31,61 @@ export const initCommand = defineCommand({
     },
   },
   async run({ args }) {
-    const root = resolve(args.cwd)
-    const defaultName = root.split('/').filter(Boolean).at(-1) ?? 'project'
-    let projectName = args.name
+    const root = resolve(args.cwd);
+    const defaultName = root.split('/').filter(Boolean).at(-1) ?? 'project';
+    let projectName = args.name;
 
-    intro('VibeRig init')
+    intro('VibeRig init');
 
     if (!projectName && !args.yes) {
       const answer = await text({
         message: 'Project name',
         placeholder: defaultName,
         defaultValue: defaultName,
-      })
+      });
 
       if (isCancel(answer)) {
-        cancelPrompt()
+        cancelPrompt();
       }
 
-      projectName = typeof answer === 'string' ? answer : defaultName
+      projectName = typeof answer === 'string' ? answer : defaultName;
     }
 
-    projectName ||= defaultName
+    projectName ||= defaultName;
 
     if (!args.yes) {
       const answer = await confirm({
         message: `Initialize VibeRig in ${root}?`,
         initialValue: true,
-      })
+      });
 
       if (isCancel(answer)) {
-        cancelPrompt()
+        cancelPrompt();
       }
 
       if (!answer) {
-        cancelPrompt('Initialization skipped.')
+        cancelPrompt('Initialization skipped.');
       }
     }
 
-    const docsRoot = resolve(root, '.vibeRig/requirements')
-    const worktreesRoot = resolve(root, '.worktrees')
-    const projectYamlPath = resolve(root, '.vibeRig/project.yaml')
+    const docsRoot = resolve(root, '.vibeRig/requirements');
+    const worktreesRoot = resolve(root, '.worktrees');
+    const projectYamlPath = resolve(root, '.vibeRig/project.yaml');
 
-    await ensureDir(docsRoot)
-    await ensureDir(worktreesRoot)
+    await ensureDir(docsRoot);
+    await ensureDir(worktreesRoot);
 
     if (await pathExists(projectYamlPath)) {
-      consola.warn(`${projectYamlPath} already exists; leaving it unchanged.`)
-    } else {
-      await ensureDir(resolve(root, '.vibeRig'))
-      await writeFile(projectYamlPath, projectYaml({ projectName }), 'utf8')
-      consola.success(`Created ${projectYamlPath}`)
+      consola.warn(`${projectYamlPath} already exists; leaving it unchanged.`);
+    }
+    else {
+      await ensureDir(resolve(root, '.vibeRig'));
+      await writeFile(projectYamlPath, projectYaml({ projectName }), 'utf8');
+      consola.success(`Created ${projectYamlPath}`);
     }
 
-    consola.info(`Ensured ${docsRoot}`)
-    consola.info(`Ensured ${worktreesRoot}`)
-    outro('VibeRig project scaffold is ready.')
+    consola.info(`Ensured ${docsRoot}`);
+    consola.info(`Ensured ${worktreesRoot}`);
+    outro('VibeRig project scaffold is ready.');
   },
-})
+});

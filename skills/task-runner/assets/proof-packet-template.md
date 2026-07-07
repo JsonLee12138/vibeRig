@@ -1,46 +1,42 @@
-# Proof Packet Comment Template
+# Proof Packet 评论模板
 
-Render in `.vibeRig/project.yaml` `output.language`. Technical identifiers (keys, paths, commands) stay unchanged.
+用 `.vibeRig/project.yaml` `output.language` 渲染人读内容；技术标识（key、路径、命令）保持原样。issue 级不含 PR 字段——PR 只发生在 `accept-milestone`。
 
 ```markdown
 ## Proof Packet
 
-**Issue**: <issue-key> — <task goal>
-**Workspace**: <worktree | current-workspace> — `<path>`
+**Issue**: <issue-key> — <任务目标>
+**Workspace**: `<worktree 路径>`（里程碑共享 worktree）
 
-## Branch / PR
+## 分支 / 提交
 
-- Branch: `<branch-name>`
+- 集成分支: `milestone/<req-id>-<n>`
 - Commit: `<commit-hash>`
-- PR: <PR URL or "not yet created">
-- Provider: <github | other>
-- Base: `<base-branch>`
-- Draft: <true | false>
-- CI/Checks: <URL or "not available">
+- 临时分支: <无 | 已合回集成分支并删除：<branch-name>>
 
-## Changed Files
+## 改动文件
 
-- `<file-path>` — <what changed>
+- `<file-path>` — <改了什么>
 
-## Validation
+## 验证
 
-- `<command>` → <PASS | FAIL | SKIP: reason>
+- `<command>` → <PASS | FAIL | SKIP: 原因>
 
-## Acceptance Coverage
+## AC 覆盖
 
-- Covered: AC-...
-- Not covered: AC-... — <reason>
+- 已覆盖: AC-...
+- 未覆盖: AC-... — <原因>
 
-## Manual Checks Required
+## 待人工检查
 
-- <check description>
+- <检查项描述>
 
 ## Subagent
 
-- Used: <capability name>
-- Handoff notes: <key findings or residual risks from subagent>
+- 使用: <capability 名称>（执行时经 subagent-routing 现场选择）
+- 交接备注: <subagent 的关键发现或残余风险>
 
-## Residual Risks
+## 残余风险
 
-- <risk or remaining uncertainty>
+- <风险或未消除的不确定性>
 ```

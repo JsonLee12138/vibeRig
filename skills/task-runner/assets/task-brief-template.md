@@ -1,49 +1,41 @@
-# Task Brief Template
+# Task Brief 模板
 
-Use this Markdown template when delegating execution from `task-runner` to a selected subagent. Replace placeholders with resolved task details before sending the brief.
+`task-runner` 向选定 subagent 委派执行时使用。发出前把占位符替换为已解析的任务细节。spec 是动态组装的：只给本 issue 相关的片段，禁止全量文档。
 
-## Goal
+## 目标
 
-<task goal from Linear>
+<来自 Linear issue 的任务目标>
 
-## Source Docs
+## Spec（动态组装）
 
-- .vibeRig/requirements/<requirement-id>/brief.md#...
-- .vibeRig/requirements/<requirement-id>/architecture.md#...
-- .vibeRig/requirements/<requirement-id>/acceptance.md#...
+- issue 描述：<目标 + AC-ids + 文档链接>
+- 接口契约：<architecture.md 中与本 issue 相关的片段，只截相关部分>
+- 验收条目：<acceptance.json 中对应 AC 条目，含 verification>
 
-## Acceptance
+## 验收标准
 
-- AC-...: <expected result>
+- AC-...: <预期结果>
 
-## Constraints
+## 约束
 
-- <scope boundaries>
-- do not revert unrelated user changes
-- no Linear updates inside subagent
+- <范围边界>
+- 不回退无关的用户改动
+- subagent 不更新 Linear
+- 不创建新分支/新 worktree；改动提交前交回主 agent 校验
 
-## Validation
+## 验证
 
-- <commands/manual checks>
+- <命令 / 人工检查步骤>
 
 ## Workspace
 
-- mode: <worktree | current-workspace>
-- path: <absolute path>
-- reason: <why this mode was selected>
+- 路径: <里程碑共享 worktree 绝对路径>
+- 集成分支: `milestone/<req-id>-<n>`
 
-## Pull Request
+## 输出契约
 
-- required: <true | false>
-- provider: <auto | github | other>
-- branch: <codex/<issue-key>-<short-slug>>
-- base: <base branch or repository default>
-- draft: <true | false>
-
-## Output Contract
-
-- changed files
-- validation attempted
-- acceptance coverage
-- residual risks
-- handoff notes
+- 改动文件
+- 已尝试的验证及输出
+- AC 覆盖情况
+- 残余风险
+- 交接备注

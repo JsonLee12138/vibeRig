@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-import { defineCommand, runMain } from 'citty'
+import { defineCommand, runMain } from 'citty';
 
-import { auditCommand } from './commands/audit.js'
-import { initCommand } from './commands/init.js'
-import { skillLockCommand } from './commands/skill-lock.js'
+import { initCommand } from './commands/init.js';
+import { skillLockCommand } from './commands/skill-lock.js';
 
 const main = defineCommand({
   meta: {
@@ -12,10 +11,9 @@ const main = defineCommand({
     description: 'VibeRig project workflow CLI',
   },
   subCommands: {
-    init: initCommand,
+    'init': initCommand,
     'skill-lock': skillLockCommand,
-    'audit-linear-native-plan': auditCommand,
   },
-})
+});
 
-runMain(main)
+runMain(main);

@@ -1,0 +1,67 @@
+---
+name: accept-milestone
+description: 里程碑验收（取代 accept）。当用户对某个里程碑说"验收里程碑"、"验收通过"、"合并"时使用。前置：requirement.yaml 中该里程碑状态为 pending_acceptance。全量回归 → 拉最新远程 main → 冲突与用户确认后处理 → 集成分支→main 的 PR 并合并 → Linear 验收评论（逐步操作说明）+ Project Update → requirement.yaml 置 accepted → 归档判定（需求归档、PRD 归档、insights 复盘）。
+---
+
+# Accept Milestone（里程碑验收）
+
+用本 skill 对**整个里程碑**做最终验收。这是两级验收的上层，也是唯一发起 PR 的地方：里程碑集成分支 → main。
+
+## 契约
+
+- 范围：一个里程碑（其下全部 issue 已完成并经 `accept-issue` 或等价验证）。
+- 验收决定必须来自用户当前明确表态。
+- 前置：`requirement.yaml` 中该里程碑 `status: pending_acceptance`；不是则停止并说明差什么（还有 issue 未完成 → `task-runner`；未拆分 → `split-issues`）。
+- 本 skill 不做新的开发工作；发现缺陷走 §缺陷回流。
+
+## 验收记录书写规范（强制）
+
+与 `accept-issue` 相同：写入 Linear 的验收评论必须是**可照做的操作步骤**——第一步做什么、第二步做什么；在哪个文件配置什么；打开哪个网页看到什么。**禁止**"功能正常""验证通过"这类抽象话单独出现。步骤来源：该里程碑全部 AC 的 `verification` 字段展开成人话。
+
+## 流程（严格按顺序）
+
+1. **前置确认**：读 `requirement.yaml`，确认目标里程碑存在、状态为 `pending_acceptance`、知道它属于哪个需求/PRD、是不是该需求最后一个里程碑。
+2. **全量回归**：按 `project.yaml` `gate_policy` 跑全部 required commands / manual checks；再逐条验证该里程碑的 AC（按 `verification`）。任何一项失败 → 停止，走缺陷回流，不进入合并。
+3. **拉取最新 main**：`git fetch` 后把最新远程 main rebase/merge 到集成分支——**不基于最新 main 的 PR 不算 PR**。
+4. **冲突处理**：
+   - 无冲突 → 直接继续；
+   - 有冲突 → 先逐处分析：这处冲突涉及哪些改动、双方各自想干什么、取舍会影响什么；**与用户确认取舍后**再解决合并。不自作主张。
+5. **发 PR 并合并**：集成分支（`milestone/<req-id>-<n>`）→ main。PR 正文含：里程碑标题、issue 清单、AC 覆盖、回归证据、残余风险。合并前确认 CI 通过、无冲突、必需审批齐全；任一不满足 → 记录阻塞并停止，不置任何终态。
+6. **Linear 记录**：
+   - Milestone 验收评论（按书写规范：逐步操作说明 + 每步看到的结果 + PR 链接 + commit）；
+   - `save_status_update` 写 Project Update（该里程碑完成、整体进度）。
+7. **更新 requirement.yaml**：该里程碑 `status: accepted`。
+8. **复盘 + 自学习（按顺序）**：
+   - 触发 `insights` 对该里程碑复盘（聚合其名下全部 issue 的证据），结论用 `save_comment` 写入 Linear 评论区（紧随验收评论）；
+   - 触发 `vb-learn <里程碑id>` 从评论区自学习（复盘评论 + 各 issue 的 proof packet + 验收评论）；无可泛化经验时由 vb-learn 自行返回 `skipped`。
+9. **归档判定**：
+   - 若这是该需求**最后一个**里程碑：需求 `status: accepted`，目录迁入 `requirements/archive/<req-id>/`，并做需求级复盘汇总（insights 汇总各里程碑复盘 → 写入 Linear；`vb-learn <req-id>` 做需求级自学习）；
+   - 若该需求关联 PRD：扫描所有 `requirement.yaml`（含 `archive/`），该 PRD 名下需求**全部** accepted 时把 PRD 目录迁入 `prd/archive/`；有任何一个未 accepted 则不动。
+10. **清理 worktree**：确认集成分支已合入且无未推送 commit（`git log origin/<branch>..<branch>` 为空）、工作区干净（`git status --short` 为空）后 `git worktree remove`；两项检查任一不过 → 不删，报告原因。
+11. 报告：回归结果、PR 链接与合并结果、Linear 记录、requirement.yaml 变更、复盘评论链接、vb-learn 结果、归档结果、清理结果。
+
+## 缺陷回流
+
+验收中发现的 bug 走 `bugger`（独立流程：归因分析 → triage）：影响当前在途里程碑 → 挂该里程碑；否则 → 容器 Project backlog。
+
+## 红线
+
+- 里程碑状态不是 `pending_acceptance` 就开始验收 → 前置不满足，停止。
+- 没拉最新远程 main 就发 PR → 第 3 步是强制的。
+- 有冲突却没跟用户确认取舍就解决了 → 撤回，逐处分析后与用户确认。
+- 回归没过就合并 → 任何回归失败都阻塞合并。
+- 验收评论是抽象话 → 违反书写规范，重写成逐步操作说明。
+- PRD 名下还有未 accepted 的需求却归档了 PRD → 扫描必须覆盖 `requirements/` 与 `archive/` 全部 requirement.yaml。
+- 未验证推送/干净状态就删 worktree → 两项检查缺一不可。
+
+## 检查清单
+
+- [ ] 前置：`pending_acceptance` 确认；用户明确表态验收。
+- [ ] 全量回归 + AC 逐条验证通过。
+- [ ] 基于最新远程 main；冲突处理经用户确认。
+- [ ] PR 合并成功后才写终态；requirement.yaml 该里程碑置 `accepted`。
+- [ ] 验收评论符合书写规范；Project Update 已写。
+- [ ] 复盘评论已写入评论区，随后 vb-learn 已执行（沉淀或 skipped 有原因）。
+- [ ] 归档判定正确执行（需求 / PRD / 需求级复盘汇总）。
+- [ ] worktree 清理前通过两项检查。
+- [ ] 人读内容使用 `output.language`。

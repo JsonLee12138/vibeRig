@@ -19,12 +19,13 @@ Internal pipeline: **read Linear → verify terminal state → `insights` → `s
 
 | Caller | Condition |
 |---|---|
-| `accept` | After Linear status is moved to Done — pass the issue key |
-| `accept-bug` | After Linear status is moved to Done AND fix reveals a non-obvious, recurring failure mode — pass the issue key |
+| `accept-issue` | issue 验收通过、状态置终态、**insights 复盘评论已写入该 issue 评论区**之后——传 issue key |
+| `accept-milestone` | 里程碑验收通过、**insights 复盘评论已写入**之后——传里程碑 id |
 | User (manual) | "vb-learn VB-42", "学习 VB-42", "把 VB-42 的经验沉淀下来", "记录这个 pattern" |
 
-**`accept` and `accept-bug` must update Linear to a terminal state before calling this skill.**
-This skill verifies the state itself and refuses to learn from non-terminal issues.
+**调用方必须先把 Linear 置为终态、并先跑 insights 复盘**——本 skill 的学习输入就是评论区（insights 复盘评论 + proof packet + 验收评论）。本 skill 自己会校验终态，拒绝从非终态学习。
+
+与 `insights` 的分工：insights 负责复盘并把结论写入 Linear 评论区；本 skill 从评论区学习并沉淀 skill 到 `~/.vb-skills`。本 skill 不写复盘评论；insights 不直接写 `~/.vb-skills`。
 
 ### Do NOT invoke
 
@@ -50,10 +51,10 @@ Check the issue's current status against the team's terminal states (Done / Acce
 ```
 ERROR: VB-42 is not in a terminal state (current: <status>).
 vb-learn requires the issue to be Done/Accepted/Completed/Cancelled/Duplicate before learning.
-Run `accept` or `accept-bug` first, or close the issue manually.
+Run `accept-milestone` or `accept-issue` first, or close the issue manually.
 ```
 
-If the issue is a **parent (requirement)**: use `_list_issues(filter: {parent: {id: {eq: <id>}}})` to load all sub-tasks. Gather from parent + all sub-tasks:
+聚合粒度（里程碑原生工作流）：入参可以是**里程碑 id / 需求 id / issue key**。里程碑 → 聚合该里程碑下全部 issue（用 `_list_issues` 按 Milestone 过滤 + 读 `requirement.yaml`）；需求 → 聚合其全部里程碑的复盘。Gather from all issues in scope:
 
 - Title, description, acceptance criteria
 - Root-cause analysis or key insight from comments
@@ -73,7 +74,7 @@ Fill in [`assets/content-summary-template.md`](assets/content-summary-template.m
 ### 3. Skill planning — decide what to learn
 
 ```bash
-cat ~/.vb-skills/vb-skill-lock.json   # survey existing skills
+cat ~/.vb-skills/vb-skill-lock.json   # survey existing skills（格式见 assets/vb-skill-lock.schema.json）
 ls ~/.vb-skills/
 ```
 

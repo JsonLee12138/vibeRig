@@ -1,6 +1,7 @@
-import { cancel } from '@clack/prompts'
+import process from 'node:process';
+import { cancel } from '@clack/prompts';
 
-export const cancelPrompt = (message = 'Operation cancelled.') => {
-  cancel(message)
-  process.exit(0)
+export function cancelPrompt(message = 'Operation cancelled.') {
+  cancel(message);
+  process.exit(0);
 }

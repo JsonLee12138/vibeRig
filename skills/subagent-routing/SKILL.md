@@ -7,7 +7,7 @@ description: Choose and brief specialized subagents for VibeRig research, planni
 
 Use this skill whenever a VibeRig workflow needs specialized judgment or bounded execution.
 
-Subagents are not only for `task-runner`. They can be used during brainstorm research, requirement review, architecture review, QA adversarial review, code review, integration planning, and implementation.
+Subagents are not only for `task-runner`. They can be used during tech-research, requirement review, architecture review, QA adversarial review, code review, integration planning, and implementation.
 
 ## Contract
 
@@ -27,7 +27,9 @@ Required:
 
 Optional:
 
-- Preferred subagent recommendation from `.vibeRig/project.yaml`, Linear issue text, or requirement docs.
+- Preferred subagent recommendation from `.vibeRig/project.yaml` or requirement docs.
+
+**执行时路由（里程碑原生工作流）**：Linear issue 建单时不写推荐 subagent、不指派（`split-issues` / `record-issue` 只建单）。task-runner 执行到某个 issue 时才调用本 skill，基于 issue 描述 + 组装好的 spec 现场选择——即使 issue 描述中残留旧的推荐 subagent 字段，也以现场路由结果为准。
 
 If no suitable subagent exists for a non-task phase, the main agent may proceed directly and report the routing risk. If no suitable subagent exists for Linear task execution, stop before implementation.
 
@@ -150,7 +152,7 @@ Use parallel fan-out when multiple independent reviews or analyses can run on th
 Use adversarial routing when a decision, design, or artifact needs to be stress-tested rather than validated. An adversarial subagent has a single mandate: find what's wrong. It must not validate; it must attack.
 
 **When to use:**
-- `architecture.md` after initial draft (mandatory in brainstorm Stage 4)
+- `architecture.md` after initial draft (architecture-design 的对抗性校验为强制)
 - Security-sensitive contract or data-flow decisions
 - Implementation approaches for high-stakes or irreversible operations
 - Acceptance criteria that might be untestable or ambiguous

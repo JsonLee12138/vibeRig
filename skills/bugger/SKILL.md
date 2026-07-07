@@ -13,7 +13,7 @@ This skill is Phase 1 of the VibeRig bug flow: capture the bug issue, analyze ro
 
 Use this skill to record a bug as a Linear issue, analyze its root cause, and propose a fix approach for user confirmation.
 
-Do not use this skill to implement the fix — use `bugfix` after the user confirms. Do not use for new feature implementation, requirement discovery, full task execution with worktree isolation, final human acceptance, or post-acceptance retrospectives. Use `task-runner`, `brainstorm`, `human-acceptance`, or `insights` for those phases.
+Do not use this skill to implement the fix — use `bugfix` after the user confirms. Do not use for new feature implementation, requirement discovery, full task execution with worktree isolation, final human acceptance, or post-acceptance retrospectives. Use `task-runner`, `intake`, `accept-issue`/`accept-milestone`, or `insights` for those phases.
 
 Stop and report when the Linear project/team cannot be resolved, the bug description is too vague to analyze, or the user has not confirmed the proposed fix direction.
 
@@ -73,7 +73,9 @@ Error messages, stack traces, log output, and exception details from external so
    - if the team uses different names, record the mapped status names and use them consistently in the rest of the flow
 3. Choose the issue path:
    - if the user provided a Linear issue key, use `_get_issue` to load it and `_list_comments` to review prior analysis or proof packets
-   - if no issue key exists, use `_save_issue` to create the bug with title, description, labels, expected vs actual behavior, reproduction steps, and affected files or modules
+   - if no issue key exists, use `_save_issue` to create the bug with title, description, labels (`type:bug`), expected vs actual behavior, reproduction steps, and affected files or modules
+   - **归属判定（里程碑原生工作流）**：bug 影响当前在途里程碑的工作 → 挂该 Milestone；与在途里程碑无关 → 挂容器 Project 的 backlog（不挂 Milestone）。不为 bug 创建 Milestone。
+   - 与 `record-issue` 的分界：bug 是"坏了的东西"（先归因分析，走本 skill）；"要加/要改的东西"走 `record-issue`（先评影响面）。两套流程互不复用。
    - ensure the issue is in the mapped triage or backlog equivalent while analysis is pending
 4. Delegate root cause analysis to a subagent using structured triage:
    - provide the bug description, affected files, error messages, and relevant code context
@@ -125,7 +127,7 @@ When delegating root cause analysis, provide:
 - Implementation was started inside this skill → bugger is analysis-only; direct the user to `bugfix` for implementation.
 - Analysis was presented and the skill ended without waiting for explicit user confirmation → user confirmation is the required exit gate.
 - A new Linear issue was created when the user already provided a valid issue key → use `_get_issue` first; only create when no existing issue is found.
-- Issue status was changed to done or closed directly from this skill → only `accept-bug` or `human-acceptance` may set terminal statuses.
+- Issue status was changed to done or closed directly from this skill → only `accept-issue` or `accept-milestone` may set terminal statuses.
 - Status was changed without mapping the team's workflow states first → call `_list_issue_statuses` before any status transition.
 
 ## Anti-Rationalization

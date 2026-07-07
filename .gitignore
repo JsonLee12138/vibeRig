@@ -15,7 +15,6 @@ skill-video/
 .vibeRig/
 video/youtube/
 research/
-docs/
 skills/ian-xiaohei-illustrations/assets/examples/
 video/
 skills/ian-xiaohei-illustrations/
@@ -40,3 +39,4 @@ skills/general-video/
 skills/faceless-explainer/
 video/youtube/rules.md
 .codex/agents/ts-cli-scaffolder.toml
+docs_local/

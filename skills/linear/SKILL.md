@@ -1,6 +1,6 @@
 ---
 name: linear
-description: Shared Linear access reference for VibeRig skills. Use whenever a VibeRig skill needs to read or write Linear (issues, comments, statuses, labels, projects, teams, documents) — for the concrete tool mapping, status-mapping rule, human-facing language policy, subagent-ownership invariant, and the fallback behavior when Linear tools are unavailable. Not a standalone user-facing workflow; other skills (`accept`, `accept-bug`, `bugger`, `bugfix`, `write-plan`, `task-runner`, `agent-sop`, `blocker-resume`, `vb-init`, `insights`, `vb-learn`, `brainstorm`) reference this skill instead of restating these rules.
+description: Shared Linear access reference for VibeRig skills. Use whenever a VibeRig skill needs to read or write Linear (issues, comments, statuses, labels, projects, teams, documents, milestones, status updates) — for the concrete tool mapping, status-mapping rule, human-facing language policy, subagent-ownership invariant, exploration-phase prohibition, and the fallback behavior when Linear tools are unavailable. Not a standalone user-facing workflow; other skills (`intake`, `prd-brainstorm`, `tech-research`, `define-acceptance`, `split-milestones`, `split-issues`, `record-issue`, `accept-milestone`, `accept-issue`, `bugger`, `bugfix`, `task-runner`, `agent-sop`, `blocker-resume`, `vb-init`, `insights`, `vb-learn`) reference this skill instead of restating these rules.
 ---
 
 # Linear
@@ -9,7 +9,7 @@ Shared reference other VibeRig skills point to for Linear access. This skill is 
 
 ## MCP Server
 
-VibeRig ships its own Linear MCP server declaration at the plugin root (`.mcp.json` for Codex/Claude, `mcp.json` for Cursor), pointing at Linear's official hosted MCP server (`https://mcp.linear.app/mcp`). The host must complete Linear's OAuth flow once before the tools below are available. Do not assume a separately installed Linear connector — the bundled config is the source of truth for which server is used.
+VibeRig ships its own Linear MCP server declaration at the plugin root (`.mcp.json` for Codex/Claude, `mcp.json` for Cursor), pointing at Linear's official hosted MCP server (`https://mcp.linear.app/mcp`). No separate Linear account setup is required from the user ahead of time — `vb-init` verifies login with a read-only probe before it registers a Project, and triggers the OAuth flow on the spot if the probe shows the host isn't logged in yet. Do not assume a separately installed Linear connector — the bundled config is the source of truth for which server is used.
 
 ## Tool Mapping
 
@@ -26,8 +26,14 @@ VibeRig ships its own Linear MCP server declaration at the plugin root (`.mcp.js
 | `_list_teams` / `_get_team` | Resolve the target Linear team, typically during `vb-init`. |
 | `_list_projects` / `_save_project` | Find or create the Linear project registered in `.vibeRig/project.yaml`. |
 | `_list_documents` / `_save_document` | Find or create the Linear Project Document, typically during `vb-init`. |
+| `_list_milestones` / `_get_milestone` / `_save_milestone` | 里程碑：`split-milestones` 创建（先查重），`task-runner` / `accept-milestone` 读取。Milestone 描述只放 Document 链接 + 本地契约路径 + AC-ids，不粘贴文档全文。 |
+| `_save_status_update` / `_get_status_updates` | Project Update：`accept-milestone` 在里程碑验收后写健康度/进度汇报。 |
 
 If Linear tools are unavailable, summarize the intended record in chat and stop — never claim Linear was updated when it wasn't.
+
+## 探索阶段禁令（Exploration-Phase Prohibition）
+
+探索阶段 skill（`intake` / `prd-brainstorm` / `tech-research` / `architecture-design` / `define-acceptance`）**只允许写 Linear Document**（叙事同步副本），**禁止创建任何 Milestone / Issue**。结构化写入只发生在 `split-milestones`、`split-issues`、`record-issue`、`bugger` 中。任何 skill 在探索阶段调用 `_save_issue` / `_save_milestone` 都是违规。
 
 ## Status Mapping Rule
 
@@ -35,7 +41,7 @@ Use `_list_issue_statuses` to resolve the team's actual states before any status
 
 - Never invent a status name that doesn't exist in the team's workflow.
 - If no matching status exists for the intended lifecycle state, leave the current status unchanged and record the intended state in a comment instead.
-- Callers own their own specific lifecycle → status table (for example, `accept`'s Full/Partial/Blocked acceptance mapping). This skill only provides the resolution method, not the specific mapping — that mapping is skill-specific.
+- Callers own their own specific lifecycle → status table (for example, `accept-milestone`'s Full/Partial/Blocked acceptance mapping). This skill only provides the resolution method, not the specific mapping — that mapping is skill-specific.
 
 ## Language Policy
 

@@ -1,6 +1,6 @@
 ---
 name: bugfix
-description: Implement a confirmed bug fix in the current workspace. Use after `bugger` has analyzed the root cause and the user has explicitly confirmed the fix direction. Executes the fix through agent-sop, commits, records evidence in Linear, and hands off to `accept-bug` for final sign-off.
+description: Implement a confirmed bug fix in the current workspace. Use after `bugger` has analyzed the root cause and the user has explicitly confirmed the fix direction. Executes the fix through agent-sop, commits, records evidence in Linear, and hands off to `accept-issue` for final sign-off.
 ---
 
 # Bug Fix
@@ -36,7 +36,7 @@ Return:
 - Commit hash referencing the Linear issue key.
 - Fix evidence comment posted to Linear.
 - Linear issue updated to ready-for-acceptance state.
-- Handoff instruction to invoke `accept-bug` for final sign-off.
+- Handoff instruction to invoke `accept-issue` for final sign-off.
 
 ## Workflow
 
@@ -63,7 +63,7 @@ Return:
 9. Write fix evidence to Linear with `_save_comment`:
    - Files changed, reproduction test result (before/after), validation result, commit hash.
 10. Update Linear issue to ready-for-acceptance state with `_save_issue`.
-11. Tell the user that `accept-bug` is required for final sign-off and Linear closure.
+11. Tell the user that `accept-issue` is required for final sign-off and Linear closure.
 
 ## Red Flags
 
@@ -73,7 +73,7 @@ Return:
 - Reproduction test passed immediately without any code change → the test is not testing the right thing; revise it.
 - Commit includes unrelated files → inspect staged diff before committing; include only bug-related changes.
 - Fix addresses the symptom but not the root cause → ask "why does this happen?" until reaching the actual cause.
-- Linear was moved to Done from this skill → only `accept-bug` or `human-acceptance` may set terminal statuses.
+- Linear was moved to Done from this skill → only `accept-issue` or `accept-milestone` may set terminal statuses.
 - Validation was skipped because the fix "looks right" → run targeted tests before committing; a visual check is not evidence.
 - The same rework brief was sent to the subagent twice without changing the approach → change the approach or escalate after 2 identical failures.
 
@@ -85,7 +85,7 @@ Return:
 | "The fix is small, I can skip agent-sop delegation" | Even small fixes benefit from bounded delegation and a QA check. The separation catches regressions the implementer is biased to miss. |
 | "The branch has some unrelated staged changes — I'll include them to save a commit" | Unrelated changes in a bug-fix commit complicate revert and audit. Stage only the bug diff. |
 | "Validation passed once, it's fine to commit" | Run the targeted test suite consistently. One pass is not evidence if the test is flaky or the coverage is shallow. |
-| "I'll move the issue to Done since the fix is verified" | Done is a terminal state that requires explicit user sign-off. Use `accept-bug` for closure. |
+| "I'll move the issue to Done since the fix is verified" | Done is a terminal state that requires explicit user sign-off. Use `accept-issue` for closure. |
 
 ## Verification Checklist
 
@@ -109,4 +109,4 @@ git log -1 --pretty="%s" | grep -q "<issue-key>" && echo "ok" || echo "MISSING I
 - [ ] Commit references the Linear issue key.
 - [ ] Fix evidence written to Linear comment (including reproduction test before/after).
 - [ ] Linear issue is in ready-for-acceptance state, not a terminal state.
-- [ ] User was informed that `accept-bug` is required for final closure.
+- [ ] User was informed that `accept-issue` is required for final closure.

@@ -7,13 +7,22 @@ description: Generate VibeRig post-acceptance retrospectives, learning candidate
 
 Use this skill to turn accepted VibeRig work into conservative learning candidates and skill curation proposals.
 
+## 与 vb-learn 的分工（里程碑原生工作流）
+
+两个 skill 是上下游，不重复：
+
+- **insights（复盘）**：从已验收的证据生成复盘结论与学习候选，**必须用 `_save_comment` 把复盘结论写入 Linear 评论区**（issue 级写在 issue 上，里程碑级写在 Milestone 验收评论之后）。评论区既给人看，也是 `vb-learn` 的学习输入。
+- **vb-learn（自学习）**：读评论区（复盘评论 + proof packet + 验收评论），提炼可泛化模式，经 `skill-builder` 沉淀为 `~/.vb-skills` 的 skill。
+- 边界：insights **不直接沉淀 skill 到 `~/.vb-skills`**（那是 vb-learn 的职责；insights 只在用户明确确认某个 `skill_update` 候选时经 skill-builder 修改本仓库 `skills/`）；vb-learn 不自己写复盘评论。
+- 调用时机：`accept-issue` 与 `accept-milestone` 验收通过后都先触发 insights 复盘、再触发 vb-learn 自学习。
+
 Linear comments and local Docs as Code are the primary evidence sources. VibeRig no longer relies on local task-engine evidence directories or local proof packet files.
 
 ## Contract
 
 Use this skill to generate or apply conservative learning candidates from accepted VibeRig work.
 
-Do not use this skill for active implementation, task execution, final acceptance, or unreviewed memory capture. Use `task-runner` for execution and `human-acceptance` for sign-off.
+Do not use this skill for active implementation, task execution, final acceptance, or unreviewed memory capture. Use `task-runner` for execution and `accept-issue`/`accept-milestone` for sign-off.
 
 Stop before applying a learning when evidence is not tied to accepted work, the user has not confirmed the candidate, or the change would modify a skill without routing through `skill-builder`.
 
@@ -24,7 +33,7 @@ Stop before applying a learning when evidence is not tied to accepted work, the 
 - Do not learn from failed, abandoned, unmerged, or unaccepted work.
 - Do not modify other skills or user memory unless the user explicitly confirms.
 - For every confirmed `skill_update` or SkillOS-lite curation proposal that adds, changes, or deprecates a skill package, invoke `skill-builder` first and follow its contract for trigger wording, resource planning, file edits, and validation.
-- When called from `human-acceptance`, use the explicit human acceptance comment as the acceptance boundary.
+- When called from `accept-issue` or `accept-milestone`, use the explicit human acceptance comment as the acceptance boundary.
 - During implementation, read confirmed project learnings when present, but do not write new learnings.
 
 ## Input Contract
@@ -46,7 +55,7 @@ Use this skill when one of these is true:
 
 - A Linear issue or sub-issue has passed validation and review.
 - A PR or handoff tied to a Linear issue was accepted.
-- `human-acceptance` has recorded explicit acceptance for a Linear issue and requests post-acceptance insights.
+- `accept-issue` or `accept-milestone` has recorded explicit acceptance and requests post-acceptance insights.
 - The user asks for a VibeRig retrospective, accepted-work insights, or learning candidates.
 - The user asks to apply reviewed learning candidates.
 
@@ -54,15 +63,15 @@ Use this skill when one of these is true:
 
 Prefer explicit evidence over conversation memory:
 
-1. Linear issue description, status, comments, proof packet, and linked PR/commit.
-2. `.vibeRig/requirements/{requirement-id}/brief.md`
-3. `.vibeRig/requirements/{requirement-id}/contract.json`
+聚合粒度（里程碑原生工作流）：**以里程碑为单位**复盘——一个里程碑验收后聚合它名下全部 issue 的证据；需求级复盘 = 各里程碑复盘的汇总（最后一个里程碑验收归档时触发）。
+
+1. Linear Milestone（该里程碑下全部 issue 的描述、状态、评论、proof packet、验收评论）与 PR/commit。
+2. `.vibeRig/requirements/{requirement-id}/requirement.yaml`（里程碑列表与四态）
+3. `.vibeRig/requirements/{requirement-id}/intake.md`
 4. `.vibeRig/requirements/{requirement-id}/architecture.md`
 5. `.vibeRig/requirements/{requirement-id}/acceptance.json`
-6. `.vibeRig/requirements/{requirement-id}/acceptance.md`
-7. `.vibeRig/requirements/{requirement-id}/validation.md`
-8. Git diff, commits, PR description, and changed files
-9. Validation output, CI URLs, screenshots, logs, and manual review notes
+6. Git diff, commits, PR description, and changed files
+7. Validation output, CI URLs, screenshots, logs, and manual review notes
 
 ## Language Policy
 

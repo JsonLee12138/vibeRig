@@ -13,7 +13,7 @@ VibeRig no longer resumes backend runs or command-mode Codex sessions. Recovery 
 
 Use this skill to inspect a blocked VibeRig Linear issue, classify the blocker, and either resume safely through `task-runner` or ask for the exact missing input.
 
-Do not use this skill for normal task execution, final acceptance, or retrospective learning. Use `task-runner` for executable work, `human-acceptance` for sign-off, and `insights` after accepted work.
+Do not use this skill for normal task execution, final acceptance, or retrospective learning. Use `task-runner` for executable work, `accept-issue`/`accept-milestone` for sign-off, and `insights` after accepted work.
 
 Stop and report when the blocker depends on a product decision, credentials, missing external system state, or ambiguous ownership that cannot be resolved from Linear and local docs.
 
@@ -44,13 +44,12 @@ Do not claim an issue is unblocked unless the blocking evidence is resolved and 
 ## Evidence To Gather
 
 - Linear issue title, description, status, labels, assignee, comments, and proof packet comments.
-- Referenced local docs:
-  - `brief.md`
-  - `contract.json`
+- Referenced local docs（里程碑原生工作流）:
+  - `requirement.yaml`（需求状态 + 里程碑四态：not_started / in_progress / pending_acceptance / accepted）
+  - `intake.md`
   - `architecture.md`
   - `acceptance.json`
-  - `acceptance.md`
-  - `validation.md`
+- 状态信号源：**milestone 进度 + issue 状态**（不再有 parent issue）。判断"卡在哪"先看 `requirement.yaml` 的里程碑状态，再看该里程碑下 Linear issue 的状态分布。
 - Current git status, branch, changed files, commit/PR links when available.
 - Validation logs or CI URLs referenced from Linear comments.
 - Prior subagent handoff notes.

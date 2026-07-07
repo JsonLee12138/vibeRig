@@ -1,10 +1,11 @@
 export interface ProjectYamlOptions {
-  projectName: string
+  projectName: string;
 }
 
-const quoteYaml = (value: string) => `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`
+const quoteYaml = (value: string) => `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
 
-export const projectYaml = ({ projectName }: ProjectYamlOptions) => `version: 1
+export function projectYaml({ projectName }: ProjectYamlOptions) {
+  return `version: 1
 project:
   name: ${quoteYaml(projectName)}
   root: "."
@@ -34,4 +35,5 @@ subagents:
   default_qa: "qa"
   default_review: "code_review"
   default_integration: "integrator"
-`
+`;
+}

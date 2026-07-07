@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viberig.dev/schemas/acceptance.schema.json",
+  "title": "VibeRig Acceptance Criteria",
+  "type": "object",
+  "required": ["version", "requirement", "criteria"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "requirement": {
+      "type": "string",
+      "description": "需求 id，如 req-0003",
+      "pattern": "^req-[0-9]{4}$"
+    },
+    "criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "precondition", "action", "expected", "evidence", "verification", "milestone"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "稳定 AC id",
+            "pattern": "^AC-[0-9]+$"
+          },
+          "source": {
+            "type": "string",
+            "description": "来源引用：intake.md / prd.md 的段落"
+          },
+          "precondition": {
+            "type": "string",
+            "description": "前置条件：系统处于什么状态"
+          },
+          "action": {
+            "type": "string",
+            "description": "动作：做什么操作"
+          },
+          "expected": {
+            "type": "string",
+            "description": "预期：应该看到什么结果"
+          },
+          "evidence": {
+            "type": "string",
+            "description": "证据形式：命令输出 / 截图 / 日志 / 页面表现"
+          },
+          "verification": {
+            "type": "string",
+            "description": "验证方式：可直接执行的命令，或可照做的逐步人工操作。禁止抽象描述。"
+          },
+          "milestone": {
+            "type": ["string", "null"],
+            "description": "归属里程碑 id（如 ms-1），拆分前为 null，由 split-milestones 回填"
+          }
+        }
+      }
+    }
+  }
+}

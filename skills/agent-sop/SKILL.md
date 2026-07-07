@@ -213,7 +213,7 @@ Return: fix summary, evidence, remaining risk.
 - The main agent accepted a subagent result without running any verification → main-agent verification (step 6) is not optional.
 - The rework loop ran more than 3 rounds on the same issue family without escalating → escalate after 2 repetitions of the same failure; more loops do not fix direction errors.
 - A subagent updated Linear, changed issue status, or wrote proof packets → subagents return phase evidence only; all Linear writes belong to the main agent.
-- The parallel quality review (step 8) was skipped for a non-trivial code change → Critical findings from code review, security, or test coverage that reach `accept` or `accept-bug` are more expensive to fix than catching them here.
+- The parallel quality review (step 8) was skipped for a non-trivial code change → Critical findings from code review, security, or test coverage that reach `accept-milestone` or `accept-issue` are more expensive to fix than catching them here.
 - A Critical finding from the parallel review was noted but delivery proceeded anyway → Critical findings must be fixed before the final response is delivered.
 
 ## Anti-Rationalization

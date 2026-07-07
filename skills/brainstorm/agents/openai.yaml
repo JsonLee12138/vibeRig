@@ -1,4 +1,0 @@
-interface:
-  display_name: "Brainstorm"
-  short_description: "Create local Docs as Code requirement contracts"
-  default_prompt: "Use $brainstorm to turn an idea or research topic into a VibeRig Docs as Code contract under .vibeRig/requirements/<requirement-id>/. Work through brief, evidence research, structured contract, architecture, acceptance matrix, validation policy, and adversarial review. Use $subagent-routing for specialized research or review when useful. Do not create tasks.yaml or Linear issues unless explicitly asked to combine the next stage."

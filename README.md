@@ -1,74 +1,62 @@
 # VibeRig
 
-VibeRig is a Codex plugin for Linear-native software delivery. It turns rough requirements into local Docs as Code contracts, maps accepted planning output into Linear issues, routes execution through suitable Codex subagents, and records proof, acceptance, and learning back into Linear.
+VibeRig is a multi-platform AI coding plugin for Linear-native software delivery. It turns rough requirements into local Docs as Code contracts, maps accepted planning output into Linear issues, routes execution through suitable subagents, and records proof, acceptance, and learning back into Linear.
 
 Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
 ```mermaid
 flowchart TD
     S([▶ Start]) --> Init["vb-init\nInitialize project · once per project"]
-    Init --> Brainstorm["brainstorm\nDiscover & structure requirement"]
-    Brainstorm --> WritePlan["write-plan\nCreate Linear Issues from ACs"]
-    WritePlan --> TaskRunner["task-runner\nExecute a Linear task"]
-    TaskRunner --> Review{"Human\nReview"}
-    Review -->|"All ACs pass"| Accept["accept\nMerge PR · update Linear · archive docs"]
-    Review -->|"Needs rework"| TaskRunner
-    Review -->|"Blocked"| Blocker["blocker-resume\nUnblock & resume"]
+    Init -.optional.-> PRD["prd-brainstorm\nProduct-level PRD"]
+    Init --> Intake
+    PRD --> Intake["intake\nRecord requirement · interview style"]
+    Intake -.optional.-> Research["tech-research\nFeasibility & spikes"]
+    Intake -.cross-module.-> Arch["architecture-design\nModule map & contracts"]
+    PRD --> DefineAC
+    Research --> DefineAC
+    Arch --> DefineAC
+    Intake --> DefineAC["define-acceptance\nAC as DoR gate"]
+    DefineAC --> SplitMs["split-milestones\nRequirement → Linear Milestones"]
+    SplitMs --> SplitIs["split-issues\nRolling Wave · next milestone only"]
+    SplitIs --> TaskRunner["task-runner\nExecute milestone/issue · one worktree · commit only"]
+    TaskRunner --> AcceptIssue["accept-issue\nPer-issue acceptance · no PR"]
+    AcceptIssue --> TaskRunner
+    TaskRunner -->|"all issues done"| AcceptMs["accept-milestone\nRegression · PR to main · merge · archive"]
+    AcceptMs --> Done([✅ Done])
+    AcceptMs -."auto".-> Insights[/"insights → vb-learn\nRetrospective comment → self-learning"/]
+    TaskRunner -->|"Blocked"| Blocker["blocker-resume\nUnblock & resume"]
     Blocker --> TaskRunner
-    Accept --> Done([✅ Done])
-    Accept -."auto".-> Insights[/"insights\nPost-acceptance learning"/]
 
-    BugEntry(["🐛 Bug found"]) --> Bugger
-
-    subgraph BugFlow ["Bug Fix Flow"]
-        direction LR
-        Bugger["bugger\nRecord & analyze"] --> Bugfix["bugfix\nImplement fix"] --> AcceptBug["accept-bug\nClose Linear bug issue"]
-    end
-
-    AcceptBug --> Done
+    SmallEntry(["✏️ Small change"]) --> RecordIssue["record-issue\nImpact analysis → single issue"]
+    RecordIssue --> TaskRunner
+    BugEntry(["🐛 Bug found"]) --> Bugger["bugger\nRecord & analyze"]
+    Bugger --> Bugfix["bugfix\nImplement fix"] --> AcceptIssue
 ```
 
 ## Contents
 
 1. [Prerequisites](#prerequisites)
 2. [Install](#install)
-3. [Update](#update)
-4. [Manual Usage](#manual-usage)
-5. [Built-In Skills And Subagents](#built-in-skills-and-subagents)
-6. [Workflow](#workflow)
+3. [Manual Usage](#manual-usage)
+4. [Built-In Skills And Subagents](#built-in-skills-and-subagents)
+5. [Workflow](#workflow)
 
 ## Prerequisites
 
-- Codex with plugin support enabled.
-- Linear account with access to the target team. VibeRig ships its own Linear MCP server config (`.mcp.json`) pointing at `https://mcp.linear.app/mcp` — the host must connect to it and complete Linear's OAuth flow once. VibeRig uses it to create and update projects, documents, issues, comments, and status transitions.
+- An AI coding host with plugin support: [Codex](docs/install/en/codex.md), [Claude Code](docs/install/en/claude.md), or [Cursor](docs/install/en/cursor.md).
+- A Linear workspace VibeRig can connect to. No separate account setup is needed ahead of time — VibeRig ships its own Linear MCP server config (`.mcp.json`) pointing at `https://mcp.linear.app/mcp`, and `vb-init` checks login status before registering a Linear project, triggering the OAuth flow on the spot if you aren't logged in yet.
 
 ## Install
 
-Add the VibeRig marketplace and install the plugin:
+Pick your platform and copy the install guide to your AI assistant:
 
-```sh
-codex plugin marketplace add JsonLee12138/codex-marketplace --ref main
-codex plugin add vibe-rig@jsonlee
-```
+| Platform | Install guide |
+|---|---|
+| Codex | [docs/install/en/codex.md](docs/install/en/codex.md) |
+| Claude Code | [docs/install/en/claude.md](docs/install/en/claude.md) |
+| Cursor | [docs/install/en/cursor.md](docs/install/en/cursor.md) |
 
-Current selector format is `PLUGIN@MARKETPLACE`. In this repository, the marketplace is `jsonlee` and the plugin is `vibe-rig`.
-
-## Update
-
-Refresh the marketplace snapshot:
-
-```sh
-codex plugin marketplace upgrade jsonlee
-```
-
-Then reinstall the plugin if your Codex installation does not refresh installed plugin caches automatically:
-
-```sh
-codex plugin remove vibe-rig
-codex plugin add vibe-rig@jsonlee
-```
-
-Restart Codex after updating so newly installed skills are loaded.
+Chinese guides: [codex](docs/install/zh-CN/codex.zh-CN.md) · [claude](docs/install/zh-CN/claude.zh-CN.md) · [cursor](docs/install/zh-CN/cursor.zh-CN.md)
 
 ## Manual Usage
 
@@ -77,21 +65,32 @@ Use VibeRig by asking Codex to run the relevant skill in a target project.
 Typical prompts:
 
 - `Use vb-init for this repo.`
-- `Use brainstorm for this requirement: ...`
-- `Use write-plan for .vibeRig/requirements/<requirement-id>.`
-- `Use task-runner for Linear issue ABC-123.`
-- `Use accept: all ACs are accepted for ABC-123.`
-- `Use accept-bug for Linear bug issue ABC-456.`
-- `Use insights for the accepted Linear work.`
+- `Use intake to record this requirement: ...`
+- `Use define-acceptance for req-0001.`
+- `Use split-milestones for req-0001.` / `Use split-issues for ms-1.`
+- `Use task-runner for milestone ms-1 (or Linear issue ABC-123).`
+- `Use accept-issue for ABC-123.` / `Use accept-milestone for ms-1.`
+- `Use record-issue for this small change: ...`
 
 Project-local files created or used by VibeRig:
 
 ```text
 .vibeRig/
   project.yaml
+  prd/
+    <prd-id>/prd.md
+    archive/
   requirements/
+    <req-id>/
+      requirement.yaml   # requirement status + prd link + milestone list (4-state)
+      intake.md
+      research/
+      architecture.md
+      acceptance.json
+      linear.yaml
+    archive/
 .worktrees/
-  <issue-key>-<short-slug>/
+  milestone-<req-id>-<n>/
 ```
 
 Linear is the task and status surface. Local requirement documents are contracts, not issues.
@@ -100,20 +99,26 @@ Linear is the task and status surface. Local requirement documents are contracts
 
 ### Core Workflow Skills
 
-- `vb-init`: initializes `.vibeRig/project.yaml`, `.vibeRig/requirements/`, `.worktrees/`, Linear project registration, gate policy, PR policy, default routing, and builds the project agent team.
-- `brainstorm`: turns a rough idea into local Docs as Code requirement contracts.
-- `write-plan`: creates or updates Linear issues and sub-issues from local acceptance criteria.
-- `task-runner`: executes a Linear task in the current Codex session, delegates to a suitable subagent, validates, submits a PR, and writes a Linear proof packet.
-- `accept`: records explicit human acceptance or rejection for a requirement-backed Linear issue with a PR. On full acceptance it merges the PR, updates Linear final status, runs insights with any confirmed skill updates through `skill-builder`, archives accepted requirement docs, and cleans the task worktree when safe.
-- `accept-bug`: records explicit human acceptance for a bug fix tracked in Linear. No PR required — the fix is already committed by `bugfix`. Updates Linear status to Done.
-- `insights`: generates conservative post-acceptance learning candidates and routes skill-library curation proposals.
+- `vb-init`: initializes `.vibeRig/project.yaml`, `.vibeRig/prd/`, `.vibeRig/requirements/` (with archives), `.worktrees/`, Linear container-project registration, gate policy, PR policy, default routing, and builds the project agent team.
+- `intake`: records a requirement interview-style; produces `intake.md` + `requirement.yaml`; syncs a Linear Document only (no Milestone/Issue).
+- `prd-brainstorm`: product-level PRD via interview (scope / non-goals / user stories / priority); Document sync only.
+- `tech-research`: user-triggered feasibility research with concurrent per-domain subagent discussion; produces `research/feasibility.md` + spikes.
+- `architecture-design`: module boundaries, interface contracts, and data flow with mandatory adversarial review; its module map decides milestone boundaries.
+- `define-acceptance`: drafts ACs, confirms each with the user, writes `acceptance.json` (schema-validated). This is the DoR gate for splitting.
+- `split-milestones`: first skill to write Linear structure — requirement → Milestones (big-tech 4-criteria), backfills `requirement.yaml`.
+- `split-issues`: Rolling Wave — splits only the next milestone into 1–2-day vertically sliced issues; creates issues without assignee or subagent.
+- `record-issue`: fast lane for small changes — impact analysis → single issue; escalates to the full pipeline when impact is large.
+- `task-runner`: executes a milestone (all issues) or a single issue; one worktree + one integration branch per milestone; routes subagents at execution time; commit-only (PR happens in accept-milestone).
+- `accept-issue`: per-issue acceptance — verify ACs, commit, status, step-by-step acceptance comment; then insights retrospective + vb-learn.
+- `accept-milestone`: milestone acceptance — full regression, rebase on latest main, PR to main and merge, Linear records, `requirement.yaml` state, archival, retrospective + self-learning.
+- `insights`: generates post-acceptance retrospectives and writes them as Linear comments (input for `vb-learn`).
 - `blocker-resume`: inspects blocked Linear work and either resumes through task execution or asks for the missing decision.
 
 ### Implementation Skills
 
 - `agent-sop`: runs staged implementation, validation, QA, and rework orchestration.
 - `bugger`: records a bug in Linear, analyzes root cause, and proposes a fix approach for user confirmation. Use before `bugfix`.
-- `bugfix`: implements a confirmed bug fix, commits, records evidence in Linear, and hands off to `accept-bug`.
+- `bugfix`: implements a confirmed bug fix, commits, records evidence in Linear, and hands off to `accept-issue`.
 - `incremental-implementation`: delivers changes in thin vertical slices. Use for any change touching more than one file.
 - `source-driven-development`: grounds every implementation decision in official documentation for version-sensitive framework code.
 - `test-driven-development`: drives implementation and bug fixes with tests (Prove-It Pattern).
@@ -159,19 +164,10 @@ Specialized implementation, QA, review, research, or integration subagents are p
 
 ## Workflow
 
-1. Initialize the project with `vb-init`.
-2. Discover and structure a requirement with `brainstorm`. The skill produces a local Docs as Code contract under `.vibeRig/requirements/<requirement-id>/`:
-   - `brief.md` — requirement title and background
-   - `research.md` — optional technical research notes
-   - `contract.json` / `contract.schema.json` — structured feature contract
-   - `architecture.md` — design decisions and component boundaries
-   - `acceptance.json` / `acceptance.md` — acceptance criteria
-   - `validation.md` — validation approach and edge cases
-   - `diagrams/main-flow.mmd`, `diagrams/states.mmd` — optional Mermaid diagrams
-
-   Review and adjust these files before moving to the next step.
-3. Convert accepted planning output into Linear issues with `write-plan`.
-4. Execute a Linear issue with `task-runner`; VibeRig defaults to a project-local `.worktrees/<issue-key>-<short-slug>/` worktree, validates the result, submits or updates a PR, writes the proof packet to Linear, and moves the issue to a human-acceptance/review state.
-5. Manually call `accept` after reviewing the work. Full acceptance merges the PR into the target base branch, updates the final Linear status, runs post-acceptance insights and SkillOS-lite curation, applies any confirmed skill updates through `skill-builder`, archives the accepted requirement docs, and then removes the task worktree when safe.
-6. For bugs, use `bugger` to analyze and record the bug in Linear, then `bugfix` to implement the fix, then `accept-bug` to close it out.
-7. Apply proposed skill, workflow, or curation updates only when they are explicitly confirmed or pre-authorized in the acceptance request.
+1. Initialize the project with `vb-init` (container Linear Project, `.vibeRig/prd/` and `.vibeRig/requirements/` with archives).
+2. Optionally run `prd-brainstorm` for product-level scope (not required for every requirement). Then record the requirement interview-style with `intake` → `.vibeRig/requirements/<req-id>/intake.md` + `requirement.yaml`. Optionally add `tech-research` (feasibility) and `architecture-design` (mandatory for cross-module work — its module map decides milestone boundaries). Exploration skills sync Linear Documents only; no Milestones or Issues yet.
+3. Define acceptance criteria with `define-acceptance` — each AC confirmed with you before it is written to `acceptance.json`. This is the DoR gate.
+4. Split the requirement into Linear Milestones with `split-milestones` (big-tech 4-criteria), then split only the next milestone into issues with `split-issues` (Rolling Wave; 1–2-day vertical slices; no assignee, no subagent at creation time).
+5. Execute with `task-runner <milestone-id or issue-id>`: one worktree + one integration branch (`milestone/<req-id>-<n>`) per milestone; subagents routed at execution time; each issue ends in a commit (never a PR). When all issues finish, the milestone becomes `pending_acceptance`.
+6. Accept per issue with `accept-issue` (verify ACs, commit, step-by-step acceptance comment, insights retrospective + vb-learn). Accept the milestone with `accept-milestone`: full regression → rebase on latest remote main → resolve conflicts with your confirmation → PR to main and merge → Linear acceptance comment + Project Update → `requirement.yaml` state → retrospective + self-learning → archival when it is the last milestone.
+7. For small changes use `record-issue` (impact analysis → single issue). For bugs use `bugger` → `bugfix` → `accept-issue`.
