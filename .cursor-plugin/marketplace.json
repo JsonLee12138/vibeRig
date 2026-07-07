@@ -1,0 +1,18 @@
+{
+  "name": "vibe-rig-marketplace",
+  "owner": {
+    "name": "JsonLee12138",
+    "email": "lijunsong2@gmail.com"
+  },
+  "metadata": {
+    "description": "VibeRig Cursor plugin marketplace.",
+    "version": "0.2.7"
+  },
+  "plugins": [
+    {
+      "name": "vibe-rig",
+      "source": ".",
+      "description": "Linear-native requirement planning, local Docs as Code contracts, subagent routing, and accepted-work insights for VibeRig workflows."
+    }
+  ]
+}

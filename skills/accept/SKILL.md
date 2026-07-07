@@ -29,24 +29,9 @@ Do not use for bug fix acceptance — use `accept-bug` instead.
 - Do not auto-trigger from `task-runner`, `agent-sop`, `insights`, or code review results.
 - If the acceptance decision is missing, ask for it. Do not guess.
 
-## Required Linear Tool Mapping
+## Linear Access
 
-- `_get_issue` — read the target issue.
-- `_list_comments` — read proof packets, QA notes, and prior acceptance comments.
-- `_list_issue_statuses` — map VibeRig lifecycle to actual Linear workflow states.
-- `_save_comment` — write the human acceptance record.
-- `_save_issue` — update issue status after acceptance.
-
-If Linear tools are unavailable, summarize the acceptance record in chat and stop before pretending Linear was updated.
-
-## Language Policy
-
-Read `.vibeRig/project.yaml` and use `output.language` for all human-facing Linear content.
-
-- Acceptance comment, merge note, blocker note, archival note, insights summary, and final user summary must use `output.language`.
-- If `output.language` is missing, infer from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
-- Do not translate: stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, AC IDs, schema field names, code symbols, or existing Linear status names.
-- If the user provides acceptance text in another language, preserve exact quoted wording as evidence, then summarize the record in `output.language`.
+Use the `linear` skill for tool mapping, the status-mapping method, language policy, and the subagent-ownership invariant. This skill calls `_get_issue`, `_list_comments`, `_list_issue_statuses`, `_save_comment`, and `_save_issue`; the Status Mapping section below covers only this skill's own lifecycle states.
 
 ## Default Parameter
 

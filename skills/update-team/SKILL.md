@@ -1,22 +1,24 @@
 ---
 name: update-team
-description: Analyze the current project and reconcile the Codex agent team. Use when the user asks to update the agent team, add or remove agents, re-analyze project needs, or refresh agents after requirements change. Also invoked by vb-init after baseline agents are copied. Do not use to copy plugin baseline agents or manage ~/.codex/agents global agents.
+description: Analyze the current project and reconcile the agent team across Codex, Claude Code, and Cursor. Use when the user asks to update the agent team, add or remove agents, re-analyze project needs, or refresh agents after requirements change. Also invoked by vb-init after baseline agents are copied. Do not use to copy plugin baseline agents or manage user-level (~/.codex/agents, ~/.claude/agents, ~/.cursor/agents) global agents.
 ---
 
 # Update Team
 
-分析项目上下文，推理出适合的 agent 角色，并将 `.codex/agents/` 与推理结果对齐。所有操作**幂等**——已存在且推理仍需要的 agent 直接跳过。
+分析项目上下文，推理出适合的 agent 角色，并通过 [agent-creator](../agent-creator/SKILL.md) 将 Codex（`.codex/agents/`）、Claude Code（`.claude/agents/`）、Cursor（`.cursor/agents/`）三个平台的团队与推理结果对齐。所有操作**幂等**——已存在且推理仍需要的 agent 直接跳过。
 
 ## Contract
 
-单一职责：基于项目分析结果管理当前项目的 `.codex/agents/` 团队。
+单一职责：基于项目分析结果管理当前项目跨三个平台的 agent 团队。
 
 不允许：
-- 复制插件基线 agents（由 `vb-init` 负责）
-- 操作 `~/.codex/agents/` 全局 agents
+- 手写平台原生文件（TOML/MD）——新建/更新一律经过 `agent-creator`，避免三个平台的团队漂移不一致。
+- 复制插件基线 agents（由 `built-in-agents` 负责）
+- 操作用户级全局 agents（`~/.codex/agents/`、`~/.claude/agents/`、`~/.cursor/agents/`）
 - 修改 `project.yaml` 的 `subagents` 以外的任何字段
 - 无推理依据地创建 agent
 - 无用户确认地删除 agent
+- 未经用户确认，向共享的 `.cursor/mcp.json` 写入或合并内容
 
 无法定位项目根目录或 `.vibeRig/project.yaml` 时停止并询问。
 
@@ -25,7 +27,8 @@ description: Analyze the current project and reconcile the Codex agent team. Use
 - **项目根目录** — 当前工作区或 git root，除非用户指定
 - **`--force <name>`** — 强制重新生成指定 agent，即使已存在
 - **`--only <name,...>`** — 只分析并处理指定 agent，不做全量
-- **`--remove <name>`** — 需要用户二次确认后删除指定 agent
+- **`--platforms <name,...>`** — 只对指定平台（`codex`/`claude`/`cursor`）做 diff 和渲染；默认三个平台都处理
+- **`--remove <name>`** — 需要用户二次确认后删除指定 agent（所有已渲染平台的文件一并删除）
 
 ## Workflow
 
@@ -68,25 +71,32 @@ Linear 不可用时跳过，报告中注明。
 
 ### 3. Diff 当前团队
 
+对每个目标平台分别检查：
+
 ```bash
 ls .codex/agents/*.toml 2>/dev/null
+ls .claude/agents/*.md 2>/dev/null
+ls .cursor/agents/*.md 2>/dev/null
 ```
 
-建立三个列表：
-- **待创建** — 推理需要但 `.codex/agents/` 中不存在
+对每个推理出的 agent 名称，按 (agent, 平台) 组合建立三个列表：
+- **待创建** — 推理需要但该平台目录中不存在对应文件
 - **跳过** — 已存在且推理仍需要（`--force` 则移入待更新）
-- **建议删除** — 已存在但推理判断不再需要
+- **建议删除** — 某平台已存在该 agent 文件，但推理判断整个团队不再需要这个角色
 
 ### 4. 执行变更
 
-**创建/更新**：对每个待创建 agent，调用 `agent-creator`，传入：
+**创建/更新**：对每个待创建/待更新的 agent，调用 `agent-creator`，传入：
 - agent 名称与职责
-- `sandbox_mode`
-- 项目技术栈与推理依据（用于调优 `developer_instructions`）
+- 读写权限（对应 `sandbox_mode`/`tools`/`readonly`）
+- 项目技术栈与推理依据（用于调优 mission/scope 内容）
+- `targets`：该 agent 在本轮缺失或需要更新的平台列表（不要求 agent-creator 重新渲染已跳过的平台）
+
+若该 agent 需要 MCP 服务器且目标平台包含 Cursor：先渲染 agent 文件本身（不含 MCP 字段），MCP 服务器是否合并进共享的 `.cursor/mcp.json` 单独询问用户，不在本步骤自动执行。
 
 **建议删除**：列出建议删除的 agent 及理由，等待用户确认后执行。
 
-**`--remove <name>`**：确认后删除 TOML，并从 `project.yaml` 移除对应 key。
+**`--remove <name>`**：确认后删除该 agent 在所有已渲染平台下的文件（`.codex/agents/<name>.toml`、`.claude/agents/<name>.md`、`.cursor/agents/<name>.md`），并从 `project.yaml` 移除对应 key。
 
 ### 5. 更新 `project.yaml` subagents 段
 
@@ -100,31 +110,35 @@ ls .codex/agents/*.toml 2>/dev/null
   - Linear: 8 个待执行 issue（3 个 UI、2 个 API、1 个安全）
   - 项目结构: Go 后端 + React 前端
 
-Agent 团队变更：
-  ui_engineer      → 新建（依据：Linear UI issue ×3 + requirements/ui.md）
-  security_auditor → 跳过（已存在）
-  db_specialist    → 新建（依据：requirements/db-migration.md）
+Agent 团队变更（按平台）：
+  ui_engineer      → codex: 新建 | claude: 新建 | cursor: 新建（依据：Linear UI issue ×3 + requirements/ui.md）
+  security_auditor → codex: 跳过（已存在） | claude: 新建 | cursor: 新建
+  db_specialist    → codex: 新建 | claude: 新建 | cursor: 新建（依据：requirements/db-migration.md）
   old_agent_xyz    → 建议删除（无对应任务，请确认 y/n）
 
-汇总：2 个新建，1 个跳过，1 个待确认删除
+汇总：7 个文件新建，1 个跳过，1 个待确认删除
 ```
 
 ## Validation
 
 ```bash
-# 新建的 agent TOML 存在
-ls .codex/agents/
+# 新建的 agent 文件存在（按平台）
+ls .codex/agents/ .claude/agents/ .cursor/agents/ 2>/dev/null
 
-# 无不支持的自定义字段
+# Codex: 无不支持的自定义字段
 grep -En "^\[skills\]|^recommended_skills|^scope\s*=|^inputs\s*=|^boundaries" \
   .codex/agents/*.toml && echo "INVALID FIELDS" || echo "ok"
+
+# Cursor: 不应出现按 agent 分配的 MCP 字段
+grep -En "^mcp_servers|^mcpServers" .cursor/agents/*.md 2>/dev/null && echo "UNSUPPORTED MCP FIELD" || echo "ok"
 
 # project.yaml subagents 已更新
 grep "subagents" .vibeRig/project.yaml
 ```
 
-- [ ] 每个新建 agent 有 TOML 且有推理依据
+- [ ] 每个新建 agent 在其目标平台都有对应文件，且有推理依据
 - [ ] 无 agent 被静默删除
 - [ ] `project.yaml` `subagents` 与最终团队一致
-- [ ] 报告包含每个 agent 的动作与依据
+- [ ] 报告包含每个 (agent, 平台) 组合的动作与依据
+- [ ] 涉及 MCP 的 agent 在 Cursor 上未写入不支持字段，`.cursor/mcp.json` 合并仅在用户确认后进行
 - [ ] Linear 不可用时报告中已注明

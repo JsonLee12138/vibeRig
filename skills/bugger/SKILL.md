@@ -44,26 +44,9 @@ Return and write to Linear:
 
 Do not start implementation from this skill. Stop after user confirmation and instruct the user to invoke `bugfix`.
 
-## Required Linear Tool Mapping
+## Linear Access
 
-Use the `linear` skill/plugin with these concrete Linear app tools:
-
-- `_get_issue` to read existing bug issues or related issues.
-- `_list_comments` to read prior analysis or proof packets.
-- `_list_issue_statuses` to map bug lifecycle intent to the team's actual Linear workflow states.
-- `_save_comment` to write root cause analysis and fix approach.
-- `_save_issue` to create or update the bug issue.
-
-If Linear tools are unavailable, summarize the bug record in chat and stop before pretending Linear was updated.
-
-## Language Policy
-
-Read `.vibeRig/project.yaml` and use `output.language` for human-facing bug records.
-
-- New bug issue titles must be human-readable in `output.language`.
-- Bug descriptions, expected/actual behavior, reproduction steps, root cause comments, fix approach comments, fix evidence comments, and final handoff summaries should use `output.language`.
-- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
-- Do not translate stable IDs, file paths, commands, branch names, commit hashes, Linear keys, schema field names, code symbols, stack traces, log excerpts, or existing external labels/status names.
+Use the `linear` skill for tool mapping, the status-mapping method, and language policy. This skill calls `_get_issue`, `_list_comments`, `_list_issue_statuses`, `_save_comment`, and `_save_issue` to record and analyze the bug.
 
 ## Stop-the-Line Rule
 

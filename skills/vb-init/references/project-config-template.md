@@ -10,8 +10,6 @@ docs:
   root: ".vibeRig/requirements"
 output:
   language: "zh-CN"
-workspace:
-  worktrees_root: ".worktrees"
 pull_request:
   required: "true"
   provider: "auto"
@@ -28,10 +26,11 @@ gate_policy:
   manual_checks: []
 subagents:
   default_research: "researcher"
-  default_implementation: "implementation"
   default_qa: "qa"
-  default_review: "code_review"
   default_security_audit: "security_auditor"
-  default_test_engineer: "test_engineer"
-  default_integration: "integrator"
+  default_review: "code_review"
 ```
+
+Worktrees always live at the fixed project path `.worktrees/` — not configurable, no `workspace` section needed.
+
+`subagents` only pins the four defaults above. Any other role (implementation, integration, test authoring, domain-specific review, etc.) is resolved ad hoc through `subagent-routing` at the point of need — do not add more fixed keys here. Codex, Claude Code, and Cursor each have their own native subagent/dispatch mechanism; this file only records which capability name to prefer for the four recurring roles.

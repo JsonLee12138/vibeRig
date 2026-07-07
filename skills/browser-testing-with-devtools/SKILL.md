@@ -1,6 +1,12 @@
 ---
 name: browser-testing-with-devtools
-description: Use when debugging or testing a frontend feature in a live browser: inspecting network requests, analyzing console errors, examining DOM state, profiling page performance, or running automated browser checks via Claude in Chrome MCP tools. Key terms: devtools, network tab, console error, DOM inspect, performance profile, browser debug, chrome, XHR, fetch, layout shift, memory leak.
+description: >-
+  Use when debugging or testing a frontend feature in a live browser: inspecting
+  network requests, analyzing console errors, examining DOM state, profiling page
+  performance, or running automated browser checks via Claude in Chrome MCP
+  tools. Key terms: devtools, network tab, console error, DOM inspect,
+  performance profile, browser debug, chrome, XHR, fetch, layout shift, memory
+  leak.
 ---
 
 # Browser Testing with DevTools

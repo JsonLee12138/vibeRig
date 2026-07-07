@@ -57,15 +57,11 @@ Create or update Linear artifacts:
 
 Optionally update local docs only to add stable Linear references, such as issue keys or URLs. Do not create a local task file as a long-term source of truth.
 
-## Language Policy
+## Linear Access
 
-Linear issue titles, descriptions, sub-issue names, plan-sync comments, and chat summaries must use `.vibeRig/project.yaml` `output.language`.
+Use the `linear` skill for tool mapping, the status-mapping method, language policy, and the subagent-ownership invariant.
 
-- Linear issue titles and sub-issue titles must be human-readable in `output.language`; do not leave newly created titles in another language just because source docs or the current chat use that language.
-- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
-- If requirement docs are in a different language from `output.language`, write new human-facing Linear text in `output.language` and preserve exact technical identifiers from the docs.
-- Do not translate stable IDs, file paths, commands, branch names, labels that already exist in Linear, acceptance IDs, issue keys, schema field names, or code symbols.
-- If the user explicitly requests a one-off language, use that language for the current output and recommend updating `project.yaml` if the change should become durable.
+If the user explicitly requests a one-off language for this plan sync, use that language for the current output and recommend updating `project.yaml` if the change should become durable.
 
 ## Linear Issue Template
 

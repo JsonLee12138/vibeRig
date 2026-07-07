@@ -65,7 +65,7 @@ Do not claim a task is ready for human acceptance unless validation is sufficien
 
 - Linear issue/sub-issue: task status, assignment, discussion, acceptance conclusion, and proof packet.
 - Local `.vibeRig/requirements/{requirement-id}/`: requirement contract, architecture, acceptance matrix, validation policy, and diagrams.
-- `.vibeRig/project.yaml`: Linear registration, docs root, output language, worktrees root, pull request policy, gate policy, and default subagent routing.
+- `.vibeRig/project.yaml`: Linear registration, docs root, output language, pull request policy, gate policy, and default subagent routing.
 - Current git workspace: implementation changes, branch/commit/PR, and validation evidence.
 
 ## Hard Rules
@@ -96,9 +96,9 @@ Workspace modes:
 
 For `worktree` mode:
 
-- Worktree root: use `workspace.worktrees_root` from `.vibeRig/project.yaml`; default to the project `.worktrees/` directory.
+- Worktree root: always the fixed project `.worktrees/` directory — not configurable via `project.yaml`.
 - Worktree directory pattern: project `.worktrees/` plus issue key and short slug (parent issue key for requirement runs).
-- Preferred branch naming: `codex/{issue-key}-{short-slug}` when a branch is needed.
+- Preferred branch naming: `{issue-key}-{short-slug}` when a branch is needed.
 - Create or reuse the branch inside the selected worktree.
 - Verify the selected path appears in `git worktree list` before implementation.
 
@@ -106,14 +106,14 @@ Use these command templates for worktree setup:
 
 ```bash
 git worktree list
-git worktree add -b codex/<issue-key>-<short-slug> <worktree-path> <base-ref>
+git worktree add -b <issue-key>-<short-slug> <worktree-path> <base-ref>
 git worktree list
 ```
 
 If the task branch already exists and is not checked out by another worktree, use:
 
 ```bash
-git worktree add <worktree-path> codex/<issue-key>-<short-slug>
+git worktree add <worktree-path> <issue-key>-<short-slug>
 git worktree list
 ```
 
@@ -161,9 +161,7 @@ If PR creation is required but cannot be completed because the repo has no remot
 
 ## Linear Status Policy
 
-Use `_list_issue_statuses` to map VibeRig lifecycle intent to the team's actual Linear workflow states. Do not invent states that are not available in the team.
-
-Recommended semantic lifecycle:
+See the `linear` skill for the status-mapping method (resolve via `_list_issue_statuses`, never invent states). Recommended semantic lifecycle for this skill:
 
 - `Backlog` / `Triage`: issue exists but is not ready for execution.
 - `Ready`: source docs, AC refs, validation expectations, and subagent recommendation are present.
@@ -177,16 +175,11 @@ If the team has no `Human Acceptance` status, use the closest review/waiting sta
 
 ## Language Policy
 
-Read `.vibeRig/project.yaml` and use `output.language` for human-facing execution records.
-
-- Linear blocker comments, Proof Packet comments, status notes, PR bodies created by this workflow, and final user handoff summaries should use `output.language`.
-- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
-- Do not translate stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, acceptance IDs, schema field names, code symbols, or existing external labels/status names.
-- Subagent briefs may keep technical source wording, but the main agent must normalize any human-facing Linear or PR text to `output.language` before writing it.
+See the `linear` skill for the language policy. Subagent briefs may keep technical source wording, but the main agent must normalize any human-facing Linear or PR text to `output.language` before writing it.
 
 ## Preflight
 
-1. Locate the project root and read `.vibeRig/project.yaml`, including `output.language`, `workspace.worktrees_root`, and `pull_request` when present.
+1. Locate the project root and read `.vibeRig/project.yaml`, including `output.language` and `pull_request` when present.
 2. Resolve Linear project/team ids from YAML or Linear search:
    - use `_list_projects` or `_search` when `.vibeRig/project.yaml` is missing project identifiers or the recorded project cannot be trusted
    - use `_list_issue_statuses` to understand the team's workflow states before moving issues

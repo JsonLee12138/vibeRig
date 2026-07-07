@@ -16,6 +16,7 @@
     "docs-as-code"
   ],
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "VibeRig",
     "shortDescription": "Turn requirements into local contracts and Linear tasks.",

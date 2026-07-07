@@ -1,6 +1,6 @@
 ---
 name: subagent-routing
-description: Choose and brief specialized Codex subagents for VibeRig research, planning, implementation, QA, review, integration, and task execution. Use whenever VibeRig work may benefit from a specialized subagent, not only during task-runner execution.
+description: Choose and brief specialized subagents for VibeRig research, planning, implementation, QA, review, integration, and task execution. Use whenever VibeRig work may benefit from a specialized subagent, not only during task-runner execution.
 ---
 
 # Subagent Routing
@@ -115,16 +115,16 @@ Subagents must:
 
 ## Recommended Capability Map
 
-- Evidence research: researcher, gemini_research, domain expert, security, compliance.
-- Architecture: architect, backend, frontend, data, DevOps.
-- Acceptance and QA: qa, test_engineer, reviewer, adversarial reviewer.
-- Code review: code_review (5-dimension: correctness/readability/architecture/security/performance).
-- Security audit: security_auditor (vulnerability/auth/data/infra/3rd-party, Critical→Info).
-- Test coverage: test_engineer (Unit/Integration/E2E, Prove-It Pattern for bug fixes).
-- Implementation: the most specific implementation capability available.
-- Integration: integrator, release, DevOps, code_review.
+`.vibeRig/project.yaml` `subagents` only pins four recurring roles — do not expect or require more fixed keys:
 
-Fallback chain: specific capability → closest domain capability → generic worker. Record the fallback reason when using a less specific capability.
+- Evidence research: `subagents.default_research` (e.g. `researcher`).
+- Acceptance and QA: `subagents.default_qa` (e.g. `qa`).
+- Security audit: `subagents.default_security_audit` (e.g. `security_auditor`).
+- Code review: `subagents.default_review` (e.g. `code_review`, 5-dimension: correctness/readability/architecture/security/performance).
+
+Any other need (implementation, test authoring, integration, domain-specific review, architecture, etc.) has no fixed config key — resolve it ad hoc at the point of need: pick the closest matching capability from what's actually available (`.codex/agents/`, `.claude/agents/`, `.cursor/agents/`, or the platform's built-in agent types), and fall back to a generic worker only when nothing closer exists. Record the fallback reason when using a less specific capability.
+
+Codex, Claude Code, and Cursor each already provide a native subagent/dispatch mechanism (see [Claude Code subagents](https://code.claude.com/docs/en/agent-view), [Codex subagents](https://developers.openai.com/codex/subagents), [Cursor subagents](https://cursor.com/cn/docs/subagents)) — this skill decides *whether* and *which*, not how the underlying platform dispatches. Use that platform's own mechanism to actually invoke the chosen capability.
 
 If no suitable subagent exists for a non-task phase, the main agent may proceed directly and must report the missing capability as a routing risk. If no suitable subagent exists for Linear task execution, stop and report the missing capability before implementation.
 
@@ -143,25 +143,7 @@ Use parallel fan-out when multiple independent reviews or analyses can run on th
 - The main agent synthesizes all results after every parallel subagent returns.
 - Conflicting findings must be adjudicated by the main agent, not delegated back.
 
-**Pre-acceptance parallel review brief template:**
-
-```markdown
-Fan-out phase: parallel quality review
-
-Subagent A — code_review agent:
-Objective: review the diff at <branch/PR> across five dimensions: correctness, readability, architecture, security, performance.
-Return: APPROVE / REQUEST CHANGES verdict; findings with severity (Critical / Important / Suggestion); no fixes applied.
-
-Subagent B — security_auditor agent:
-Objective: scan the same diff for vulnerabilities, injection risks, auth gaps, and sensitive data exposure.
-Return: findings with severity (Critical / High / Medium / Low / Info); proof-of-concept for Critical issues; no fixes applied.
-
-Subagent C — test_engineer agent:
-Objective: assess whether the changed behavior has adequate test coverage; follow Prove-It Pattern for bug fixes.
-Return: coverage gaps with severity; no production code changes.
-
-Main agent: after all three return, synthesize into a unified quality report. Block delivery on any Critical finding. Fix all Critical issues and re-run affected checks before proceeding.
-```
+**Pre-acceptance parallel review example:** dispatch `subagents.default_review` (diff across five dimensions, APPROVE/REQUEST CHANGES with Critical/Important/Suggestion findings) and `subagents.default_security_audit` (vulnerabilities/auth/data exposure, Critical→Info severity) in the same turn; add a test-coverage capability ad hoc if the change needs it. Each brief follows the Subagent Brief format above with its own objective and required output. After all return, synthesize into one quality report and block delivery on any Critical finding.
 
 ## Adversarial Routing
 
@@ -173,17 +155,7 @@ Use adversarial routing when a decision, design, or artifact needs to be stress-
 - Implementation approaches for high-stakes or irreversible operations
 - Acceptance criteria that might be untestable or ambiguous
 
-**Adversarial brief template:**
-
-```markdown
-Phase: adversarial review
-Mandate: Find every flaw, hidden assumption, missing failure mode, scalability cliff, security hole, and integration gap in the attached artifact.
-Do NOT validate or confirm what works. Your ONLY job is to disprove.
-Artifact: <file path or inline content>
-Return:
-- Issue list with severity: blocking / notable / minor
-- For each issue: what breaks, under what condition, and why it was not caught
-```
+**Adversarial brief:** use the Subagent Brief format above with the objective set to a single mandate — find every flaw, hidden assumption, missing failure mode, security hole, and integration gap in the attached artifact; do not validate or confirm what works. Required output: an issue list with severity (blocking / notable / minor), and for each issue what breaks, under what condition, and why it was not caught.
 
 The main agent classifies each finding: valid-incorporate, valid-tradeoff-accepted, or noise-rejected-with-reason. Incorporate valid findings before proceeding to the next stage.
 

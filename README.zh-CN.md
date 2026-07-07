@@ -40,7 +40,7 @@ flowchart TD
 ## 前置条件
 
 - Codex 已启用 plugin support。
-- 已安装并登录 Linear 插件。VibeRig 会使用 Linear 创建和更新 project、document、issue、comment 和状态流转。
+- 拥有目标团队访问权限的 Linear 账号。VibeRig 自带 Linear MCP server 配置（`.mcp.json`），指向 `https://mcp.linear.app/mcp`——宿主需要连接该 server 并完成一次 Linear OAuth 授权。VibeRig 用它创建和更新 project、document、issue、comment 和状态流转。
 
 ## 安装
 

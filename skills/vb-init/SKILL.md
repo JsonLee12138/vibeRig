@@ -20,18 +20,23 @@ Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 ```text
 <project-root>/
 ├── AGENTS.md                    (VibeRig inject block from assets/agents-md-inject.md)
+├── CLAUDE.md  ->  AGENTS.md
 ├── .vibeRig/project.yaml        (see references/project-config-template.md)
 ├── .vibeRig/requirements/
+├── .gitignore                   (".worktrees/" entry ensured)
 ├── .agents/skills/              (pre-installed: insights, skill-builder, skillos-lite)
 ├── .claude/skills  ->  ../.agents/skills
-├── .codex/agents/*.toml         (full team including self_learner)
-└── .worktrees/
+├── .codex/agents/*.toml         (baseline team, all 3 platforms rendered by built-in-agents)
+├── .claude/agents/*.md
+├── .cursor/agents/*.md
+└── .worktrees/                  (fixed path — not configurable)
 
 ~/.vb-skills/                    (global learned-skill git repo, one per machine)
 ├── .git/
 └── vb-skill-lock.json
 
 ~/.agents/skills/vb  ->  ~/.vb-skills   (Codex discovery symlink)
+~/.claude/skills/vb  ->  ~/.vb-skills   (Claude Code discovery symlink)
 ```
 
 ## Workflow
@@ -46,6 +51,9 @@ Inspect existing `AGENTS.md`, `.vibeRig/project.yaml`, and `.vibeRig/requirement
 mkdir -p .vibeRig/requirements .worktrees
 mkdir -p .agents/skills
 [ ! -L .claude/skills ] && { mkdir -p .claude; ln -s ../.agents/skills .claude/skills; }
+
+# .worktrees is a fixed path, always ignored — not a config option
+grep -qxF '.worktrees/' .gitignore 2>/dev/null || printf '%s\n' '.worktrees/' >> .gitignore
 ```
 
 Pre-install `insights`, `skill-builder`, `skillos-lite` at project level via `find-skills`.
@@ -70,15 +78,21 @@ fi
 mkdir -p ~/.agents/skills
 [ ! -L ~/.agents/skills/vb ] \
   && ln -s ~/.vb-skills ~/.agents/skills/vb
+
+# d. Claude Code discovery symlink
+mkdir -p ~/.claude/skills
+[ ! -L ~/.claude/skills/vb ] \
+  && ln -s ~/.vb-skills ~/.claude/skills/vb
 ```
 
-> **Critical**: symlink must be `~/.agents/skills/vb → ~/.vb-skills`.
+> **Critical**: symlinks must be `~/.agents/skills/vb → ~/.vb-skills` and `~/.claude/skills/vb → ~/.vb-skills`.
 > `~/.agents/vb` (sibling of `skills/`) is outside Codex scan depth and will never be discovered.
 
 ### 4. project.yaml
 
 Create or update `.vibeRig/project.yaml` from [references/project-config-template.md](./references/project-config-template.md).
-Required fields: `output.language` (BCP 47), `workspace.worktrees_root`, pull request policy, gate policy, Linear ids.
+Required fields: `output.language` (BCP 47), pull request policy, gate policy, Linear ids, the four `subagents` defaults (`default_research`, `default_qa`, `default_security_audit`, `default_review`).
+There is no `workspace` section — the worktree root is always the fixed project path `.worktrees/`.
 
 ### 5. AGENTS.md
 
@@ -86,9 +100,15 @@ Copy the inject block from [assets/agents-md-inject.md](./assets/agents-md-injec
 `<!-- inject:viberig:start -->` and `<!-- inject:viberig:end -->` tags.
 Preserve all unrelated project rules already in `AGENTS.md`.
 
+```bash
+[ ! -L CLAUDE.md ] && [ ! -e CLAUDE.md ] && ln -s AGENTS.md CLAUDE.md
+```
+
+Claude Code reads `CLAUDE.md` by convention; symlink it to `AGENTS.md` so both platforms share one source of truth. Skip if `CLAUDE.md` already exists as a real file (do not overwrite user content).
+
 ### 6. Linear registration
 
-When Linear tools are available:
+See the `linear` skill for tool mapping and fallback behavior. When Linear tools are available:
 - `_list_teams` / `_get_team` → confirm team.
 - `_search` + `_list_projects` → find existing project (search before creating).
 - `_save_project` → create only if none found.
@@ -101,7 +121,7 @@ Report as **partial** when Linear tools are unavailable; do not claim full regis
 
 **7a. 安装插件基线 agents**
 
-调用 `built-in-agents`，将 vb-plugin 自带的 9 个基线 agent TOML 写入 `.codex/agents/`（已存在的跳过）。
+调用 `built-in-agents`，将 vb-plugin 自带的 9 个基线 agent 渲染到 Codex（`.codex/agents/*.toml`）、Claude Code（`.claude/agents/*.md`）、Cursor（`.cursor/agents/*.md`）三个平台（已存在的跳过）。
 
 **7b. 调用 `update-team` 分析项目**
 
@@ -118,9 +138,11 @@ gate policy, agent team (created / existed / skipped), global store status.
 # Local project
 ls .vibeRig/project.yaml .vibeRig/requirements/ .worktrees/ AGENTS.md
 grep "language:" .vibeRig/project.yaml
+grep -qxF '.worktrees/' .gitignore && echo "gitignore ok"
+test -L CLAUDE.md && readlink CLAUDE.md | grep -q AGENTS.md && echo "symlink ok"
 test -L .claude/skills && echo "symlink ok"
 ls .agents/skills/insights/ .agents/skills/skill-builder/ .agents/skills/skillos-lite/
-ls .codex/agents/*.toml
+ls .codex/agents/*.toml .claude/agents/*.md .cursor/agents/*.md
 
 # Global learned-skill store
 git -C ~/.vb-skills rev-parse --git-dir && echo "vb-skills git ok"
@@ -128,15 +150,20 @@ ls ~/.vb-skills/vb-skill-lock.json
 test -L ~/.agents/skills/vb \
   && readlink ~/.agents/skills/vb | grep -q vb-skills \
   && echo "symlink ok" || echo "SYMLINK MISSING"
+test -L ~/.claude/skills/vb \
+  && readlink ~/.claude/skills/vb | grep -q vb-skills \
+  && echo "symlink ok" || echo "SYMLINK MISSING"
 ```
 
-- [ ] `.vibeRig/project.yaml` has all required sections including `output.language`.
+- [ ] `.vibeRig/project.yaml` has all required sections including `output.language`; no `workspace` section present.
 - [ ] Root `AGENTS.md` contains the VibeRig inject block.
+- [ ] `CLAUDE.md` symlinks to `AGENTS.md` (or was already a real file, left untouched).
 - [ ] `.claude/skills` symlinks to `../.agents/skills`.
 - [ ] `insights`, `skill-builder`, `skillos-lite` present in `.agents/skills/`.
-- [ ] All standard agents present in `.codex/agents/` (or gaps reported).
+- [ ] Baseline agents present across `.codex/agents/`, `.claude/agents/`, `.cursor/agents/` (or gaps reported).
+- [ ] `.worktrees/` exists and is listed in `.gitignore`.
 - [ ] `~/.vb-skills` is a git repo with `vb-skill-lock.json`.
-- [ ] `~/.agents/skills/vb` symlinks to `~/.vb-skills`.
+- [ ] `~/.agents/skills/vb` and `~/.claude/skills/vb` both symlink to `~/.vb-skills`.
 - [ ] Linear registration complete, or partial explicitly reported.
 
 ## Hard Rules
@@ -146,3 +173,5 @@ test -L ~/.agents/skills/vb \
 - Do not place the Codex symlink at `~/.agents/vb` — it must be `~/.agents/skills/vb`.
 - Do not report full initialization when Linear tools were available but registration was skipped.
 - Do not make CI mandatory for all projects — record the project's own gate policy.
+- Do not add a `workspace` section or a `worktrees_root` setting to `project.yaml` — the worktree path is always the fixed `.worktrees/`.
+- Do not overwrite an existing real `CLAUDE.md` file with a symlink.

@@ -40,7 +40,7 @@ flowchart TD
 ## Prerequisites
 
 - Codex with plugin support enabled.
-- Linear plugin installed and authenticated. VibeRig uses Linear to create and update projects, documents, issues, comments, and status transitions.
+- Linear account with access to the target team. VibeRig ships its own Linear MCP server config (`.mcp.json`) pointing at `https://mcp.linear.app/mcp` — the host must connect to it and complete Linear's OAuth flow once. VibeRig uses it to create and update projects, documents, issues, comments, and status transitions.
 
 ## Install
 

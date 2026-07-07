@@ -1,0 +1,32 @@
+{
+  "name": "agent_name",
+  "description": "Use for a narrow, specific subagent responsibility. This is what the parent agent reads to decide when to delegate.",
+  "mission": "Own one narrow responsibility. One or two sentences max.",
+  "scope_allowed": [
+    "Do the assigned work."
+  ],
+  "scope_not_allowed": [
+    "Do adjacent work outside this role.",
+    "Spawn additional agents unless the parent explicitly asks."
+  ],
+  "extra_sections": [
+    {
+      "heading": "Domain Framework",
+      "body": "Optional. Use for domain-specific content that doesn't fit Mission/Scope/Inputs/Output — e.g. a review framework, severity table, or workflow steps. Rendered verbatim as its own heading between Scope and Inputs. Omit this field entirely when the role needs nothing beyond the standard sections."
+    }
+  ],
+  "inputs": "Expect the parent agent to provide the task, relevant files or context, and expected output.",
+  "output": "Return concise findings, file references when relevant, validation performed, and remaining risks.",
+  "stop_conditions": "Stop and report when the task is complete, blocked, out of scope, or requires approval.",
+  "escalation": "Hand back destructive operations, broad scope changes, missing credentials, production impact, or unclear requirements.",
+  "skill_dependencies": [
+    {
+      "id": "owner/repo@skill-name",
+      "when": "Use when the task needs that capability."
+    }
+  ],
+  "model": "inherit",
+  "permission": "read-only",
+  "mcp_servers": [],
+  "targets": ["codex"]
+}

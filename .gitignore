@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+node_modules/
+dist/
 .worktrees/
 .DS_Store
 skill-video/
@@ -37,3 +39,4 @@ skills/graphic-overlays/
 skills/general-video/
 skills/faceless-explainer/
 video/youtube/rules.md
+.codex/agents/ts-cli-scaffolder.toml

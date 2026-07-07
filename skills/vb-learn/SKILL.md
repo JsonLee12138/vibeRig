@@ -1,6 +1,10 @@
 ---
 name: vb-learn
-description: Distil a completed Linear task into a reusable skill in ~/.vb-skills. Trigger phrases: "vb-learn VB-42", "学习 VB-42", "把 VB-42 沉淀成 skill", "记录这个 pattern". Issue must be in a terminal state (Done / Accepted / Completed / Cancelled / Duplicate).
+description: >-
+  Distil a completed Linear task into a reusable skill in ~/.vb-skills.
+  Trigger phrases: "vb-learn VB-42", "学习 VB-42", "把 VB-42 沉淀成 skill",
+  "记录这个 pattern". Issue must be in a terminal state (Done / Accepted /
+  Completed / Cancelled / Duplicate).
 ---
 
 # VB Learn
@@ -31,7 +35,6 @@ This skill verifies the state itself and refuses to learn from non-terminal issu
 ## Inputs
 
 - **Linear key** (e.g. `VB-42`) — required. This is the only required input.
-- `<project-root>`: inferred from current git root; used to locate `scripts/validate-skill-lock`.
 
 ## Workflow
 
@@ -114,7 +117,7 @@ If any check fails → ask `skill-builder` to revise before moving on.
 Then immediately update the lock for this skill:
 
 ```bash
-python3 <project-root>/scripts/update-skill-lock <skill-name>
+npx vibe-rig skill-lock update <skill-name>
 ```
 
 Repeat for the next candidate.
@@ -123,7 +126,7 @@ Repeat for the next candidate.
 
 ```bash
 # Hard stop — do not commit on failure
-python3 <project-root>/scripts/validate-skill-lock
+npx vibe-rig skill-lock validate
 
 git -C ~/.vb-skills add -A
 git -C ~/.vb-skills commit -m "vb-learn: capture <skill-names> (<LINEAR-KEY>)"
@@ -157,7 +160,7 @@ If all skipped: `skipped: <reason>`.
 
 ```bash
 ls ~/.vb-skills/           # confirm written skills exist
-python3 <project-root>/scripts/validate-skill-lock
+npx vibe-rig skill-lock validate
 git -C ~/.vb-skills log --oneline -1
 ```
 

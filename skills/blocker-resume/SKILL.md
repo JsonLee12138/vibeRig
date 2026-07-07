@@ -57,13 +57,9 @@ Do not claim an issue is unblocked unless the blocking evidence is resolved and 
 
 Read Linear comments, blocker comments, proof packet comments, and linked validation or CI evidence before classifying whether the blocker is resolved.
 
-## Language Policy
+## Linear Access
 
-Read `.vibeRig/project.yaml` and use `output.language` for human-facing blocker records.
-
-- Blocker classification comments, resume comments, remaining-risk notes, user-decision requests, and final summaries should use `output.language`.
-- If `output.language` is missing, infer the language from the user's current working language, state the fallback, and recommend reconciling `project.yaml` through `init-viberig`.
-- Do not translate stable IDs, file paths, commands, branch names, PR URLs, commit hashes, Linear keys, acceptance IDs, schema field names, code symbols, log excerpts, or existing external labels/status names.
+See the `linear` skill for tool mapping, the status-mapping method, and language policy.
 
 ## Workflow
 

@@ -30,23 +30,9 @@ Trigger only when the user explicitly states acceptance:
 
 Do not auto-trigger from `bugfix`, `agent-sop`, or test results.
 
-## Required Linear Tool Mapping
+## Linear Access
 
-- `_get_issue` — read the bug issue.
-- `_list_comments` — read fix evidence and prior analysis.
-- `_list_issue_statuses` — map lifecycle intent to actual Linear workflow states.
-- `_save_comment` — write the acceptance record.
-- `_save_issue` — update issue to Done.
-
-If Linear tools are unavailable, summarize the acceptance record in chat.
-
-## Language Policy
-
-Read `.vibeRig/project.yaml` and use `output.language` for all human-facing Linear content.
-
-- Acceptance comment and final user summary must use `output.language`.
-- If `output.language` is missing, infer from the user's current working language and state the fallback.
-- Do not translate: stable IDs, file paths, commands, branch names, commit hashes, Linear keys, or existing Linear status names.
+Use the `linear` skill for tool mapping, the status-mapping method, and language policy. This skill calls `_get_issue`, `_list_comments`, `_list_issue_statuses`, `_save_comment`, and `_save_issue` to move the bug issue to Done.
 
 ## Default Parameter
 
