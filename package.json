@@ -26,13 +26,14 @@
   "engines": {
     "node": ">=20.19.0"
   },
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "tsdown",
     "dev": "tsx src/cli/index.ts",
     "lint": "eslint src eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml",
     "lint:fix": "eslint src eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml --fix",
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck"
+    "test": "pnpm run typecheck"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",

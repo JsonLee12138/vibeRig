@@ -11,7 +11,7 @@
 - `.cursor-plugin/marketplace.json` → `version`
 - `.codex-plugin/plugin.json` → `version`
 
-`package-lock.json` 不手动改，改完 `package.json` 后跑 `npm install` 让它自动同步。
+`pnpm-lock.yaml` 不手动改，改完 `package.json` 后跑 `pnpm install` 让它自动同步。
 
 <!-- inject:viberig:start -->
 ## VibeRig Output Language

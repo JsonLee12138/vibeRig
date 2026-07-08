@@ -147,7 +147,7 @@ app.use('/api/auth/', rateLimit({ windowMs: 15 * 60 * 1000, max: 10 }));
 - [ ] Error messages don't expose internals
 
 ### Supply Chain
-- [ ] Lockfile committed; CI installs with `npm ci`
+- [ ] Lockfile committed; CI installs with `pnpm install --frozen-lockfile`
 - [ ] New dependencies reviewed (maintenance, download count, postinstall scripts, typosquats)
 
 ### AI / LLM (if used)
