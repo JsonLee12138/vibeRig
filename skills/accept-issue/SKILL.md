@@ -40,10 +40,9 @@ description: 单个切片 issue 的验收（取代 accept-bug 的单点验收）
    - `save_issue` 创建 `type:acceptance-fix` issue，挂同一 Milestone；描述含问题现象、涉及 AC-id、修复验证方式；
    - 修复在**同一集成分支**上小修（走 `task-runner <fix-issue-id>`），不开新分支新 worktree；
    - 原 issue 状态保持非终态。
-8. **复盘 + 自学习（验收通过后，按顺序）**：
-   - 触发 `insights` 对该 issue 复盘，结论用 `save_comment` 写入该 issue 评论区（复盘评论是给人看的，也是 vb-learn 的输入）；
-   - 触发 `vb-learn <issue-key>` 从评论区自学习（复盘评论 + proof packet + 验收评论）；无可泛化经验时由 vb-learn 自行返回 `skipped` 并说明原因。
-9. 报告：AC 逐条结果、验收评论链接、状态变更、（如有）acceptance-fix issue、复盘评论链接、vb-learn 结果（沉淀的 skill 或 skipped 原因）。
+8. **insights 复盘（验收通过后）**：触发 `insights` 对该 issue 复盘，结论用 `save_comment` 写入该 issue 评论区（复盘评论是给人看的，也是 vb-learn 的输入）。
+9. **vb-learn 自学习**：待第 8 步复盘评论写入后，触发 `vb-learn <issue-key>` 从评论区自学习（复盘评论 + proof packet + 验收评论）；无可泛化经验时由 vb-learn 自行返回 `skipped` 并说明原因。
+10. 报告：AC 逐条结果、验收评论链接、状态变更、（如有）acceptance-fix issue、复盘评论链接、vb-learn 结果（沉淀的 skill 或 skipped 原因）。
 
 ## 红线
 
@@ -60,5 +59,6 @@ description: 单个切片 issue 的验收（取代 accept-bug 的单点验收）
 - [ ] 验收评论符合书写规范（逐步操作 + 看到的结果 + commit hash），无抽象话单独出现。
 - [ ] 状态经 `list_issue_statuses` 解析后更新；未发 PR、未动 main。
 - [ ] 发现的问题已建 `type:acceptance-fix` issue 并挂同里程碑。
-- [ ] 验收通过后：insights 复盘评论已写入评论区，随后 vb-learn 已执行（沉淀或 skipped 有原因）。
+- [ ] 验收通过后：insights 复盘评论已写入评论区；
+- [ ] vb-learn（沉淀或 skipped 有原因）。
 - [ ] 人读内容使用 `output.language`。
