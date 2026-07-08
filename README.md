@@ -151,10 +151,9 @@ Linear is the task and status surface. Local requirement documents are contracts
 ### Bundled Subagents
 
 - `code_review`: code review across correctness, readability, architecture, security, and performance.
-- `gemini_research`: Gemini-backed deep web search and large-context repository analysis.
 - `integrator`: coordinates multi-task work, dependency status, branch/PR readiness, and merge risks.
 - `qa`: acceptance review, test strategy, edge cases, and validation evidence.
-- `researcher`: technical research across local code, documentation, and implementation constraints.
+- `researcher`: deep web search, large-context repository/document analysis, and source-grounded technical research.
 - `security_auditor`: security-focused code review with vulnerability detection and threat modeling.
 - `self_learner`: extracts lessons learned and reinforces successful patterns after accept/handoff.
 - `test_engineer`: test strategy, test writing, and coverage analysis.

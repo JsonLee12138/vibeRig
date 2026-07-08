@@ -23,10 +23,9 @@ description: Install vb-plugin baseline agents into the current project across C
 | Spec 文件 | Agent | 职责 |
 |---|---|---|
 | `code_review.json` | code_review | 代码质量审查 |
-| `gemini_research.json` | gemini_research | Gemini 辅助研究 |
 | `integrator.json` | integrator | 跨模块集成 |
 | `qa.json` | qa | QA 验证 |
-| `researcher.json` | researcher | 研究与只读分析 |
+| `researcher.json` | researcher | 深度网络搜索、大上下文分析与源驱动调研 |
 | `security_auditor.json` | security_auditor | 安全漏洞扫描 |
 | `self_learner.json` | self_learner | 事后学习（配合 vb-learn）|
 | `test_engineer.json` | test_engineer | 测试编写 |
@@ -52,14 +51,15 @@ description: Install vb-plugin baseline agents into the current project across C
 
 - 已存在且未传 `--force` → 跳过该 (agent, 平台) 组合，记录到报告。
 - 不存在 → 调用 `agent-creator`：这个 JSON 文件本身就是已经确定好的 intermediate spec，直接用它渲染缺失的平台，跳过 agent-creator 工作流里的"澄清职责 / 技能依赖确认"步骤——基线 agent 的边界和技能依赖已经预先审定过，不需要每次安装都重新询问用户。
-- spec 的 `mcp_servers` 非空且目标平台是 Cursor：Cursor 不支持按 agent 分配 MCP（见 agent-creator 的 Capability Matrix），渲染的 `.cursor/agents/<name>.md` 不写任何 MCP 字段。是否把该 agent 需要的 MCP 服务器合并进项目共享的 `.cursor/mcp.json` 是一个独立决定，必须先询问用户；本 skill 只渲染 agent 文件本身，MCP 合并留到用户确认后再做，并在报告中注明"待确认"。
+- 当前所有基线 spec 的 `mcp_servers` 均为空——基线 agent 需要的 MCP 服务器（`linear`、`pencil`、`gemini-cli`）由插件自带的共享 MCP 配置提供（Codex / Claude Code：`.mcp.json`；Cursor：`mcp.json`），渲染时不写任何按 agent 的 MCP 字段，也无需合并 `.cursor/mcp.json`。
+- 若未来某个 spec 的 `mcp_servers` 非空且目标平台是 Cursor：Cursor 不支持按 agent 分配 MCP（见 agent-creator 的 Capability Matrix），渲染的 `.cursor/agents/<name>.md` 不写任何 MCP 字段。是否把该 agent 需要的 MCP 服务器合并进项目共享的 `.cursor/mcp.json` 是一个独立决定，必须先询问用户；本 skill 只渲染 agent 文件本身，MCP 合并留到用户确认后再做，并在报告中注明"待确认"。
 
 ### 3. 输出报告
 
 ```
 基线 agents 安装结果（按平台）：
   code_review       → codex: 已写入 | claude: 已写入 | cursor: 已写入
-  gemini_research   → codex: 跳过（已存在） | claude: 已写入 | cursor: 已写入（MCP 未合并，需用户确认）
+  researcher        → codex: 跳过（已存在） | claude: 已写入 | cursor: 已写入
   ...
 
 汇总：X 个文件写入，Y 个跳过，Z 个待确认 MCP 合并
@@ -71,7 +71,7 @@ description: Install vb-plugin baseline agents into the current project across C
 ls .codex/agents/*.toml .claude/agents/*.md .cursor/agents/*.md 2>/dev/null
 ```
 
-- [ ] 每个安装目标平台下，9 个基线 agent 都存在（或被 `--only` 明确排除）
+- [ ] 每个安装目标平台下，8 个基线 agent 都存在（或被 `--only` 明确排除）
 - [ ] 报告列出每个 (agent, 平台) 组合的动作（写入/跳过）
 - [ ] 无文件被静默覆盖
-- [ ] 涉及 MCP 的基线 agent（`gemini_research`、`uiux_design`）在 Cursor 上没有写入不支持的 MCP 字段，且 `.cursor/mcp.json` 合并只在用户确认后进行
+- [ ] 渲染的 agent 文件不含按 agent 的 MCP 字段；基线 agent 所需 MCP（`pencil`、`gemini-cli`）由共享配置 `.mcp.json` / `mcp.json` 提供

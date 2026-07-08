@@ -130,11 +130,11 @@ Report as **partial** when Linear tools are unavailable (including login decline
 
 **7a. 安装插件基线 agents**
 
-调用 `built-in-agents`，将 vb-plugin 自带的 9 个基线 agent 渲染到 Codex（`.codex/agents/*.toml`）、Claude Code（`.claude/agents/*.md`）、Cursor（`.cursor/agents/*.md`）三个平台（已存在的跳过）。
+调用 `built-in-agents`，将 vb-plugin 自带的 8 个基线 agent 渲染到 Codex（`.codex/agents/*.toml`）、Claude Code（`.claude/agents/*.md`）、Cursor（`.cursor/agents/*.md`）三个平台（已存在的跳过）。
 
 **7b. 调用 `update-team` 分析项目**
 
-调用 `update-team`，基于 `.vibeRig/requirements/` 和 Linear 未执行 issues 推理出项目所需的额外 agent 角色，并完成创建与 `project.yaml` 的 `subagents` 更新。
+调用 `update-team`，基于 `.vibeRig/requirements/` 或 `.vibeRig/prd/` 和 Linear 未执行 issues 或 milestones 推理出项目所需的额外 agent 角色，并完成创建与 `project.yaml` 的 `subagents` 更新。
 
 ### 8. Report
 

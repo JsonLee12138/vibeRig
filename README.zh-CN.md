@@ -151,10 +151,9 @@ Linear 是任务和状态界面。本地 requirement docs 是契约，不是 iss
 ### 内置 Subagents
 
 - `code_review`：从正确性、可读性、架构、安全和性能五个维度进行代码审查。
-- `gemini_research`：Gemini 驱动的深度网络搜索和大上下文仓库分析。
 - `integrator`：协调多任务工作、依赖状态、分支/PR 就绪度和合并风险。
 - `qa`：验收评审、测试策略、边界情况和验证证据。
-- `researcher`：跨本地代码、文档和实现约束的技术调研。
+- `researcher`：深度网络搜索、大上下文仓库/文档分析与有源可溯的技术调研。
 - `security_auditor`：以安全为核心进行代码审查，包含漏洞检测和威胁建模。
 - `self_learner`：在 accept/handoff 后提取经验教训并强化成功模式。
 - `test_engineer`：测试策略、测试编写和覆盖率分析。

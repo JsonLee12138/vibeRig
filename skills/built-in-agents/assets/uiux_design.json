@@ -24,6 +24,12 @@
   "output": "Return a concise design execution report with: workflow used, source files inspected, Pencil and Gemini-assisted design usage, readiness status for UIFLOW.md and DESIGN.md, component strategy, implementation or handoff recommendations, file references for any edits, design validation evidence, assumptions, open questions, and any QA work that should be delegated separately.",
   "stop_conditions": "Stop and report when the assigned design contract is complete, required source files are missing, Pencil is unavailable for a Pencil-backed task, Gemini is unavailable for a user-selected Gemini-assisted design task, requirements conflict, the task needs human product judgment, credentials are missing, or requested changes exceed the delegated UI/UX scope.",
   "escalation": "Hand back destructive operations, global config changes, production-impacting design decisions, unclear product intent, inaccessible design sources, missing credentials, broad implementation requests (anything touching `src/`, `app/`, `lib/`), QA or acceptance testing, or any decision that needs explicit human approval.",
+  "extra_sections": [
+    {
+      "heading": "MCP Servers",
+      "body": "This agent relies on the project-level shared MCP config for its tools: `pencil` and `gemini-cli` are defined in `.mcp.json` (Codex / Claude Code) and `mcp.json` (Cursor). Do not add per-agent MCP fields when rendering; if a tool is missing, check the shared MCP config first."
+    }
+  ],
   "skill_dependencies": [
     {
       "id": "vibe-rig:uiux-design",
@@ -36,30 +42,6 @@
   ],
   "model": "inherit",
   "permission": "write",
-  "mcp_servers": [
-    {
-      "name": "pencil",
-      "config": {
-        "type": "stdio",
-        "command": "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
-        "args": ["--app", "desktop", "--agent", "codexCLI"],
-        "startup_timeout_sec": 30,
-        "tool_timeout_sec": 300
-      }
-    },
-    {
-      "name": "gemini-cli",
-      "config": {
-        "type": "stdio",
-        "command": "/usr/local/bin/npx",
-        "args": ["-y", "@tuannvm/gemini-mcp-server"],
-        "startup_timeout_sec": 60,
-        "tool_timeout_sec": 600,
-        "env": {
-          "GEMINI_MODEL": "gemini-3.1-pro-preview"
-        }
-      }
-    }
-  ],
+  "mcp_servers": [],
   "targets": ["codex", "claude", "cursor"]
 }

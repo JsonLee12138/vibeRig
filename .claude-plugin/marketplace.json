@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "viberig",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "VibeRig — Linear-native requirement planning, Docs as Code contracts, subagent routing, and accepted-work insights.",
   "owner": {
     "name": "JsonLee12138"
@@ -10,7 +10,7 @@
     {
       "name": "vibe-rig",
       "description": "Linear-native requirement planning, local Docs as Code contracts, subagent routing, and accepted-work insights for VibeRig workflows.",
-      "version": "0.2.7",
+      "version": "1.0.1",
       "author": {
         "name": "jsonlee"
       },

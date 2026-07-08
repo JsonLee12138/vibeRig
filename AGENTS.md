@@ -1,5 +1,18 @@
 # Global Coding Rules
 
+## Version Sync
+
+当用户要求"修改版本"/"升级版本号"时，必须同步修改以下所有位置，保持版本号一致（除非用户明确只指定其中一处）：
+
+- `package.json` → `version`
+- `.claude-plugin/plugin.json` → `version`
+- `.claude-plugin/marketplace.json` → 顶层 `version` 与 `plugins[0].version`
+- `.cursor-plugin/plugin.json` → `version`
+- `.cursor-plugin/marketplace.json` → `version`
+- `.codex-plugin/plugin.json` → `version`
+
+`package-lock.json` 不手动改，改完 `package.json` 后跑 `npm install` 让它自动同步。
+
 <!-- inject:viberig:start -->
 ## VibeRig Output Language
 
