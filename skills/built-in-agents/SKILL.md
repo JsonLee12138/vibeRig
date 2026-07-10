@@ -1,6 +1,6 @@
 ---
 name: built-in-agents
-description: Install vb-plugin baseline agents into the current project across Codex (.codex/agents/), Claude Code (.claude/agents/), and Cursor (.cursor/agents/) by rendering each baseline JSON spec through agent-creator. Use when initializing a VibeRig project or when baseline agents are missing. Called by vb-init; can also be run standalone to restore missing baseline agents. Do not use to update or regenerate project-specific agents.
+description: Install vb-plugin baseline agents into the current project across Codex, Claude Code, and Cursor. Use when initializing a VibeRig project or when baseline agents are missing; called by `vb-init`, or run standalone to restore missing baseline agents. Do not use to update or regenerate project-specific agents — that's `update-team`.
 ---
 
 # Built-in Agents

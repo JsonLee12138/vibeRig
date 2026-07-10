@@ -1,6 +1,6 @@
 ---
 name: linear
-description: Shared Linear access reference for VibeRig skills. Use whenever a VibeRig skill needs to read or write Linear (issues, comments, statuses, labels, projects, teams, documents, milestones, status updates) — for the concrete tool mapping, status-mapping rule, human-facing language policy, subagent-ownership invariant, exploration-phase prohibition, and the fallback behavior when Linear tools are unavailable. Not a standalone user-facing workflow; other skills (`intake`, `prd-brainstorm`, `tech-research`, `define-acceptance`, `split-milestones`, `split-issues`, `record-issue`, `accept-milestone`, `accept-issue`, `bugger`, `bugfix`, `task-runner`, `agent-sop`, `blocker-resume`, `vb-init`, `insights`, `vb-learn`) reference this skill instead of restating these rules.
+description: Shared Linear access reference for VibeRig skills. Consult whenever a VibeRig skill needs to read or write Linear (issues, comments, statuses, labels, projects, teams, documents, milestones, status updates). Not a standalone user-facing workflow — other VibeRig skills reference this one instead of restating its rules.
 ---
 
 # Linear

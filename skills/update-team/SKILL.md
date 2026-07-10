@@ -1,6 +1,6 @@
 ---
 name: update-team
-description: Analyze the current project and reconcile the agent team across Codex, Claude Code, and Cursor. Use when the user asks to update the agent team, add or remove agents, re-analyze project needs, or refresh agents after requirements change. Also invoked by vb-init after baseline agents are copied. Do not use to copy plugin baseline agents or manage user-level (~/.codex/agents, ~/.claude/agents, ~/.cursor/agents) global agents.
+description: Analyze the current project and reconcile the agent team across Codex, Claude Code, and Cursor. Use when the user asks to update the agent team, add or remove agents, re-analyze project needs, or refresh agents after requirements change; also invoked by `vb-init` after baseline agents are copied. Not for copying plugin baseline agents (`built-in-agents`) or managing user-level global agents.
 ---
 
 # Update Team

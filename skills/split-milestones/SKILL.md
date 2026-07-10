@@ -1,6 +1,6 @@
 ---
 name: split-milestones
-description: 里程碑拆分——第一个写 Linear 结构的 skill。当用户要拆里程碑、把需求拆成 Milestone、或 define-acceptance 完成后进入交付轨时使用。依据 architecture.md 模块依赖图切里程碑，每个里程碑必须满足大厂四条标准，用 save_milestone 创建（先查重），回填 requirement.yaml 的 milestones 列表。前置门禁：acceptance.json 必须存在。
+description: 里程碑拆分——第一个写 Linear 结构的 skill。当用户要拆里程碑、把需求拆成 Milestone、或 define-acceptance 完成后进入交付轨时使用。前置门禁：acceptance.json 必须存在。
 ---
 
 # Split Milestones（里程碑拆分）

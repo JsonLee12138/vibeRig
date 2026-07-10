@@ -1,6 +1,6 @@
 ---
 name: tech-research
-description: 技术调研（用户主动触发，非必经）。当用户在 intake 或 PRD 之后要求做技术调研、可行性分析、技术选型、spike 时使用。先专业调研，再按领域拆分多个 subagent 并发展开技术讨论，汇总为技术方案与可行性结论，产出 research/feasibility.md 与 spike 记录。结论同步副本写入 Linear Document。
+description: 技术调研（用户主动触发，非必经）。当用户在 intake 或 PRD 之后要求做技术调研、可行性分析、技术选型、spike 时使用。不在其他 skill 中自动连带调用。
 ---
 
 # Tech Research（技术调研）

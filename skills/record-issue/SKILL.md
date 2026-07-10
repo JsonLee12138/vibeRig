@@ -1,6 +1,6 @@
 ---
 name: record-issue
-description: 记录小需求/小改动的快速入口，不走完整需求流水线。当用户提出一个单点改动、小功能、小优化，且明显撑不起一个里程碑时使用。先做影响面分析，再判定归属（当前活跃 Milestone 或 Project backlog），最后建单。影响面大时停止并引导升级为完整需求流程（intake 起步）。与 bugger 是两个独立 skill：record-issue 面向"要加/要改的东西"，bugger 面向"坏了的东西"。
+description: 记录小需求/小改动的快速入口，不走完整需求流水线。当用户提出一个单点改动、小功能、小优化，且明显撑不起一个里程碑时使用。与 bugger 是两个独立 skill：record-issue 面向"要加/要改的东西"，bugger 面向"坏了的东西"。
 ---
 
 # Record Issue（记录小需求）

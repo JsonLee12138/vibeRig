@@ -20,7 +20,7 @@
 
 - <范围边界>
 - 不回退无关的用户改动
-- subagent 不更新 Linear
+- subagent 不更新 Linear、不发起/更新/合并 PR
 - 不创建新分支/新 worktree；改动提交前交回主 agent 校验
 
 ## 验证
@@ -29,8 +29,8 @@
 
 ## Workspace
 
-- 路径: <里程碑共享 worktree 绝对路径>
-- 集成分支: `milestone/<req-id>-<n>`
+- 路径: <本次调用使用的 worktree 绝对路径——顺序路径(b/c)是调用级共享 worktree；并发路径(a)是这个 issue 专属的一次性 worktree>
+- 集成分支: `milestone/<req-id>-<n>`（standalone issue 无集成分支，基准是 main）
 
 ## 输出契约
 

@@ -30,7 +30,7 @@ flowchart TD
     SmallEntry(["✏️ Small change"]) --> RecordIssue["record-issue\nImpact analysis → single issue"]
     RecordIssue --> TaskRunner
     BugEntry(["🐛 Bug found"]) --> Bugger["bugger\nRecord & analyze"]
-    Bugger --> Bugfix["bugfix\nImplement fix"] --> AcceptIssue
+    Bugger --> Quick["quick\nImplement fix"] --> AcceptIssue
 ```
 
 ## Contents
@@ -117,8 +117,9 @@ Linear is the task and status surface. Local requirement documents are contracts
 ### Implementation Skills
 
 - `agent-sop`: runs staged implementation, validation, QA, and rework orchestration.
-- `bugger`: records a bug in Linear, analyzes root cause, and proposes a fix approach for user confirmation. Use before `bugfix`.
-- `bugfix`: implements a confirmed bug fix, commits, records evidence in Linear, and hands off to `accept-issue`.
+- `bugger`: records a bug in Linear, analyzes root cause, and proposes a fix approach for user confirmation. Use before `quick`.
+- `quick`: implements a small, already-confirmed single-issue task (a confirmed bug fix or a tiny scoped change) in place, no branch/worktree, commits, records evidence in Linear, and hands off to `accept-issue`.
+- `merge-issue`: merges a standalone issue's own PR to main after `accept-issue` has passed, for issues that aren't tied to any milestone.
 - `incremental-implementation`: delivers changes in thin vertical slices. Use for any change touching more than one file.
 - `source-driven-development`: grounds every implementation decision in official documentation for version-sensitive framework code.
 - `test-driven-development`: drives implementation and bug fixes with tests (Prove-It Pattern).
@@ -167,6 +168,9 @@ Specialized implementation, QA, review, research, or integration subagents are p
 2. Optionally run `prd-brainstorm` for product-level scope (not required for every requirement). Then record the requirement interview-style with `intake` → `.vibeRig/requirements/<req-id>/intake.md` + `requirement.yaml`. Optionally add `tech-research` (feasibility) and `architecture-design` (mandatory for cross-module work — its module map decides milestone boundaries). Exploration skills sync Linear Documents only; no Milestones or Issues yet.
 3. Define acceptance criteria with `define-acceptance` — each AC confirmed with you before it is written to `acceptance.json`. This is the DoR gate.
 4. Split the requirement into Linear Milestones with `split-milestones` (big-tech 4-criteria), then split only the next milestone into issues with `split-issues` (Rolling Wave; 1–2-day vertical slices; no assignee, no subagent at creation time).
-5. Execute with `task-runner <milestone-id or issue-id>`: one worktree + one integration branch (`milestone/<req-id>-<n>`) per milestone; subagents routed at execution time; each issue ends in a commit (never a PR). When all issues finish, the milestone becomes `pending_acceptance`.
-6. Accept per issue with `accept-issue` (verify ACs, commit, step-by-step acceptance comment, insights retrospective + vb-learn). Accept the milestone with `accept-milestone`: full regression → rebase on latest remote main → resolve conflicts with your confirmation → PR to main and merge → Linear acceptance comment + Project Update → `requirement.yaml` state → retrospective + self-learning → archival when it is the last milestone.
-7. For small changes use `record-issue` (impact analysis → single issue). For bugs use `bugger` → `bugfix` → `accept-issue`.
+5. Execute with `task-runner <milestone-id or issue-id>`, human-invoked only (never auto-chained by another skill): one persistent integration branch (`milestone/<req-id>-<n>`) per milestone; a fresh, disposable worktree per issue; subagents routed at execution time. Each issue always ends in a PR, never a bare push:
+   - issues split off to run concurrently inside the milestone loop open a PR into the integration branch, merged by `task-runner` itself as soon as that issue's QA passes;
+   - issues run sequentially inside the milestone loop keep updating the one standing integration-branch → main PR, merged only by `accept-milestone`;
+   - a standalone issue with no milestone opens its own PR straight to main, merged by `merge-issue` after `accept-issue` passes. When all issues in a milestone finish, the milestone becomes `pending_acceptance`.
+6. Accept per issue with `accept-issue` (verify ACs, commit, step-by-step acceptance comment, insights retrospective + vb-learn) — never touches a PR. Accept the milestone with `accept-milestone`: full regression → rebase on latest remote main → resolve conflicts with your confirmation → merge the integration-branch → main PR that `task-runner` already kept up to date → Linear acceptance comment + Project Update → `requirement.yaml` state → retrospective + self-learning → archival when it is the last milestone.
+7. For small changes use `record-issue` (impact analysis → single issue). For bugs use `bugger` → `quick` → `accept-issue`.

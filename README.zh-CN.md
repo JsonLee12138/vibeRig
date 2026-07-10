@@ -30,7 +30,7 @@ flowchart TD
     SmallEntry(["✏️ 小需求"]) --> RecordIssue["record-issue\n影响面分析 → 单个 issue"]
     RecordIssue --> TaskRunner
     BugEntry(["🐛 发现 Bug"]) --> Bugger["bugger\n记录 & 分析 Bug"]
-    Bugger --> Bugfix["bugfix\n实现修复"] --> AcceptIssue
+    Bugger --> Quick["quick\n实现修复"] --> AcceptIssue
 ```
 
 ## 目录
@@ -117,8 +117,9 @@ Linear 是任务和状态界面。本地 requirement docs 是契约，不是 iss
 ### 实现类 Skills
 
 - `agent-sop`：编排分阶段实现、验证、QA 和基于证据的 rework。
-- `bugger`：把 bug 记录到 Linear，分析根因，并提出修复方向供用户确认。在 `bugfix` 之前使用。
-- `bugfix`：执行已确认的 bug fix，提交代码，记录证据到 Linear，交由 `accept-issue` 完成收尾。
+- `bugger`：把 bug 记录到 Linear，分析根因，并提出修复方向供用户确认。在 `quick` 之前使用。
+- `quick`：直接在当前工作区执行一个已确认的小任务（确认过的 bug fix 或一个很小的改动），不开分支/worktree，提交代码，记录证据到 Linear，交由 `accept-issue` 完成收尾。
+- `merge-issue`：`accept-issue` 通过后，合并一个不挂在任何里程碑下的 issue 自己的 PR 到 main。
 - `incremental-implementation`：以薄垂直切片方式交付变更，适用于涉及多个文件的任何改动。
 - `source-driven-development`：对版本敏感的框架代码，以官方文档为实现决策的唯一依据。
 - `test-driven-development`：以测试驱动实现和 bug fix（Prove-It Pattern）。
@@ -167,6 +168,9 @@ Linear 是任务和状态界面。本地 requirement docs 是契约，不是 iss
 2. 按需先 `prd-brainstorm` 做产品级范围定义（并非每个需求都需要）。再用 `intake` 访谈式记录需求 → `.vibeRig/requirements/<req-id>/intake.md` + `requirement.yaml`。按需追加 `tech-research`（可行性调研，用户主动触发）、`architecture-design`（跨模块必开——模块图决定里程碑边界）。探索阶段只同步 Linear Document，不建任何 Milestone/Issue。
 3. 使用 `define-acceptance` 定验收标准——每条 AC 先与你确认再写入 `acceptance.json`。这是拆分的 DoR 门禁。
 4. 使用 `split-milestones` 把需求拆成 Linear 里程碑（大厂四条标准），再用 `split-issues` 只拆下一个待做里程碑（Rolling Wave；1~2 天垂直切片；建单时不指派、不选 subagent）。
-5. 使用 `task-runner <里程碑id 或 issue-id>` 执行：一个里程碑一个 worktree 一个集成分支（`milestone/<req-id>-<n>`）；subagent 在执行时现场路由；每个 issue 完成只 commit（绝不发 PR）。全部 issue 完成后里程碑进入 `pending_acceptance`。
-6. 用 `accept-issue` 做单点验收（按 AC 验证、commit、逐步操作的验收评论、insights 复盘 + vb-learn 自学习）；用 `accept-milestone` 做里程碑验收：全量回归 → 拉最新远程 main → 冲突与你确认后处理 → PR 合入 main → Linear 验收评论 + Project Update → 更新 `requirement.yaml` 状态 → 复盘自学习 → 最后一个里程碑触发归档。
-7. 小改动走 `record-issue`（影响面分析 → 单个 issue）；Bug 走 `bugger` → `bugfix` → `accept-issue`。
+5. 使用 `task-runner <里程碑id 或 issue-id>` 执行，只允许人为调用（不允许被其他 skill 自动串联）：一个里程碑一条持久集成分支（`milestone/<req-id>-<n>`），每个 issue 各自一个一次性 worktree；subagent 在执行时现场路由。每个 issue 完成都以一个 PR 收尾，绝不裸 push：
+   - 里程碑循环里并发拆出去执行的 issue，PR 目标是集成分支，由 `task-runner` 在内部循环里、该 issue QA 通过后立即合并；
+   - 里程碑循环里顺序执行的 issue，持续更新同一个"集成分支 → main"的常驻 PR，只由 `accept-milestone` 合并；
+   - 不挂任何里程碑的单个 issue，PR 直接目标 main，`accept-issue` 通过后由 `merge-issue` 合并。全部 issue 完成后里程碑进入 `pending_acceptance`。
+6. 用 `accept-issue` 做单点验收（按 AC 验证、commit、逐步操作的验收评论、insights 复盘 + vb-learn 自学习），本身不碰任何 PR；用 `accept-milestone` 做里程碑验收：全量回归 → 拉最新远程 main → 冲突与你确认后处理 → 合并 `task-runner` 已经持续维护好的集成分支 → main PR → Linear 验收评论 + Project Update → 更新 `requirement.yaml` 状态 → 复盘自学习 → 最后一个里程碑触发归档。
+7. 小改动走 `record-issue`（影响面分析 → 单个 issue）；Bug 走 `bugger` → `quick` → `accept-issue`。

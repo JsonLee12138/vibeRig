@@ -1,6 +1,6 @@
 ---
 name: intake
-description: 记录一个新需求（访谈式）。当用户说"记录需求"、"新需求"、"intake"、或描述了一个想做的功能/想法时使用。以产品经理对接客户的方式逐轮提问，问清后产出 .vibeRig/requirements/<req-id>/intake.md 与 requirement.yaml，并把同步副本写入 Linear Document。不创建任何 Linear Milestone / Issue。
+description: 记录一个新需求（访谈式）。当用户说"记录需求"、"新需求"、"intake"、或描述了一个想做的功能/想法时使用。不创建任何 Linear Milestone / Issue。
 ---
 
 # Intake（记录需求）

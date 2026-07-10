@@ -11,7 +11,7 @@ Write a failing test before writing the code that makes it pass. For bug fixes, 
 
 Use this skill for new behavior implementation, behavior changes, and bug fix validation.
 
-Do not use for documentation-only, trivial config changes, or static content. For bug tracking and root cause analysis, use `bugger` first; for fix implementation with the Prove-It Pattern, use `bugfix`.
+Do not use for documentation-only, trivial config changes, or static content. For bug tracking and root cause analysis, use `bugger` first; for fix implementation with the Prove-It Pattern, use `quick`.
 
 ## The TDD Cycle
 
@@ -36,7 +36,7 @@ Bug arrives
  → Run full suite (no regressions)
 ```
 
-This is required by `bugfix`. A fix without a reproduction test is a guess.
+This is required by `quick`. A fix without a reproduction test is a guess.
 See `references/testing-patterns.md` for code examples.
 
 ## Test Decision (for agent-sop step 2)

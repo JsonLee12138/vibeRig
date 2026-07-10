@@ -1,6 +1,6 @@
 ---
 name: prd-brainstorm
-description: PRD 脑暴（访谈式）。当用户要写 PRD、做产品级规划、或一个中大型需求需要产品视角的范围/用户故事/优先级定义时使用。以产品经理对接客户的方式逐项问清并确认后，产出 .vibeRig/prd/<prd-id>/prd.md，同步副本写入 Linear Document。不创建任何 Linear Milestone / Issue，不负责 PRD 归档。
+description: PRD 脑暴（访谈式）。当用户要写 PRD、做产品级规划、或一个中大型需求需要产品视角的范围/用户故事/优先级定义时使用。不创建任何 Linear Milestone / Issue，不负责 PRD 归档。
 ---
 
 # PRD Brainstorm（PRD 脑暴）

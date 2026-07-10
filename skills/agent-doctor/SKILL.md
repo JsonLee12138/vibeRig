@@ -1,6 +1,6 @@
 ---
 name: agent-doctor
-description: Diagnose the availability and correctness of custom subagent files across Codex (`.codex/agents/*.toml`), Claude Code (`.claude/agents/*.md`), and Cursor (`.cursor/agents/*.md`). Use when the user asks to check, diagnose, validate, or health-check agents; when a spawned subagent behaves as if it has no instructions; or after creating/editing agent files. Detects the Codex field-ordering bug where `mcp_servers` placed before `developer_instructions` silently breaks the agent, and fans out concurrent subagents to check the Claude Code and Cursor renders against agent-creator's platform rules.
+description: Diagnose the availability and correctness of custom subagent files across Codex (`.codex/agents/*.toml`), Claude Code (`.claude/agents/*.md`), and Cursor (`.cursor/agents/*.md`). Use when the user asks to check, diagnose, validate, or health-check agents; when a spawned subagent behaves as if it has no instructions; or after creating/editing agent files.
 ---
 
 # Agent Doctor

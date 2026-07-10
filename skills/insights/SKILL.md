@@ -1,6 +1,6 @@
 ---
 name: insights
-description: Generate VibeRig post-acceptance retrospectives, learning candidates, and SkillOS-lite curation proposals from accepted Linear work. Use after validation, acceptance review, and code review pass; when asked to summarize accepted VibeRig work; or when applying confirmed learning candidates. Do not use during active implementation except to read confirmed project learnings. When applying any skill_update or curation proposal that creates, updates, or deprecates skills/*/SKILL.md, invoke skill-builder and follow its validation contract.
+description: Generate VibeRig post-acceptance retrospectives, learning candidates, and SkillOS-lite curation proposals from accepted Linear work. Use after validation, acceptance review, and code review pass; when asked to summarize accepted VibeRig work; or when applying confirmed learning candidates. Do not use during active implementation except to read confirmed project learnings.
 ---
 
 # Insights

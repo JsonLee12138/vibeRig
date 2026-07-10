@@ -1,6 +1,6 @@
 ---
 name: define-acceptance
-description: 定验收标准（DoR 门禁）。当用户要定义验收标准、验收条件、AC，或准备拆分里程碑/issue 之前使用。起草每条 AC（五要素 + 验证方式），先向用户逐条展示确认，确认通过后才写入 acceptance.json 并做 schema 校验。本 skill 未完成前，split-milestones 与 split-issues 拒绝运行。
+description: 定验收标准（DoR 门禁）。当用户要定义验收标准、验收条件、AC，或准备拆分里程碑/issue 之前使用。本 skill 未完成前，split-milestones 与 split-issues 拒绝运行。
 ---
 
 # Define Acceptance（定验收标准）

@@ -13,7 +13,7 @@ Systematically refactor code for clarity and maintainability. The fundamental te
 Use this skill to improve the readability and structure of code that works but is harder to read, maintain, or extend than it should be.
 
 Do not use this skill for:
-- Bug fixes — use `bugfix` instead.
+- Bug fixes — use `quick` instead.
 - Feature work or behavior changes — any change that alters outputs, errors, or side effects is out of scope.
 - Performance optimization — a separate concern with different tradeoffs.
 - Unsolicited drive-by cleanup of files unrelated to the user's stated scope.

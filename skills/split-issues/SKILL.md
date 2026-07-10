@@ -1,6 +1,6 @@
 ---
 name: split-issues
-description: Issues 拆分（Rolling Wave，按里程碑滚动执行）。当用户要把某个里程碑拆成 issue、或 split-milestones 完成后进入执行准备时使用。只拆下一个待做里程碑，每个 issue 必须满足大厂三条标准（1~2 个专注工作日 / 可独立验证 / 可单独 commit），用 save_issue 创建并挂到 Milestone。只建单：不指派、不选 subagent——subagent 路由是 task-runner 执行时的职责。
+description: Issues 拆分（Rolling Wave，按里程碑滚动执行）。当用户要把某个里程碑拆成 issue、或 split-milestones 完成后进入执行准备时使用。只建单：不指派、不选 subagent。
 ---
 
 # Split Issues（Issues 拆分）

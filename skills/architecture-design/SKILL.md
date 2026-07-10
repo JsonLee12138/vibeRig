@@ -1,6 +1,6 @@
 ---
 name: architecture-design
-description: 架构/接口设计。跨模块需求必开——它的模块图直接决定里程碑怎么切。当用户要做架构设计、模块划分、接口契约、数据流设计时使用。先脑暴模块边界与契约，再由多个 subagent 并发做对抗性校验（红队挑刺），修订定稿为 architecture.md（含 mermaid 模块依赖图）。不同步 Linear。
+description: 架构/接口设计。跨模块需求必开——它的模块图直接决定里程碑怎么切。当用户要做架构设计、模块划分、接口契约、数据流设计时使用。不同步 Linear。
 ---
 
 # Architecture Design（架构/接口设计）

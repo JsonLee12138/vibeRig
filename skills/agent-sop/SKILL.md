@@ -1,6 +1,6 @@
 ---
 name: agent-sop
-description: Use for implementation, bug fix, refactor, validation, or delivery tasks that benefit from staged subagent orchestration with MCP tools and capability-routed subagents. Triggers when the main agent should analyze scope, decide whether tests are needed, delegate test authoring, QA-check tests, delegate development, run local verification, request final QA acceptance, and loop evidence-based rework without hard-coding subagent names.
+description: Use for implementation, bug fix, refactor, validation, or delivery tasks that benefit from staged subagent orchestration with MCP tools and capability-routed subagents — the main-agent execution protocol for routing phases, gathering evidence, and driving rework without hard-coding subagent names.
 ---
 
 # Agent SOP

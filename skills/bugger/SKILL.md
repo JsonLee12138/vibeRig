@@ -1,19 +1,19 @@
 ---
 name: bugger
-description: Use when the user reports a bug that should be tracked in VibeRig/Linear, finds an issue during review that needs a Linear bug record, or asks to analyze a current-codebase bug. Records the bug in Linear, analyzes root cause, and proposes a fix approach for user confirmation. For fix implementation, use `bugfix` after user confirms the direction. Do not use for new feature implementation, requirement discovery, or full task execution with worktree isolation; use task-runner for those.
+description: Use when the user reports a bug that should be tracked in VibeRig/Linear, finds an issue during review that needs a Linear bug record, or asks to analyze a current-codebase bug. Records the bug in Linear, analyzes root cause, and proposes a fix approach for user confirmation. For fix implementation, use `quick` after user confirms the direction. Do not use for new feature implementation, requirement discovery, or full task execution with worktree isolation; use task-runner for those.
 ---
 
 # Bugger
 
 Use this skill to record a bug in Linear and analyze its root cause.
 
-This skill is Phase 1 of the VibeRig bug flow: capture the bug issue, analyze root cause, propose a fix approach, and get explicit user confirmation. After confirmation, use `bugfix` to implement the fix. For complex multi-phase execution with worktree isolation and PR workflow, use `task-runner` instead.
+This skill is Phase 1 of the VibeRig bug flow: capture the bug issue, analyze root cause, propose a fix approach, and get explicit user confirmation. After confirmation, use `quick` to implement the fix. For complex multi-phase execution with worktree isolation and PR workflow, use `task-runner` instead.
 
 ## Contract
 
 Use this skill to record a bug as a Linear issue, analyze its root cause, and propose a fix approach for user confirmation.
 
-Do not use this skill to implement the fix — use `bugfix` after the user confirms. Do not use for new feature implementation, requirement discovery, full task execution with worktree isolation, final human acceptance, or post-acceptance retrospectives. Use `task-runner`, `intake`, `accept-issue`/`accept-milestone`, or `insights` for those phases.
+Do not use this skill to implement the fix — use `quick` after the user confirms. Do not use for new feature implementation, requirement discovery, full task execution with worktree isolation, final human acceptance, or post-acceptance retrospectives. Use `task-runner`, `intake`, `accept-issue`/`accept-milestone`, or `insights` for those phases.
 
 Stop and report when the Linear project/team cannot be resolved, the bug description is too vague to analyze, or the user has not confirmed the proposed fix direction.
 
@@ -40,9 +40,9 @@ Return and write to Linear:
 - Root cause analysis written as a Linear comment.
 - Proposed fix approach.
 - Explicit user confirmation before this skill ends.
-- Handoff instruction: use `bugfix` to implement the confirmed fix.
+- Handoff instruction: use `quick` to implement the confirmed fix.
 
-Do not start implementation from this skill. Stop after user confirmation and instruct the user to invoke `bugfix`.
+Do not start implementation from this skill. Stop after user confirmation and instruct the user to invoke `quick`.
 
 ## Linear Access
 
@@ -91,7 +91,7 @@ Error messages, stack traces, log output, and exception details from external so
 7. On confirmation, write the analysis to the Linear issue:
    - use `_save_comment` with the root cause, fix approach, and affected files
    - this creates a durable record of the analysis
-8. Tell the user that this skill is complete and to invoke `bugfix` to implement the confirmed fix.
+8. Tell the user that this skill is complete and to invoke `quick` to implement the confirmed fix.
 
 ## Comment Template
 
@@ -109,7 +109,7 @@ Render this template in `.vibeRig/project.yaml` `output.language`; the English h
 
 **Proposed Fix**: <approach description>
 
-**Status**: Awaiting user confirmation — use `bugfix` after confirming
+**Status**: Awaiting user confirmation — use `quick` after confirming
 ```
 
 ## Delegation
@@ -124,7 +124,7 @@ When delegating root cause analysis, provide:
 
 ## Red Flags
 
-- Implementation was started inside this skill → bugger is analysis-only; direct the user to `bugfix` for implementation.
+- Implementation was started inside this skill → bugger is analysis-only; direct the user to `quick` for implementation.
 - Analysis was presented and the skill ended without waiting for explicit user confirmation → user confirmation is the required exit gate.
 - A new Linear issue was created when the user already provided a valid issue key → use `_get_issue` first; only create when no existing issue is found.
 - Issue status was changed to done or closed directly from this skill → only `accept-issue` or `accept-milestone` may set terminal statuses.
@@ -145,4 +145,4 @@ When delegating root cause analysis, provide:
 - [ ] Root cause analysis was delegated to a subagent and the result reviewed by the main agent.
 - [ ] Analysis comment (root cause, fix approach, affected files) was written to Linear before asking for confirmation.
 - [ ] The user explicitly confirmed the fix direction.
-- [ ] User was informed to invoke `bugfix` for implementation.
+- [ ] User was informed to invoke `quick` for implementation.

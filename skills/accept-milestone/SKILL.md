@@ -1,11 +1,11 @@
 ---
 name: accept-milestone
-description: 里程碑验收（取代 accept）。当用户对某个里程碑说"验收里程碑"、"验收通过"、"合并"时使用。前置：main 分支工作区的 requirement.yaml 中该里程碑状态为 pending_acceptance。全量回归 → 拉最新远程 main → 冲突与用户确认后处理 → 合并 task-runner 已提交的集成分支→main PR → Linear 验收评论（逐步操作说明）+ Project Update → main 分支工作区的 requirement.yaml 置 accepted → 归档判定（需求归档、PRD 归档、insights 复盘）。
+description: 里程碑验收（取代 accept）。当用户对某个里程碑说"验收里程碑"、"验收通过"、"合并"时使用。验收决定必须来自用户当前明确表态。
 ---
 
 # Accept Milestone（里程碑验收）
 
-用本 skill 对**整个里程碑**做最终验收。这是两级验收的上层，负责审核并**合并** `task-runner` 在里程碑收尾时已发起的集成分支 → main PR；本 skill 不新建 PR。
+用本 skill 对**整个里程碑**做最终验收。这是两级验收的上层，负责审核并**合并** `task-runner` 在各 issue 完成过程中已发起并持续更新的集成分支 → main PR；本 skill 不新建 PR。
 
 ## 契约
 
@@ -27,7 +27,7 @@ description: 里程碑验收（取代 accept）。当用户对某个里程碑说
 4. **冲突处理**：
    - 无冲突 → 直接继续；
    - 有冲突 → 先逐处分析：这处冲突涉及哪些改动、双方各自想干什么、取舍会影响什么；**与用户确认取舍后**再解决合并。不自作主张。
-5. **合并 PR**：集成分支（`milestone/<req-id>-<n>`）→ main 的 PR 已由 `task-runner` 在里程碑收尾时发起，**本 skill 不新建 PR**。核对该 PR 存在且目标分支正确；补全/更新 PR 正文（里程碑标题、issue 清单、AC 覆盖、本次全量回归证据、残余风险）；确认 CI 通过、无冲突、必需审批齐全后合并该 PR。任一不满足 → 记录阻塞并停止，不置任何终态；若该 PR 不存在，停止并报告，退回 `task-runner` 补发起。本地main分支合并远程main代码。
+5. **合并 PR**：集成分支（`milestone/<req-id>-<n>`）→ main 的 PR 已由 `task-runner` 在各 issue 完成过程中发起并持续更新，**本 skill 不新建 PR**。核对该 PR 存在且目标分支正确；补全/更新 PR 正文（里程碑标题、issue 清单、AC 覆盖、本次全量回归证据、残余风险）；确认 CI 通过、无冲突、必需审批齐全后合并该 PR。任一不满足 → 记录阻塞并停止，不置任何终态；若该 PR 不存在，停止并报告，退回 `task-runner` 补发起。本地main分支合并远程main代码。
 6. **Linear 记录**：
    - Milestone 验收评论（按书写规范：逐步操作说明 + 每步看到的结果 + PR 链接 + commit）；
    - `save_status_update` 写 Project Update（该里程碑完成、整体进度）。
@@ -50,7 +50,7 @@ description: 里程碑验收（取代 accept）。当用户对某个里程碑说
 - 没拉最新远程 main 就合并 PR → 第 3 步是强制的。
 - 有冲突却没跟用户确认取舍就解决了 → 撤回，逐处分析后与用户确认。
 - 回归没过就合并 → 任何回归失败都阻塞合并。
-- 在本 skill 新建了 PR → PR 由 `task-runner` 在里程碑收尾时发起，本 skill 只同步、审核、合并。
+- 在本 skill 新建了 PR → PR 由 `task-runner` 在各 issue 完成过程中发起并持续更新，本 skill 只同步、审核、合并。
 - 在里程碑 worktree 里改了 `requirement.yaml` → 必须在 main 分支工作区改。
 - 验收评论是抽象话 → 违反书写规范，重写成逐步操作说明。
 - PRD 名下还有未 accepted 的需求却归档了 PRD → 扫描必须覆盖 `requirements/` 与 `archive/` 全部 requirement.yaml。
