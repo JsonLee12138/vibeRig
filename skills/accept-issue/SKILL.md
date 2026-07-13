@@ -35,7 +35,7 @@ description: 单个切片 issue 的验收（取代 accept-bug 的单点验收）
 6. **通过**：
    - 确认改动已 commit 到对应分支（挂里程碑的 issue 是该里程碑的集成分支 `milestone/<req-id>-<n>`；不挂里程碑的独立 issue 是它自己的分支，PR 已直接面向 main）；
    - `save_comment` 写验收评论（按上方书写规范：每条 AC 的操作步骤 + 实际看到的结果 + commit hash）；
-   - `save_issue` 把 issue 状态改到团队最接近"已验收/Done"的状态（先 `list_issue_statuses` 解析，不发明状态名）；
+   - `save_issue` 把该 issue **及其全部 sub-issue** 状态改到团队最接近"已验收/Done"的状态（先 `list_issue_statuses` 解析，不发明状态名；逐个 sub-issue 单独 `save_issue`，不遗漏）；
    - 不挂里程碑的独立 issue：告诉用户下一步是 `merge-issue`，由它负责合并这个 issue 自己的 PR；挂里程碑的 issue：告诉用户合并要等 `accept-milestone`。
 7. **发现问题**：
    - `save_issue` 创建 `type:acceptance-fix` issue，挂同一 Milestone；描述含问题现象、涉及 AC-id、修复验证方式；
@@ -52,13 +52,14 @@ description: 单个切片 issue 的验收（取代 accept-bug 的单点验收）
 - 在本 skill 发起、更新或合并了 PR → PR 的发起/更新属于 `task-runner`，合并属于 `accept-milestone`。
 - 为修复问题开了新分支/新 worktree → acceptance-fix 在同一集成分支小修。
 - 验收的其实是整个里程碑 → 走 `accept-milestone`。
+- 只改了主 issue 状态、漏了 sub-issue → 状态更新必须覆盖该 issue 及其全部 sub-issue。
 
 ## 检查清单
 
 - [ ] 用户当前明确表态了验收结论。
 - [ ] 每条映射 AC 按 `verification` 实际验证过，结果已记录。
 - [ ] 验收评论符合书写规范（逐步操作 + 看到的结果 + commit hash），无抽象话单独出现。
-- [ ] 状态经 `list_issue_statuses` 解析后更新；未新开/操作 PR、未动 main。
+- [ ] 状态经 `list_issue_statuses` 解析后更新，且覆盖该 issue 及其全部 sub-issue；未新开/操作 PR、未动 main。
 - [ ] 发现的问题已建 `type:acceptance-fix` issue 并挂同里程碑。
 - [ ] 验收通过后：insights 复盘评论已写入评论区；
 - [ ] vb-learn（沉淀或 skipped 有原因）。
