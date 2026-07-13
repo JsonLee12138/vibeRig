@@ -6,7 +6,7 @@
 ## Proof Packet
 
 **Issue**: <issue-key> — <任务目标>
-**Workspace**: `<本次调用使用的 worktree 路径——路径 b/c 是调用级共享 worktree，本 issue 完成后不清理，留给同一次调用的下一个 issue；路径 a 是本 issue 专属的一次性 worktree，已清理>`
+**Workspace**: `<本次调用使用的 worktree 路径——路径 b/c 是调用级共享 worktree，全程保留不清理；路径 a 是本 issue 专属的一次性 worktree，已清理>`
 
 ## 分支 / 提交 / PR
 
