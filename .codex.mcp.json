@@ -1,0 +1,17 @@
+{
+  "linear": {
+    "command": "npx",
+    "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
+  },
+  "pencil": {
+    "command": "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
+    "args": ["--app", "desktop", "--agent", "codexCLI"]
+  },
+  "gemini-cli": {
+    "command": "/usr/local/bin/npx",
+    "args": ["-y", "@tuannvm/gemini-mcp-server"],
+    "env": {
+      "GEMINI_MODEL": "gemini-3.1-pro-preview"
+    }
+  }
+}
