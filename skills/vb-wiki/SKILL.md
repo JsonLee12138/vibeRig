@@ -19,22 +19,24 @@ global notes and per-project notes. See `assets/schema-template.md` for the
 full page/repo schema.
 
 **Status of this skill**: this version implements the **repo bootstrap**
-(Step 1), **global/project routing** (Step 2 below, `JSO-270`), and the
-**core single-page write engine** (Step 3 below) — given a Linear key and
-distilled content, it classifies the content as `scope: global` or
-`scope: project`, resolves `TARGET_PATH`/`PROJECT_KEY`, then writes one
-frontmatter'd page, appends to `index.md`/`log.md`, and produces exactly one
-commit on a clean tree, satisfying `AC-5`/`AC-6` in addition to `AC-4`,
-`AC-7`, `AC-8`, `AC-9`. This version does **not** refresh qmd embeddings
-after the commit (`AC-10`), does **not** check for an existing page to
-update instead of creating a new one (`AC-14`), and does **not** prompt
-about creating a reusable skill (`AC-15`). Step 2's `PROJECT_KEY`
-derivation is also a deliberate placeholder (see Step 2b) that `JSO-272`
-will replace with proper cross-path project identity matching. Those are
-implemented by later `vb-wiki` work (see "Handoff notes for later issues"
-below) and are **not yet present** in this file. Do not treat the absence of
-those steps as a bug in this version — extend this file when that work
-lands, rather than duplicating the write-engine logic elsewhere.
+(Step 1), **global/project routing** (Step 2 below, `JSO-270`), the
+**core single-page write engine** (Step 3 below), and the **qmd embed
+refresh** (Step 4 below, `JSO-271`) — given a Linear key and distilled
+content, it classifies the content as `scope: global` or `scope: project`,
+resolves `TARGET_PATH`/`PROJECT_KEY`, writes one frontmatter'd page, appends
+to `index.md`/`log.md`, produces exactly one commit on a clean tree, and
+then best-effort refreshes the `vb-wiki` qmd collection's vector index so
+the new page becomes searchable — satisfying `AC-5`/`AC-6` in addition to
+`AC-4`, `AC-7`, `AC-8`, `AC-9`, and `AC-10`. This version does **not** check
+for an existing page to update instead of creating a new one (`AC-14`), and
+does **not** prompt about creating a reusable skill (`AC-15`). Step 2's
+`PROJECT_KEY` derivation is also a deliberate placeholder (see Step 2b) that
+`JSO-272` will replace with proper cross-path project identity matching.
+Those are implemented by later `vb-wiki` work (see "Handoff notes for later
+issues" below) and are **not yet present** in this file. Do not treat the
+absence of those steps as a bug in this version — extend this file when
+that work lands, rather than duplicating the write-engine or embed-refresh
+logic elsewhere.
 
 ## When
 
@@ -48,8 +50,8 @@ lands, rather than duplicating the write-engine logic elsewhere.
 
 ### Do NOT invoke
 
-- Steps 1–3 (bootstrap + routing + core page write) are implemented. Do not
-  attempt qmd embed refresh, dedup-before-write, or the skill-creation gate
+- Steps 1–4 (bootstrap + routing + core page write + qmd embed refresh) are
+  implemented. Do not attempt dedup-before-write or the skill-creation gate
   here — those are "future work" (see "Status of this skill" above) and land
   in later issues. Callers must already have decided this is a new page, not
   an update to an existing one (dedup-before-write is `JSO-275`'s job, not
@@ -280,6 +282,63 @@ This produces exactly one new commit (append-only page + append-only
 `AC-7`, `AC-8`, and `AC-9` (and, together with Step 2's routing decision,
 `AC-5`/`AC-6`).
 
+### 4. Refresh vector index (qmd embed)
+
+Run this step **only after** Step 3's step 7 has verified `git -C ~/.vb-wiki
+status --porcelain` is empty following a successful commit. Never run this
+before the commit lands — it must key off a page that is already committed.
+This step is best-effort: it makes the just-written page findable by vector
+search (`AC-10`); it never touches the Step 3 commit.
+
+**4a. Ensure `~/.vb-wiki` is a registered qmd collection** (idempotent —
+`qmd collection add` on an already-registered path just re-indexes it, it
+does not error or duplicate the collection):
+
+```bash
+npx -y @tobilu/qmd collection add ~/.vb-wiki --name vb-wiki
+```
+
+One collection named `vb-wiki` covers the **entire** `~/.vb-wiki` tree —
+both global pages and every `projects/<project-key>/` subtree — because
+`assets/schema-template.md`'s "Root layout" has no separate top-level split
+that would need its own collection; project scoping is just a subdirectory
+under the same tree. Do not create a collection per project.
+
+**4b. Refresh embeddings for that collection only:**
+
+```bash
+npx -y @tobilu/qmd embed -c vb-wiki
+```
+
+`qmd embed` only computes vectors for content hashes that don't already have
+them, so this is cheap on repeat runs — it re-embeds just the page(s) written
+since the last refresh, not the whole wiki. `-c vb-wiki` scopes the refresh
+to this collection so it never touches other collections a user may have
+registered for unrelated notes.
+
+**4c. Failure handling.** If either command exits non-zero or hangs/times
+out, log/report the failure to the caller (e.g. "qmd embed refresh failed,
+page committed but not yet vector-searchable — re-run `qmd embed -c
+vb-wiki` manually") and stop this step. Do **not**:
+
+- retry indefinitely,
+- roll back, amend, or revert the Step 3 commit,
+- fail the overall distillation — the wiki write already succeeded and is
+  durable; a missed embed refresh only delays vector search recall for this
+  page, it does not lose data (`qmd embed` is idempotent and can be re-run
+  later, including by an unrelated future invocation of this step).
+
+**4d. Verification** (what a caller or tester can run to confirm `AC-10`):
+
+```bash
+npx -y @tobilu/qmd vsearch "<topic words from the new page>" -c vb-wiki
+```
+
+The new page's `qmd://vb-wiki/<path>.md` should appear in the results. (The
+same check can be done via the `qmd` MCP server's structured `query` tool
+using a `vec:` line instead of the CLI — either satisfies `AC-10`'s
+verification.)
+
 **Handoff notes for later issues** (extension points, not yet implemented):
 
 - **JSO-272 (project-uniqueness cross-path matching)**: should replace Step
@@ -290,19 +349,18 @@ This produces exactly one new commit (append-only page + append-only
   section, so a renamed or relocated clone of the same repo still resolves
   to the same `PROJECT_KEY` instead of forking a new `projects/` directory.
   Step 2b is the single place this later change needs to touch.
-- **JSO-271 (qmd embed refresh)**: should run *after* step 7 succeeds
-  (commit landed, tree clean), keyed off `TARGET_PATH`/`PAGE_SLUG`, so a
-  failed embed refresh never blocks or partially-undoes the commit produced
-  here.
-- **JSO-273 (skill-creation gate)**: should run *after* step 7, inspecting
-  `BODY`/`TYPE` for a reusable operational pattern; it is a read-only
-  suggestion prompt and must not touch `~/.vb-wiki` itself.
-- **JSO-275 (dedup-before-write)**: should run *before* step 1, replacing
-  "write a new page" with "update existing page `P`'s `updated` field and
-  append new content (with a double-link) to `P`" whenever an existing page
-  already covers the topic — i.e. it decides whether to invoke this step's
-  create-path at all, or instead perform an update-path that this step does
-  not implement.
+- **JSO-273 (skill-creation gate)**: should run *after* Step 3's step 7 (and
+  can run independently of Step 4), inspecting `BODY`/`TYPE` for a reusable
+  operational pattern; it is a read-only suggestion prompt and must not
+  touch `~/.vb-wiki` itself.
+- **JSO-275 (dedup-before-write)**: should run *before* Step 3's step 1,
+  replacing "write a new page" with "update existing page `P`'s `updated`
+  field and append new content (with a double-link) to `P`" whenever an
+  existing page already covers the topic — i.e. it decides whether to invoke
+  Step 3's create-path at all, or instead perform an update-path that Step 3
+  does not implement. Step 4 (qmd embed refresh) applies equally to that
+  future update-path once it exists — re-embedding is not specific to
+  newly-created pages.
 
 ## Validation
 
@@ -352,6 +410,19 @@ head -20 <new-file>   # frontmatter has scope: project + matching project_key, O
 - [ ] Global-scope pages land outside `projects/` entirely, with frontmatter
       `scope: global` and no `project_key` field (`AC-6`).
 
+After a Step 4 (qmd embed refresh) run:
+
+```bash
+npx -y @tobilu/qmd vsearch "<topic words from the new page>" -c vb-wiki
+```
+
+- [ ] The new page's `qmd://vb-wiki/<path>.md` appears in the `vsearch`
+      results (`AC-10`).
+- [ ] A deliberately-forced `qmd embed` failure (e.g. an unreachable model
+      download) is reported/logged, and the Step 3 commit made just before
+      it is untouched (`git -C ~/.vb-wiki log -1` still shows that commit,
+      `git status --porcelain` still empty).
+
 ## Hard Rules
 
 - Bootstrap (Step 1) write target is `~/.vb-wiki/` root only — `AGENTS.md`,
@@ -384,6 +455,14 @@ head -20 <new-file>   # frontmatter has scope: project + matching project_key, O
   write across multiple commits, and never leave the tree dirty afterward.
 - `sources` must never be an empty array — refuse to write a page without at
   least one source.
-- Do not implement qmd embed refresh, dedup-before-write, or the
-  skill-creation gate here — those belong to later `vb-wiki` issues
-  (`JSO-271`, `JSO-275`, `JSO-273` respectively).
+- Step 4 (qmd embed refresh) must never run before Step 3's step 7 has
+  confirmed a clean tree — it only ever follows a landed commit.
+- Step 4 is best-effort: a failed `qmd collection add` / `qmd embed` must be
+  logged/reported, never retried indefinitely, and must never roll back,
+  amend, or revert the Step 3 commit.
+- Step 4 uses exactly one qmd collection (`vb-wiki`) covering all of
+  `~/.vb-wiki` — never create a separate collection per project or per
+  scope.
+- Do not implement dedup-before-write or the skill-creation gate here —
+  those belong to later `vb-wiki` issues (`JSO-275`, `JSO-273`
+  respectively).
