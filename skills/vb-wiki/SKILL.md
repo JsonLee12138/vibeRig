@@ -19,24 +19,26 @@ global notes and per-project notes. See `assets/schema-template.md` for the
 full page/repo schema.
 
 **Status of this skill**: this version implements the **repo bootstrap**
-(Step 1), **global/project routing** (Step 2 below, `JSO-270`), the
-**core single-page write engine** (Step 3 below), and the **qmd embed
-refresh** (Step 4 below, `JSO-271`) — given a Linear key and distilled
-content, it classifies the content as `scope: global` or `scope: project`,
-resolves `TARGET_PATH`/`PROJECT_KEY`, writes one frontmatter'd page, appends
-to `index.md`/`log.md`, produces exactly one commit on a clean tree, and
-then best-effort refreshes the `vb-wiki` qmd collection's vector index so
-the new page becomes searchable — satisfying `AC-5`/`AC-6` in addition to
-`AC-4`, `AC-7`, `AC-8`, `AC-9`, and `AC-10`. This version does **not** check
-for an existing page to update instead of creating a new one (`AC-14`), and
-does **not** prompt about creating a reusable skill (`AC-15`). Step 2's
-`PROJECT_KEY` derivation is also a deliberate placeholder (see Step 2b) that
-`JSO-272` will replace with proper cross-path project identity matching.
-Those are implemented by later `vb-wiki` work (see "Handoff notes for later
-issues" below) and are **not yet present** in this file. Do not treat the
-absence of those steps as a bug in this version — extend this file when
-that work lands, rather than duplicating the write-engine or embed-refresh
-logic elsewhere.
+(Step 1), **global/project routing with cross-path project identity
+matching** (Step 2 below, `JSO-270` + `JSO-272`), the **core single-page
+write engine** (Step 3 below), and the **qmd embed refresh** (Step 4 below,
+`JSO-271`) — given a Linear key and distilled content, it classifies the
+content as `scope: global` or `scope: project`, resolves
+`TARGET_PATH`/`PROJECT_KEY` (matching the current repo's identity against
+existing `projects/*/meta.md` files so a renamed or relocated clone reuses
+its original project directory instead of forking a new one), writes one
+frontmatter'd page (and, on a project's first-ever write, its `meta.md`),
+appends to `index.md`/`log.md`, produces exactly one commit on a clean tree,
+and then best-effort refreshes the `vb-wiki` qmd collection's vector index so
+the new page becomes searchable — satisfying `AC-5`/`AC-6`/`AC-11` in
+addition to `AC-4`, `AC-7`, `AC-8`, `AC-9`, and `AC-10`. This version does
+**not** check for an existing page to update instead of creating a new one
+(`AC-14`), and does **not** prompt about creating a reusable skill
+(`AC-15`). Those are implemented by later `vb-wiki` work (see "Handoff notes
+for later issues" below) and are **not yet present** in this file. Do not
+treat the absence of those steps as a bug in this version — extend this file
+when that work lands, rather than duplicating the write-engine or
+embed-refresh logic elsewhere.
 
 ## When
 
@@ -50,12 +52,13 @@ logic elsewhere.
 
 ### Do NOT invoke
 
-- Steps 1–4 (bootstrap + routing + core page write + qmd embed refresh) are
-  implemented. Do not attempt dedup-before-write or the skill-creation gate
-  here — those are "future work" (see "Status of this skill" above) and land
-  in later issues. Callers must already have decided this is a new page, not
-  an update to an existing one (dedup-before-write is `JSO-275`'s job, not
-  Step 2's or Step 3's).
+- Steps 1–4 (bootstrap + routing incl. project identity matching + core page
+  write + qmd embed refresh) are implemented. Do not attempt dedup-before-write
+  or the skill-creation gate here — those are "future work" (see "Status of
+  this skill" above) and land in later issues (`JSO-275`, `JSO-273`).
+  Callers must already have decided this is a new page, not an update to an
+  existing one (dedup-before-write is `JSO-275`'s job, not Step 2's or
+  Step 3's).
 
 ## Workflow
 
@@ -149,22 +152,98 @@ required. Ask: would this knowledge help in *any* codebase, or only in
   leaking project-specific detail into global notes pollutes every other
   project's context immediately.
 
-**2b. Resolve `PROJECT_KEY`** (only needed when `scope: project`):
+**2b. Resolve `PROJECT_KEY`** (only needed when `scope: project`), by
+matching the current repo's identity against existing
+`projects/*/meta.md` files before ever deriving a fresh key — this is what
+lets a renamed or relocated clone of the same repo reuse its original
+`projects/<key>/` directory instead of forking a new one (`JSO-272`,
+`AC-11`).
+
+**Step 1 — extract the current repo's identity fields.**
 
 ```bash
-PROJECT_KEY=$(awk -F': *' '/^project:/{p=1} p && /name:/{gsub(/"/,"",$2); print $2; exit}' .vibeRig/project.yaml)
+REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+CURRENT_GITHUB_REPO=$(echo "$REMOTE_URL" | sed -E 's#^(https?://[^/]+/|git@[^:]+:|ssh://git@[^/]+/)##; s#\.git$##')
+
+CURRENT_LINEAR_PROJECT_ID=$(awk '
+  /^linear:/ { in_linear=1; next }
+  /^[^ ]/ { in_linear=0 }
+  in_linear && /^[ ]+project_id:/ {
+    sub(/^[ ]+project_id:[ ]*/, "");
+    gsub(/"/,"");
+    print;
+    exit
+  }
+' .vibeRig/project.yaml)
 ```
 
-This reads `project.name` from the current repo's `.vibeRig/project.yaml`
-(e.g. `vb-plugin`). **This is a placeholder derivation**, not the final
-design: it assumes the directory/repo name is a stable, globally-unique
-project identity, with no cross-path identity matching — a renamed or
-relocated clone of the same repo would resolve to a different `PROJECT_KEY`
-and silently fork its knowledge into a second `projects/<key>/` directory.
-`JSO-272` replaces this with matching against `meta.md`'s GitHub repo id /
-`linear.project_id`, per `assets/schema-template.md`'s "Root layout"
-section — do not build that matching logic here; use the simple
-`project.yaml` read above until `JSO-272` lands.
+- `CURRENT_GITHUB_REPO` is the `owner/repo` slug parsed out of `git remote
+  get-url origin` (handles `https://github.com/owner/repo(.git)`,
+  `git@github.com:owner/repo.git`, and `ssh://git@github.com/owner/repo.git`
+  forms). This is a deliberate, documented simplification of "GitHub repo
+  id": the numeric GitHub repo id requires a GitHub API call, which this
+  step avoids; the `owner/repo` slug is stable across renames/relocations of
+  the *local clone* (it only changes if the repo is renamed *on GitHub*,
+  which is a materially different, rarer event than "moved to a new local
+  path" that this issue targets). If there is no `origin` remote,
+  `CURRENT_GITHUB_REPO` is empty — that half of the match is simply
+  unavailable, not an error.
+- `CURRENT_LINEAR_PROJECT_ID` reads the nested `linear.project_id` field
+  from the current repo's `.vibeRig/project.yaml` (not `project.name` — that
+  placeholder read is now only a same-invocation fallback, see Step 3
+  below). Empty if `.vibeRig/project.yaml` has no `linear:` block or no
+  `project_id` under it.
+
+**Step 2 — derive the candidate key** (same placeholder-style derivation as
+before; only used if no existing project matches):
+
+```bash
+CANDIDATE_KEY=$(awk -F': *' '/^project:/{p=1} p && /name:/{gsub(/"/,"",$2); print $2; exit}' .vibeRig/project.yaml)
+```
+
+**Step 3 — scan existing `projects/*/meta.md` files for an identity match**,
+before creating anything:
+
+```bash
+PROJECT_KEY=""
+for META in ~/.vb-wiki/projects/*/meta.md; do
+  [ -f "$META" ] || continue
+  EXISTING_GITHUB_REPO=$(awk -F': *' '/^github_repo:/{gsub(/"/,"",$2); print $2; exit}' "$META")
+  EXISTING_LINEAR_PROJECT_ID=$(awk -F': *' '/^linear_project_id:/{gsub(/"/,"",$2); print $2; exit}' "$META")
+  if { [ -n "$CURRENT_GITHUB_REPO" ] && [ "$CURRENT_GITHUB_REPO" = "$EXISTING_GITHUB_REPO" ]; } \
+     || { [ -n "$CURRENT_LINEAR_PROJECT_ID" ] && [ "$CURRENT_LINEAR_PROJECT_ID" = "$EXISTING_LINEAR_PROJECT_ID" ]; }; then
+    PROJECT_KEY=$(basename "$(dirname "$META")")
+    break
+  fi
+done
+
+if [ -z "$PROJECT_KEY" ]; then
+  PROJECT_KEY="$CANDIDATE_KEY"
+  NEW_PROJECT_META=true   # Step 3 (write engine) must also create this project's meta.md this write
+else
+  NEW_PROJECT_META=false  # matched an existing project — reuse it, never create a second directory
+fi
+```
+
+**Either field matching is sufficient** — `github_repo` OR
+`linear_project_id`, not both — per intake.md's "项目唯一性校验": "任一匹配即
+认定为同一项目". The scan stops at the first match; `~/.vb-wiki/projects/`
+is not expected to contain more than one `meta.md` matching the same
+identity (if it does, that is a pre-existing dedup problem out of this
+step's scope, not something to resolve here).
+
+If a match is found, `PROJECT_KEY` is the **existing** directory's name —
+even when it differs from `CANDIDATE_KEY` (e.g. `vb-plugin` vs.
+`vb-plugin-renamed`). This is the whole point: the renamed/relocated clone's
+derived name is discarded in favor of the identity match, so its knowledge
+lands in the same `projects/<key>/` directory as before instead of forking a
+new one.
+
+If no match is found, this is the first time this project is seen:
+`PROJECT_KEY = CANDIDATE_KEY`, and `NEW_PROJECT_META=true` is handed off to
+Step 3 so it also writes this project's `meta.md` (see Step 3 below) —
+recording `CURRENT_GITHUB_REPO`/`CURRENT_LINEAR_PROJECT_ID` so a *future*
+renamed/relocated clone of *this* project can match back to it.
 
 **2c. Resolve `TARGET_PATH`**:
 
@@ -188,14 +267,15 @@ section — do not build that matching logic here; use the simple
   contain `projects/` anywhere (`AC-6`).
 
 **2e. Hand off** `TARGET_PATH`, `SCOPE`, and (when `scope: project`)
-`PROJECT_KEY` to Step 3 unchanged — do not duplicate Step 3's write logic
-here, this step only produces its inputs.
+`PROJECT_KEY`, `NEW_PROJECT_META`, `CURRENT_GITHUB_REPO`, and
+`CURRENT_LINEAR_PROJECT_ID` to Step 3 unchanged — do not duplicate Step 3's
+write logic here, this step only produces its inputs.
 
 ### 3. Write a page (core write engine)
 
 **Inputs this step assumes the caller already resolved** (Step 2 above
-resolves `TARGET_PATH`/`SCOPE`/`PROJECT_KEY`; dedup is out of scope here —
-see "Status of this skill"):
+resolves `TARGET_PATH`/`SCOPE`/`PROJECT_KEY`/`NEW_PROJECT_META`; dedup is out
+of scope here — see "Status of this skill"):
 
 - `TARGET_PATH` — absolute path under `~/.vb-wiki/` for the new page, e.g.
   `~/.vb-wiki/gotchas/npx-registry-timeout.md` (global) or
@@ -209,6 +289,11 @@ see "Status of this skill"):
   **must be non-empty** — Linear issue key, commit hash, PR URL, etc.), and
   `PROJECT_KEY` (only when `SCOPE=project`, must match the containing
   `projects/<project-key>/` directory name).
+- `NEW_PROJECT_META`, `CURRENT_GITHUB_REPO`, `CURRENT_LINEAR_PROJECT_ID`
+  (only when `SCOPE=project`, from Step 2b) — when `NEW_PROJECT_META=true`,
+  this write is the first-ever write for `PROJECT_KEY` and must also create
+  `~/.vb-wiki/projects/<PROJECT_KEY>/meta.md` (step 3a below); when `false`,
+  that project already has a `meta.md` and this step must **not** touch it.
 - `BODY` — the distilled markdown content, which the caller must write to
   include **at least one** `[[double-link]]` to a related, already-existing
   page (never invent a link to a page that doesn't exist — if no genuine
@@ -245,6 +330,30 @@ file write and git command itself):
    and `updated` are identical on a first write — only a later update (out
    of scope for this step; see `AC-14` handoff notes below) changes
    `updated` alone.
+3a. **Only when `SCOPE: project` and `NEW_PROJECT_META=true`** (Step 2b found
+   no existing project matched this repo's identity): also write
+   `~/.vb-wiki/projects/<PROJECT_KEY>/meta.md` (parent directory already
+   created by step 2 above), with the verbatim structure of
+   `assets/meta-template.md`, filled in with `NOW`, `CURRENT_GITHUB_REPO`,
+   and `CURRENT_LINEAR_PROJECT_ID` from Step 2b:
+
+   ```markdown
+   ---
+   github_repo: <CURRENT_GITHUB_REPO, or empty string if no origin remote>
+   linear_project_id: <CURRENT_LINEAR_PROJECT_ID, or empty string if unset>
+   created: <NOW>
+   updated: <NOW>
+   ---
+
+   # <PROJECT_KEY> — project meta
+   ...
+   ```
+
+   This is what lets a *future* renamed/relocated clone of this same repo
+   match back to `PROJECT_KEY` instead of forking a new directory (`AC-11`).
+   When `NEW_PROJECT_META=false`, skip this step entirely — do not rewrite,
+   touch `updated` on, or otherwise modify an existing `meta.md`; updating an
+   existing project's `meta.md` is out of scope for this write engine.
 4. Append exactly one line to `~/.vb-wiki/index.md` — **never** rewrite or
    reorder existing lines, only append:
 
@@ -259,12 +368,15 @@ file write and git command itself):
    - <TS> — [[<PAGE_SLUG>]] — <SCOPE> — <REASON>
    ```
 
-6. Stage **exactly** the three touched files (the new page, `index.md`,
-   `log.md`) — never `git add -A` / `git add .`, to guarantee the commit
-   contains only this write's changes:
+6. Stage **exactly** the touched files — the new page, `index.md`, `log.md`,
+   and (only when step 3a ran) the new project's `meta.md` — never
+   `git add -A` / `git add .`, to guarantee the commit contains only this
+   write's changes:
 
    ```bash
    git -C ~/.vb-wiki add "<path-relative-to-~/.vb-wiki>" index.md log.md
+   # only if step 3a ran this write:
+   git -C ~/.vb-wiki add "projects/<PROJECT_KEY>/meta.md"
    git -C ~/.vb-wiki commit -m "docs(wiki): add <PAGE_SLUG>" >/dev/null
    ```
 
@@ -274,13 +386,13 @@ file write and git command itself):
    git -C ~/.vb-wiki status --porcelain   # -> must be empty
    ```
 
-   If it is not empty, something outside this step's three files changed —
-   stop and investigate rather than committing further.
+   If it is not empty, something outside this step's files changed — stop
+   and investigate rather than committing further.
 
 This produces exactly one new commit (append-only page + append-only
-`index.md`/`log.md` edits) on a clean working tree, satisfying `AC-4`,
-`AC-7`, `AC-8`, and `AC-9` (and, together with Step 2's routing decision,
-`AC-5`/`AC-6`).
+`index.md`/`log.md` edits, plus a new `meta.md` on a project's first-ever
+write) on a clean working tree, satisfying `AC-4`, `AC-7`, `AC-8`, and `AC-9`
+(and, together with Step 2's routing decision, `AC-5`/`AC-6`/`AC-11`).
 
 ### 4. Refresh vector index (qmd embed)
 
@@ -339,16 +451,16 @@ same check can be done via the `qmd` MCP server's structured `query` tool
 using a `vec:` line instead of the CLI — either satisfies `AC-10`'s
 verification.)
 
+**Implemented since the previous version**: `JSO-272` (project-uniqueness
+cross-path matching) — Step 2b now matches the current repo's identity
+(`git remote get-url origin` parsed to an `owner/repo` slug, and/or
+`.vibeRig/project.yaml`'s `linear.project_id`) against every existing
+`projects/*/meta.md`, reusing the existing `PROJECT_KEY` on any match
+instead of forking a new directory; Step 3 writes a new project's `meta.md`
+on that project's first-ever write. See Step 2b and Step 3's step 3a above.
+
 **Handoff notes for later issues** (extension points, not yet implemented):
 
-- **JSO-272 (project-uniqueness cross-path matching)**: should replace Step
-  2b's placeholder `PROJECT_KEY` derivation (`.vibeRig/project.yaml`'s
-  `project.name`, read verbatim as the key) with identity matching against
-  each `projects/<project-key>/meta.md` (GitHub repo id and/or
-  `linear.project_id`), per `assets/schema-template.md`'s "Root layout"
-  section, so a renamed or relocated clone of the same repo still resolves
-  to the same `PROJECT_KEY` instead of forking a new `projects/` directory.
-  Step 2b is the single place this later change needs to touch.
 - **JSO-273 (skill-creation gate)**: should run *after* Step 3's step 7 (and
   can run independently of Step 4), inspecting `BODY`/`TYPE` for a reusable
   operational pattern; it is a read-only suggestion prompt and must not
@@ -410,6 +522,25 @@ head -20 <new-file>   # frontmatter has scope: project + matching project_key, O
 - [ ] Global-scope pages land outside `projects/` entirely, with frontmatter
       `scope: global` and no `project_key` field (`AC-6`).
 
+Project-identity-matching check (`AC-11`) — simulating a renamed/relocated
+clone:
+
+```bash
+PROJECTS_BEFORE=$(ls ~/.vb-wiki/projects/ | wc -l)
+# ... clone this repo to a new path, set origin remote back to the same
+#     github_repo (or keep the same .vibeRig/project.yaml linear.project_id),
+#     trigger a vb-wiki project-scope write from the new path ...
+PROJECTS_AFTER=$(ls ~/.vb-wiki/projects/ | wc -l)
+[ "$PROJECTS_BEFORE" = "$PROJECTS_AFTER" ]   # -> true, no new project directory
+```
+
+- [ ] `ls ~/.vb-wiki/projects/` has the same directory count before and
+      after the renamed/relocated-clone write (no new `projects/<key>/`
+      directory created).
+- [ ] The write's `TARGET_PATH` and page frontmatter's `project_key` both
+      resolve to the **original** `PROJECT_KEY`, not a freshly-derived name
+      from the new clone's `.vibeRig/project.yaml` `project.name` (`AC-11`).
+
 After a Step 4 (qmd embed refresh) run:
 
 ```bash
@@ -431,20 +562,26 @@ npx -y @tobilu/qmd vsearch "<topic words from the new page>" -c vb-wiki
   already a git repository — bootstrap is a no-op in that case.
 - Never overwrite an existing `AGENTS.md` / `index.md` / `log.md` — only
   create files that are missing.
-- Step 2 (routing) only computes `TARGET_PATH`/`SCOPE`/`PROJECT_KEY` — it
-  never writes files, never runs `mkdir`, and never touches git. All actual
-  writes happen in Step 3.
+- Step 2 (routing) only computes
+  `TARGET_PATH`/`SCOPE`/`PROJECT_KEY`/`NEW_PROJECT_META` — it never writes
+  files, never runs `mkdir`, and never touches git. All actual writes happen
+  in Step 3.
 - Global-scope `TARGET_PATH` values must never contain a `projects/`
   segment; project-scope `TARGET_PATH` values must always be under
   `projects/<PROJECT_KEY>/`, with `PROJECT_KEY` matching the directory name
   exactly (`AC-5`/`AC-6`).
-- Step 2b's `PROJECT_KEY` derivation (reading `.vibeRig/project.yaml`'s
-  `project.name`) is a known placeholder pending `JSO-272` — do not build
-  cross-path project identity matching (`meta.md`, GitHub repo id,
-  `linear.project_id`) here.
-- Step 3 (page write) touches exactly three files per invocation: the one
-  new page file, `index.md`, and `log.md`. Never `git add -A`/`git add .`;
-  always stage those three paths explicitly.
+- Step 2b must always scan existing `projects/*/meta.md` for an identity
+  match (`github_repo` OR `linear_project_id`) **before** deriving/using
+  `CANDIDATE_KEY` — never skip the scan and never create a second
+  `projects/<key>/` directory for a repo whose identity already matches an
+  existing `meta.md` (`AC-11`). Matching on either field alone is
+  sufficient; both fields do not need to match.
+- Step 3 (page write) touches exactly three files per invocation — the one
+  new page file, `index.md`, and `log.md` — or exactly four when Step 2b set
+  `NEW_PROJECT_META=true` (adds `projects/<PROJECT_KEY>/meta.md`). Never
+  `git add -A`/`git add .`; always stage those paths explicitly.
+- Step 3 must never write or modify `meta.md` when `NEW_PROJECT_META=false`
+  — an existing project's `meta.md` is immutable to this write engine.
 - Step 3 only **appends** to `index.md`/`log.md` — never edit, reorder, or
   delete an existing line/entry in either file.
 - Step 3 never overwrites an existing page file — if `TARGET_PATH` already
