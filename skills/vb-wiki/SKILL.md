@@ -19,15 +19,18 @@ global notes and per-project notes. See `assets/schema-template.md` for the
 full page/repo schema.
 
 **Status of this skill**: this version implements the **repo bootstrap**
-(Step 1) and the **core single-page write engine** (Step 2 below) — given an
-already-resolved target path, title, body, and sources, it writes one
+(Step 1), **global/project routing** (Step 2 below, `JSO-270`), and the
+**core single-page write engine** (Step 3 below) — given a Linear key and
+distilled content, it classifies the content as `scope: global` or
+`scope: project`, resolves `TARGET_PATH`/`PROJECT_KEY`, then writes one
 frontmatter'd page, appends to `index.md`/`log.md`, and produces exactly one
-commit on a clean tree. Step 2 as implemented here does **not** decide
-*where* a page belongs (global vs `projects/<project-key>/` routing —
-JSON-RPC-key-safe rendering aside, that's `AC-5`/`AC-6`'s job), does **not**
-refresh qmd embeddings after the commit (`AC-10`), does **not** check for an
-existing page to update instead of creating a new one (`AC-14`), and does
-**not** prompt about creating a reusable skill (`AC-15`). Those are
+commit on a clean tree, satisfying `AC-5`/`AC-6` in addition to `AC-4`,
+`AC-7`, `AC-8`, `AC-9`. This version does **not** refresh qmd embeddings
+after the commit (`AC-10`), does **not** check for an existing page to
+update instead of creating a new one (`AC-14`), and does **not** prompt
+about creating a reusable skill (`AC-15`). Step 2's `PROJECT_KEY`
+derivation is also a deliberate placeholder (see Step 2b) that `JSO-272`
+will replace with proper cross-path project identity matching. Those are
 implemented by later `vb-wiki` work (see "Handoff notes for later issues"
 below) and are **not yet present** in this file. Do not treat the absence of
 those steps as a bug in this version — extend this file when that work
@@ -45,13 +48,12 @@ lands, rather than duplicating the write-engine logic elsewhere.
 
 ### Do NOT invoke
 
-- Steps 1–2 (bootstrap + core page write) are implemented. Do not attempt
-  global/project routing decisions, qmd embed refresh, dedup-before-write, or
-  the skill-creation gate here — those are "future work" (see "Status of
-  this skill" above) and land in later issues. Callers of Step 2 must already
-  have decided the target file path (including whether it lives under
-  `projects/<project-key>/`) and must already have decided this is a new
-  page, not an update to an existing one.
+- Steps 1–3 (bootstrap + routing + core page write) are implemented. Do not
+  attempt qmd embed refresh, dedup-before-write, or the skill-creation gate
+  here — those are "future work" (see "Status of this skill" above) and land
+  in later issues. Callers must already have decided this is a new page, not
+  an update to an existing one (dedup-before-write is `JSO-275`'s job, not
+  Step 2's or Step 3's).
 
 ## Workflow
 
@@ -102,10 +104,96 @@ writes itself, there is no compiled installer):
    `git -C ~/.vb-wiki commit -m "chore: init vb-wiki knowledge base"` so the
    working tree ends clean.
 
-### 2. Write a page (core write engine)
+### 2. Decide scope and target path (routing)
 
-**Inputs this step assumes the caller already resolved** (routing/dedup are
-out of scope here — see "Status of this skill"):
+Run after Step 1 bootstrap, before Step 3 (page write). This step turns
+distilled content into the `TARGET_PATH`/`SCOPE`/`PROJECT_KEY` inputs Step 3
+expects — it does not write, `mkdir`, or touch git at all; Step 3 does all of
+that.
+
+**2a. Classify scope.** Per `.vibeRig/requirements/req-0001/intake.md`
+("全局 / 项目分流由 agent 自动判断，无需逐条确认"), this is an agent
+judgment call, not a deterministic rule — no per-item user confirmation is
+required. Ask: would this knowledge help in *any* codebase, or only in
+*this* one?
+
+- `scope: project` — specific to this codebase's conventions, architecture
+  decisions, or gotchas. Examples grounded in vb-plugin itself:
+  - vb-plugin's version number must be kept in sync across 6 locations
+    (`package.json`, `.claude-plugin/plugin.json`,
+    `.claude-plugin/marketplace.json`, etc. — see this repo's `CLAUDE.md`
+    "Version Sync" rule). That release convention is specific to this repo's
+    file layout, not a general practice.
+  - VibeRig stores milestone/issue state exclusively in Linear, never in a
+    local markdown copy as source of truth — an architecture decision
+    specific to this project's workflow design.
+  - `skills/vb-wiki` Step 3 (write engine) stages exactly three files per
+    commit and never uses `git add -A` — an implementation convention of
+    this specific skill in this specific repo.
+- `scope: global` — reusable across projects: tool usage, language/framework
+  pitfalls, general patterns. Examples:
+  - `npx` can hit a registry timeout on first run and needs a retry (see the
+    `npx-registry-timeout` example used elsewhere in this file) — a generic
+    npm-tooling gotcha, not tied to vb-plugin.
+  - Idempotent repo bootstrap: check
+    `git rev-parse --is-inside-work-tree` before `git init`, never re-init an
+    existing repo — reusable in any git-backed tool, as done in Step 1 above.
+  - The llm-wiki distillation pattern itself (YAML frontmatter +
+    `[[double-link]]`, append-only `index.md`/`log.md`) is a general
+    knowledge-management technique, not something particular to vb-plugin.
+
+  When genuinely uncertain, default to `scope: project` — over-scoping to
+  project is reversible later (a page can be promoted to global), while
+  leaking project-specific detail into global notes pollutes every other
+  project's context immediately.
+
+**2b. Resolve `PROJECT_KEY`** (only needed when `scope: project`):
+
+```bash
+PROJECT_KEY=$(awk -F': *' '/^project:/{p=1} p && /name:/{gsub(/"/,"",$2); print $2; exit}' .vibeRig/project.yaml)
+```
+
+This reads `project.name` from the current repo's `.vibeRig/project.yaml`
+(e.g. `vb-plugin`). **This is a placeholder derivation**, not the final
+design: it assumes the directory/repo name is a stable, globally-unique
+project identity, with no cross-path identity matching — a renamed or
+relocated clone of the same repo would resolve to a different `PROJECT_KEY`
+and silently fork its knowledge into a second `projects/<key>/` directory.
+`JSO-272` replaces this with matching against `meta.md`'s GitHub repo id /
+`linear.project_id`, per `assets/schema-template.md`'s "Root layout"
+section — do not build that matching logic here; use the simple
+`project.yaml` read above until `JSO-272` lands.
+
+**2c. Resolve `TARGET_PATH`**:
+
+- `scope: project` →
+  `~/.vb-wiki/projects/<PROJECT_KEY>/<content-type-dir>/<slug>.md`
+- `scope: global` → `~/.vb-wiki/<content-type-dir>/<slug>.md` — this path
+  must **not** contain a `projects/` segment anywhere.
+
+`<content-type-dir>` is the plural of Step 3's `TYPE` input (`gotcha` →
+`gotchas/`, `convention` → `conventions/`, `pattern` → `patterns/`,
+`decision` → `decisions/`, `fact` → `facts/`). `<slug>` is Step 3's
+`PAGE_SLUG` input (kebab-case, no `.md`).
+
+**2d. Frontmatter obligations these choices impose on Step 3**:
+
+- `scope: project` → Step 3's frontmatter must include `scope: project` and
+  `project_key: <PROJECT_KEY>`, and `PROJECT_KEY` must equal the
+  `projects/<PROJECT_KEY>/` directory segment in `TARGET_PATH` (`AC-5`).
+- `scope: global` → Step 3's frontmatter must include `scope: global` and
+  must **not** include a `project_key` field at all; `TARGET_PATH` must not
+  contain `projects/` anywhere (`AC-6`).
+
+**2e. Hand off** `TARGET_PATH`, `SCOPE`, and (when `scope: project`)
+`PROJECT_KEY` to Step 3 unchanged — do not duplicate Step 3's write logic
+here, this step only produces its inputs.
+
+### 3. Write a page (core write engine)
+
+**Inputs this step assumes the caller already resolved** (Step 2 above
+resolves `TARGET_PATH`/`SCOPE`/`PROJECT_KEY`; dedup is out of scope here —
+see "Status of this skill"):
 
 - `TARGET_PATH` — absolute path under `~/.vb-wiki/` for the new page, e.g.
   `~/.vb-wiki/gotchas/npx-registry-timeout.md` (global) or
@@ -189,14 +277,19 @@ file write and git command itself):
 
 This produces exactly one new commit (append-only page + append-only
 `index.md`/`log.md` edits) on a clean working tree, satisfying `AC-4`,
-`AC-7`, `AC-8`, and `AC-9`.
+`AC-7`, `AC-8`, and `AC-9` (and, together with Step 2's routing decision,
+`AC-5`/`AC-6`).
 
 **Handoff notes for later issues** (extension points, not yet implemented):
 
-- **JSO-270 (global/project routing)**: should run *before* this step and
-  produce `TARGET_PATH`/`SCOPE`/`PROJECT_KEY` as described above. This step
-  does not inspect `.vibeRig/project.yaml` or any project identity — it only
-  writes to whatever path it's given.
+- **JSO-272 (project-uniqueness cross-path matching)**: should replace Step
+  2b's placeholder `PROJECT_KEY` derivation (`.vibeRig/project.yaml`'s
+  `project.name`, read verbatim as the key) with identity matching against
+  each `projects/<project-key>/meta.md` (GitHub repo id and/or
+  `linear.project_id`), per `assets/schema-template.md`'s "Root layout"
+  section, so a renamed or relocated clone of the same repo still resolves
+  to the same `PROJECT_KEY` instead of forking a new `projects/` directory.
+  Step 2b is the single place this later change needs to touch.
 - **JSO-271 (qmd embed refresh)**: should run *after* step 7 succeeds
   (commit landed, tree clean), keyed off `TARGET_PATH`/`PAGE_SLUG`, so a
   failed embed refresh never blocks or partially-undoes the commit produced
@@ -226,7 +319,7 @@ git -C ~/.vb-wiki status --porcelain                 # -> empty (clean tree) aft
       makes no changes (`git status --porcelain` stays empty, no new commit).
 - [ ] Bootstrap never overwrites pre-existing files under `~/.vb-wiki`.
 
-After a Step 2 write:
+After a Step 2 (routing) + Step 3 (write) sequence:
 
 ```bash
 OLD=<HEAD before the write>
@@ -245,6 +338,20 @@ git -C ~/.vb-wiki show HEAD -- index.md log.md  # -> only "+" lines besides hunk
       gained exactly one new entry; neither file lost or modified an
       existing line (`AC-9`).
 
+Routing-specific checks:
+
+```bash
+git -C ~/.vb-wiki diff --name-only $OLD..HEAD | grep '^projects/<project-key>/'   # project scope: matches
+git -C ~/.vb-wiki diff --name-only $OLD..HEAD | grep -v 'projects/'                # global scope: matches
+head -20 <new-file>   # frontmatter has scope: project + matching project_key, OR scope: global with no project_key
+```
+
+- [ ] Project-scope pages land under `projects/<project-key>/`, with
+      frontmatter `scope: project` and `project_key` equal to that directory
+      name (`AC-5`).
+- [ ] Global-scope pages land outside `projects/` entirely, with frontmatter
+      `scope: global` and no `project_key` field (`AC-6`).
+
 ## Hard Rules
 
 - Bootstrap (Step 1) write target is `~/.vb-wiki/` root only — `AGENTS.md`,
@@ -253,19 +360,30 @@ git -C ~/.vb-wiki show HEAD -- index.md log.md  # -> only "+" lines besides hunk
   already a git repository — bootstrap is a no-op in that case.
 - Never overwrite an existing `AGENTS.md` / `index.md` / `log.md` — only
   create files that are missing.
-- Step 2 (page write) touches exactly three files per invocation: the one
+- Step 2 (routing) only computes `TARGET_PATH`/`SCOPE`/`PROJECT_KEY` — it
+  never writes files, never runs `mkdir`, and never touches git. All actual
+  writes happen in Step 3.
+- Global-scope `TARGET_PATH` values must never contain a `projects/`
+  segment; project-scope `TARGET_PATH` values must always be under
+  `projects/<PROJECT_KEY>/`, with `PROJECT_KEY` matching the directory name
+  exactly (`AC-5`/`AC-6`).
+- Step 2b's `PROJECT_KEY` derivation (reading `.vibeRig/project.yaml`'s
+  `project.name`) is a known placeholder pending `JSO-272` — do not build
+  cross-path project identity matching (`meta.md`, GitHub repo id,
+  `linear.project_id`) here.
+- Step 3 (page write) touches exactly three files per invocation: the one
   new page file, `index.md`, and `log.md`. Never `git add -A`/`git add .`;
   always stage those three paths explicitly.
-- Step 2 only **appends** to `index.md`/`log.md` — never edit, reorder, or
+- Step 3 only **appends** to `index.md`/`log.md` — never edit, reorder, or
   delete an existing line/entry in either file.
-- Step 2 never overwrites an existing page file — if `TARGET_PATH` already
+- Step 3 never overwrites an existing page file — if `TARGET_PATH` already
   exists, that means the caller's dedup step (out of scope here, see
   `AC-14`/JSO-275) should have routed to an update instead; stop and
   investigate rather than clobbering it.
-- Every Step 2 write is exactly one git commit; never split a single page
+- Every Step 3 write is exactly one git commit; never split a single page
   write across multiple commits, and never leave the tree dirty afterward.
 - `sources` must never be an empty array — refuse to write a page without at
   least one source.
-- Do not implement global/project routing, qmd embed refresh, dedup-before-
-  write, or the skill-creation gate here — those belong to later `vb-wiki`
-  issues (JSO-270, JSO-271, JSO-275, JSO-273 respectively).
+- Do not implement qmd embed refresh, dedup-before-write, or the
+  skill-creation gate here — those belong to later `vb-wiki` issues
+  (`JSO-271`, `JSO-275`, `JSO-273` respectively).
