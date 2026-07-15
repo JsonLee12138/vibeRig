@@ -18,14 +18,20 @@ rationale) into `~/.vb-wiki` — a git-backed, llm-wiki-style knowledge base
 global notes and per-project notes. See `assets/schema-template.md` for the
 full page/repo schema.
 
-**Status of this skill**: this version implements only the **repo bootstrap**
-step (Step 1 below) — creating and idempotently verifying `~/.vb-wiki` as a
-git repo with its root schema/index/log files. The page-writing engine,
-global/project routing, project-uniqueness resolution, qmd embed refresh,
-dedup-before-write, and the skill-creation suggestion gate are implemented by
-later `vb-wiki` work and are **not yet present** in this file. Do not treat
-the absence of those steps as a bug in this version — extend this file when
-that work lands, rather than duplicating the bootstrap logic elsewhere.
+**Status of this skill**: this version implements the **repo bootstrap**
+(Step 1) and the **core single-page write engine** (Step 2 below) — given an
+already-resolved target path, title, body, and sources, it writes one
+frontmatter'd page, appends to `index.md`/`log.md`, and produces exactly one
+commit on a clean tree. Step 2 as implemented here does **not** decide
+*where* a page belongs (global vs `projects/<project-key>/` routing —
+JSON-RPC-key-safe rendering aside, that's `AC-5`/`AC-6`'s job), does **not**
+refresh qmd embeddings after the commit (`AC-10`), does **not** check for an
+existing page to update instead of creating a new one (`AC-14`), and does
+**not** prompt about creating a reusable skill (`AC-15`). Those are
+implemented by later `vb-wiki` work (see "Handoff notes for later issues"
+below) and are **not yet present** in this file. Do not treat the absence of
+those steps as a bug in this version — extend this file when that work
+lands, rather than duplicating the write-engine logic elsewhere.
 
 ## When
 
@@ -39,9 +45,13 @@ that work lands, rather than duplicating the bootstrap logic elsewhere.
 
 ### Do NOT invoke
 
-- Only the bootstrap step (Step 1) is implemented — do not attempt the
-  page-writing workflow described as "future work" above; that lands in
-  later issues.
+- Steps 1–2 (bootstrap + core page write) are implemented. Do not attempt
+  global/project routing decisions, qmd embed refresh, dedup-before-write, or
+  the skill-creation gate here — those are "future work" (see "Status of
+  this skill" above) and land in later issues. Callers of Step 2 must already
+  have decided the target file path (including whether it lives under
+  `projects/<project-key>/`) and must already have decided this is a new
+  page, not an update to an existing one.
 
 ## Workflow
 
@@ -92,9 +102,114 @@ writes itself, there is no compiled installer):
    `git -C ~/.vb-wiki commit -m "chore: init vb-wiki knowledge base"` so the
    working tree ends clean.
 
-### 2. Distil and write pages
+### 2. Write a page (core write engine)
 
-Not implemented in this version — see "Status of this skill" above.
+**Inputs this step assumes the caller already resolved** (routing/dedup are
+out of scope here — see "Status of this skill"):
+
+- `TARGET_PATH` — absolute path under `~/.vb-wiki/` for the new page, e.g.
+  `~/.vb-wiki/gotchas/npx-registry-timeout.md` (global) or
+  `~/.vb-wiki/projects/vb-plugin/conventions/skill-status-notes.md`
+  (project). The parent directory may not exist yet.
+- `PAGE_SLUG` — `TARGET_PATH`'s filename without the `.md` extension and
+  without any path segment (per the schema's double-link convention), e.g.
+  `npx-registry-timeout`.
+- `TITLE`, `TYPE` (e.g. `gotcha`, `convention`, `pattern`, `decision`,
+  `fact`), `SCOPE` (`global` or `project`), `TAGS` (list), `SOURCES` (list,
+  **must be non-empty** — Linear issue key, commit hash, PR URL, etc.), and
+  `PROJECT_KEY` (only when `SCOPE=project`, must match the containing
+  `projects/<project-key>/` directory name).
+- `BODY` — the distilled markdown content, which the caller must write to
+  include **at least one** `[[double-link]]` to a related, already-existing
+  page (never invent a link to a page that doesn't exist — if no genuine
+  related page exists yet, link to the closest real one, e.g. a topic index
+  page, rather than fabricating a target).
+- A one-line `SUMMARY` (for `index.md`) and `REASON` (for `log.md`).
+
+**Sequence** (this is a markdown-skill plugin — the agent performs every
+file write and git command itself):
+
+1. Compute `NOW=$(date -u +%Y-%m-%d)` (ISO 8601 date) and
+   `TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)` (ISO 8601 timestamp) once, up front,
+   so `created`/`updated` and the log timestamp are consistent within one
+   write.
+2. `mkdir -p` the parent directory of `TARGET_PATH` if it doesn't exist.
+3. Write `TARGET_PATH` with frontmatter followed by `BODY`:
+
+   ```markdown
+   ---
+   title: <TITLE>
+   created: <NOW>
+   updated: <NOW>
+   type: <TYPE>
+   scope: <SCOPE>
+   tags: [<TAGS...>]
+   sources: [<SOURCES...>]
+   ---
+
+   <BODY, containing at least one [[double-link]]>
+   ```
+
+   When `SCOPE: project`, add a `project_key: <PROJECT_KEY>` line to the
+   frontmatter (after `scope`), per `assets/schema-template.md`. `created`
+   and `updated` are identical on a first write — only a later update (out
+   of scope for this step; see `AC-14` handoff notes below) changes
+   `updated` alone.
+4. Append exactly one line to `~/.vb-wiki/index.md` — **never** rewrite or
+   reorder existing lines, only append:
+
+   ```
+   - [[<PAGE_SLUG>]] — scope: <SCOPE> — <SUMMARY>
+   ```
+
+5. Append exactly one entry to `~/.vb-wiki/log.md` — **never** rewrite or
+   reorder existing entries, only append:
+
+   ```
+   - <TS> — [[<PAGE_SLUG>]] — <SCOPE> — <REASON>
+   ```
+
+6. Stage **exactly** the three touched files (the new page, `index.md`,
+   `log.md`) — never `git add -A` / `git add .`, to guarantee the commit
+   contains only this write's changes:
+
+   ```bash
+   git -C ~/.vb-wiki add "<path-relative-to-~/.vb-wiki>" index.md log.md
+   git -C ~/.vb-wiki commit -m "docs(wiki): add <PAGE_SLUG>" >/dev/null
+   ```
+
+7. Verify the result before reporting success:
+
+   ```bash
+   git -C ~/.vb-wiki status --porcelain   # -> must be empty
+   ```
+
+   If it is not empty, something outside this step's three files changed —
+   stop and investigate rather than committing further.
+
+This produces exactly one new commit (append-only page + append-only
+`index.md`/`log.md` edits) on a clean working tree, satisfying `AC-4`,
+`AC-7`, `AC-8`, and `AC-9`.
+
+**Handoff notes for later issues** (extension points, not yet implemented):
+
+- **JSO-270 (global/project routing)**: should run *before* this step and
+  produce `TARGET_PATH`/`SCOPE`/`PROJECT_KEY` as described above. This step
+  does not inspect `.vibeRig/project.yaml` or any project identity — it only
+  writes to whatever path it's given.
+- **JSO-271 (qmd embed refresh)**: should run *after* step 7 succeeds
+  (commit landed, tree clean), keyed off `TARGET_PATH`/`PAGE_SLUG`, so a
+  failed embed refresh never blocks or partially-undoes the commit produced
+  here.
+- **JSO-273 (skill-creation gate)**: should run *after* step 7, inspecting
+  `BODY`/`TYPE` for a reusable operational pattern; it is a read-only
+  suggestion prompt and must not touch `~/.vb-wiki` itself.
+- **JSO-275 (dedup-before-write)**: should run *before* step 1, replacing
+  "write a new page" with "update existing page `P`'s `updated` field and
+  append new content (with a double-link) to `P`" whenever an existing page
+  already covers the topic — i.e. it decides whether to invoke this step's
+  create-path at all, or instead perform an update-path that this step does
+  not implement.
 
 ## Validation
 
@@ -111,13 +226,46 @@ git -C ~/.vb-wiki status --porcelain                 # -> empty (clean tree) aft
       makes no changes (`git status --porcelain` stays empty, no new commit).
 - [ ] Bootstrap never overwrites pre-existing files under `~/.vb-wiki`.
 
+After a Step 2 write:
+
+```bash
+OLD=<HEAD before the write>
+git -C ~/.vb-wiki status --porcelain            # -> empty
+git -C ~/.vb-wiki log --oneline $OLD..HEAD      # -> exactly 1 line
+awk '/^---$/{n++} n==1' <new-file>              # -> frontmatter with all 7 fields, sources non-empty
+grep -cE '\[\[[^]]+\]\]' <new-file>             # -> >= 1
+git -C ~/.vb-wiki show HEAD -- index.md log.md  # -> only "+" lines besides hunk headers
+```
+
+- [ ] Exactly one new commit; working tree clean afterward (`AC-4`).
+- [ ] New page frontmatter has `title`/`created`/`updated`/`type`/`scope`/
+      `tags`/`sources`, with `sources` a non-empty array (`AC-7`).
+- [ ] New page body has at least one `[[double-link]]` (`AC-8`).
+- [ ] `index.md` gained exactly one new line naming the page; `log.md`
+      gained exactly one new entry; neither file lost or modified an
+      existing line (`AC-9`).
+
 ## Hard Rules
 
-- Write target for this step is `~/.vb-wiki/` root only — `AGENTS.md`,
+- Bootstrap (Step 1) write target is `~/.vb-wiki/` root only — `AGENTS.md`,
   `index.md`, `log.md`, and the repo's `.git/`. No other paths.
 - Never re-run `git init` or recreate the root files if `~/.vb-wiki` is
   already a git repository — bootstrap is a no-op in that case.
 - Never overwrite an existing `AGENTS.md` / `index.md` / `log.md` — only
   create files that are missing.
-- Do not implement page-writing, routing, qmd refresh, or the skill-creation
-  gate here — those belong to later `vb-wiki` issues.
+- Step 2 (page write) touches exactly three files per invocation: the one
+  new page file, `index.md`, and `log.md`. Never `git add -A`/`git add .`;
+  always stage those three paths explicitly.
+- Step 2 only **appends** to `index.md`/`log.md` — never edit, reorder, or
+  delete an existing line/entry in either file.
+- Step 2 never overwrites an existing page file — if `TARGET_PATH` already
+  exists, that means the caller's dedup step (out of scope here, see
+  `AC-14`/JSO-275) should have routed to an update instead; stop and
+  investigate rather than clobbering it.
+- Every Step 2 write is exactly one git commit; never split a single page
+  write across multiple commits, and never leave the tree dirty afterward.
+- `sources` must never be an empty array — refuse to write a page without at
+  least one source.
+- Do not implement global/project routing, qmd embed refresh, dedup-before-
+  write, or the skill-creation gate here — those belong to later `vb-wiki`
+  issues (JSO-270, JSO-271, JSO-275, JSO-273 respectively).
