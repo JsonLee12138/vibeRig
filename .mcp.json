@@ -14,6 +14,10 @@
       "env": {
         "GEMINI_MODEL": "gemini-3.1-pro-preview"
       }
+    },
+    "qmd": {
+      "command": "npx",
+      "args": ["-y", "@tobilu/qmd", "mcp"]
     }
   }
 }

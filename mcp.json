@@ -7,6 +7,10 @@
     "pencil": {
       "command": "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
       "args": ["--app", "desktop", "--agent", "codexCLI"]
+    },
+    "qmd": {
+      "command": "npx",
+      "args": ["-y", "@tobilu/qmd", "mcp"]
     }
   }
 }
