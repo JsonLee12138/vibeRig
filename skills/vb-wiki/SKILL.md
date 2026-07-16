@@ -21,24 +21,26 @@ full page/repo schema.
 **Status of this skill**: this version implements the **repo bootstrap**
 (Step 1), **global/project routing with cross-path project identity
 matching** (Step 2 below, `JSO-270` + `JSO-272`), the **core single-page
-write engine** (Step 3 below), and the **qmd embed refresh** (Step 4 below,
-`JSO-271`) — given a Linear key and distilled content, it classifies the
+write engine** (Step 3 below), the **qmd embed refresh** (Step 4 below,
+`JSO-271`), and the **skill-creation suggestion gate** (Step 5 below,
+`JSO-273`) — given a Linear key and distilled content, it classifies the
 content as `scope: global` or `scope: project`, resolves
 `TARGET_PATH`/`PROJECT_KEY` (matching the current repo's identity against
 existing `projects/*/meta.md` files so a renamed or relocated clone reuses
 its original project directory instead of forking a new one), writes one
 frontmatter'd page (and, on a project's first-ever write, its `meta.md`),
 appends to `index.md`/`log.md`, produces exactly one commit on a clean tree,
-and then best-effort refreshes the `vb-wiki` qmd collection's vector index so
-the new page becomes searchable — satisfying `AC-5`/`AC-6`/`AC-11` in
-addition to `AC-4`, `AC-7`, `AC-8`, `AC-9`, and `AC-10`. This version does
-**not** check for an existing page to update instead of creating a new one
-(`AC-14`), and does **not** prompt about creating a reusable skill
-(`AC-15`). Those are implemented by later `vb-wiki` work (see "Handoff notes
-for later issues" below) and are **not yet present** in this file. Do not
-treat the absence of those steps as a bug in this version — extend this file
-when that work lands, rather than duplicating the write-engine or
-embed-refresh logic elsewhere.
+best-effort refreshes the `vb-wiki` qmd collection's vector index so the new
+page becomes searchable, and then — only when the just-written page is a
+reusable operational procedure — asks the user once whether to create a
+skill from it, handing off to `vb-learn` on "yes" and doing nothing further
+on "no" — satisfying `AC-5`/`AC-6`/`AC-11`/`AC-15` in addition to `AC-4`,
+`AC-7`, `AC-8`, `AC-9`, and `AC-10`. This version does **not** check for an
+existing page to update instead of creating a new one (`AC-14`). That is
+implemented by later `vb-wiki` work (see "Handoff notes for later issues"
+below) and is **not yet present** in this file. Do not treat the absence of
+that step as a bug in this version — extend this file when that work lands,
+rather than duplicating the write-engine or embed-refresh logic elsewhere.
 
 ## When
 
@@ -52,13 +54,15 @@ embed-refresh logic elsewhere.
 
 ### Do NOT invoke
 
-- Steps 1–4 (bootstrap + routing incl. project identity matching + core page
-  write + qmd embed refresh) are implemented. Do not attempt dedup-before-write
-  or the skill-creation gate here — those are "future work" (see "Status of
-  this skill" above) and land in later issues (`JSO-275`, `JSO-273`).
-  Callers must already have decided this is a new page, not an update to an
-  existing one (dedup-before-write is `JSO-275`'s job, not Step 2's or
-  Step 3's).
+- Steps 1–5 (bootstrap + routing incl. project identity matching + core page
+  write + qmd embed refresh + skill-suggestion gate) are implemented. Do not
+  attempt dedup-before-write here — that is "future work" (see "Status of
+  this skill" above) and lands in a later issue (`JSO-275`). Callers must
+  already have decided this is a new page, not an update to an existing one
+  (dedup-before-write is `JSO-275`'s job, not Step 2's or Step 3's).
+- Step 5 must never create a skill itself, write to `~/.vb-skills/`, or touch
+  `vb-skill-lock.json` directly — on user confirmation it only hands off to
+  `vb-learn`'s existing skill-creation workflow (see Step 5 below).
 
 ## Workflow
 
@@ -451,6 +455,86 @@ same check can be done via the `qmd` MCP server's structured `query` tool
 using a `vec:` line instead of the CLI — either satisfies `AC-10`'s
 verification.)
 
+### 5. Suggest a skill (read-only gate)
+
+Run this step *after* Step 3's step 7 has verified a clean tree following a
+landed commit. It may run before, after, or in parallel with Step 4 — the
+two are independent post-write checks and neither depends on the other's
+outcome. This step is **read-only with respect to `~/.vb-wiki`** — the wiki
+page write already happened in Step 3/4; this step never writes, edits, or
+touches any file under `~/.vb-wiki` (nor `~/.vb-skills`, unless the user
+confirms — see 5d).
+
+**5a. Trigger condition.** Only trigger when the page just written in Step 3
+describes a reusable **operational procedure** — a repeatable sequence of
+concrete actions with a clear trigger condition ("when X happens, do steps
+1..N") — as opposed to a standalone fact, gotcha, convention, or decision
+record that is knowledge but not a procedure. This is a judgment call, made
+by reading the page's `TYPE` and `BODY` together (a `TYPE: pattern` or
+`TYPE: convention` page can still qualify if its body is actually a
+procedure; a `TYPE: gotcha` or `TYPE: fact` page almost never does).
+
+Examples distinguishing the two:
+
+- **Ask** — "Here's a 5-step way to debug a stuck `qmd embed` refresh:
+  check the collection is registered, check network reachability to the
+  model host, check disk space for the local vector store, re-run with
+  `--verbose`, and if it still fails, delete and re-add the collection." A
+  repeatable sequence with a clear trigger ("qmd embed hangs or fails") —
+  worth asking about.
+- **Ask** — "When a renamed/relocated repo clone shows up, resolve its
+  `PROJECT_KEY` by: (1) parsing `git remote get-url origin` into an
+  `owner/repo` slug, (2) reading `.vibeRig/project.yaml`'s
+  `linear.project_id`, (3) scanning existing `projects/*/meta.md` for either
+  field, (4) reusing the match if found." A concrete, ordered, reusable
+  procedure — worth asking about.
+- **Do NOT ask** — "`npx` can hit a registry timeout on first run." A bare
+  fact/gotcha with no procedure attached — just a note.
+- **Do NOT ask** — "VibeRig stores milestone/issue state exclusively in
+  Linear, never in a local markdown copy." A decision/convention record, not
+  a sequence of actions to follow — just a note.
+
+When uncertain whether the body is "a procedure" or "just a note", default
+to **not** triggering — Step 5 firing on every write would make the gate
+noise instead of signal; only ask when the page reads like a checklist or
+runbook someone would want to invoke by name later.
+
+**5b. When triggered, ask the user once**, presenting:
+
+- A proposed skill name matching `vb-learn`'s naming convention
+  `^[a-z0-9][a-z0-9-]*$` (derive it from the page's `PAGE_SLUG` or `TITLE`,
+  kebab-cased).
+- A one-line **When** — the trigger condition under which this skill would
+  fire (mirrors what `vb-learn` Step 3 asks candidates to state).
+- An explicit yes/no question, e.g.:
+
+  > This page describes a reusable procedure. Want me to turn it into a
+  > skill? Proposed name: `<proposed-skill-name>`. When: "<one-line trigger
+  > condition>". Create it? (yes/no)
+
+Ask this **once** per page write — do not re-prompt if the user doesn't
+answer affirmatively the first time (see 5c).
+
+**5c. Decline path.** If the user answers no, or gives any non-affirmative
+response, or does not respond: **stop immediately.**
+
+- Do not touch `~/.vb-skills/` in any way.
+- Do not touch `vb-skill-lock.json` in any way.
+- Do not invoke `vb-learn` or any part of its skill-creation machinery.
+- The wiki page written in Step 3/4 already happened and stands regardless
+  of this answer — declining a skill never undoes or affects the wiki
+  write.
+
+**5d. Accept path.** If the user answers yes: hand off to `vb-learn`'s
+existing skill-creation workflow — do not duplicate its Step 3 (skill
+planning) or Step 4 (write each skill via `skill-builder` + lock update)
+logic here. Pass it the proposed skill name and When condition from 5b as
+the starting candidate (see `skills/vb-learn/SKILL.md` Step 3 "Skill
+planning — decide what to learn" and Step 4 "Write each skill"). `vb-learn`
+owns everything downstream of a "yes" — its own lock update, validation, and
+commit sequence (`skills/vb-learn/SKILL.md` Step 5 "Validate and commit")
+apply unchanged; Step 5 here does not re-implement or shortcut any of it.
+
 **Implemented since the previous version**: `JSO-272` (project-uniqueness
 cross-path matching) — Step 2b now matches the current repo's identity
 (`git remote get-url origin` parsed to an `owner/repo` slug, and/or
@@ -458,13 +542,10 @@ cross-path matching) — Step 2b now matches the current repo's identity
 `projects/*/meta.md`, reusing the existing `PROJECT_KEY` on any match
 instead of forking a new directory; Step 3 writes a new project's `meta.md`
 on that project's first-ever write. See Step 2b and Step 3's step 3a above.
+Also `JSO-273` (skill-creation suggestion gate) — see Step 5 above.
 
 **Handoff notes for later issues** (extension points, not yet implemented):
 
-- **JSO-273 (skill-creation gate)**: should run *after* Step 3's step 7 (and
-  can run independently of Step 4), inspecting `BODY`/`TYPE` for a reusable
-  operational pattern; it is a read-only suggestion prompt and must not
-  touch `~/.vb-wiki` itself.
 - **JSO-275 (dedup-before-write)**: should run *before* Step 3's step 1,
   replacing "write a new page" with "update existing page `P`'s `updated`
   field and append new content (with a double-link) to `P`" whenever an
@@ -554,6 +635,26 @@ npx -y @tobilu/qmd vsearch "<topic words from the new page>" -c vb-wiki
       it is untouched (`git -C ~/.vb-wiki log -1` still shows that commit,
       `git status --porcelain` still empty).
 
+Skill-suggestion gate check (`AC-15`) — writing a page whose body is a
+reusable operational procedure, then declining Step 5's question:
+
+```bash
+ls -R ~/.vb-skills > /tmp/before.txt 2>&1
+shasum ~/.vb-skills/vb-skill-lock.json > /tmp/before-lock.txt 2>&1
+# ... trigger a vb-wiki distillation whose content is a reusable procedure,
+#     answer "no" to Step 5's skill-creation question ...
+ls -R ~/.vb-skills > /tmp/after.txt 2>&1
+shasum ~/.vb-skills/vb-skill-lock.json > /tmp/after-lock.txt 2>&1
+diff /tmp/before.txt /tmp/after.txt        # -> no output (identical)
+diff /tmp/before-lock.txt /tmp/after-lock.txt   # -> no output (identical)
+```
+
+- [ ] The session transcript contains exactly one question presenting a
+      proposed skill name and a one-line When trigger condition (`AC-15`).
+- [ ] After a "no" answer, `ls -R ~/.vb-skills` and
+      `shasum ~/.vb-skills/vb-skill-lock.json` are byte-identical to their
+      pre-question state (`AC-15`).
+
 ## Hard Rules
 
 - Bootstrap (Step 1) write target is `~/.vb-wiki/` root only — `AGENTS.md`,
@@ -600,6 +701,22 @@ npx -y @tobilu/qmd vsearch "<topic words from the new page>" -c vb-wiki
 - Step 4 uses exactly one qmd collection (`vb-wiki`) covering all of
   `~/.vb-wiki` — never create a separate collection per project or per
   scope.
-- Do not implement dedup-before-write or the skill-creation gate here —
-  those belong to later `vb-wiki` issues (`JSO-275`, `JSO-273`
-  respectively).
+- Step 5 (skill-suggestion gate) only triggers for pages describing a
+  reusable operational procedure — never for plain gotchas/facts/decisions/
+  conventions that carry no repeatable action sequence. When uncertain,
+  default to not triggering.
+- Step 5 must ask the yes/no skill-creation question **at most once** per
+  page write, and must present both a proposed skill name
+  (`^[a-z0-9][a-z0-9-]*$`) and a one-line When condition in that question.
+- On a "no" (or non-affirmative/no-response) answer, Step 5 must stop
+  immediately: zero writes to `~/.vb-skills/`, zero changes to
+  `vb-skill-lock.json`, and no invocation of `vb-learn`'s skill-creation
+  machinery. The Step 3/4 wiki write is unaffected either way.
+- On a "yes" answer, Step 5 must hand off to `vb-learn`'s existing
+  skill-creation workflow rather than duplicating its planning/write/lock/
+  commit logic here.
+- Step 5 never writes, edits, or deletes anything under `~/.vb-wiki` — it is
+  read-only with respect to the wiki; the page write already happened in
+  Step 3/4.
+- Do not implement dedup-before-write here — that belongs to a later
+  `vb-wiki` issue (`JSO-275`).
