@@ -7,7 +7,7 @@ updated: <ISO 8601 date>
 
 # <project-key> — project meta
 
-Identity fields used for cross-path project matching (`JSO-272`):
+Identity fields used for cross-path project matching:
 
 - `github_repo` — derived from `git remote get-url origin`, parsed to an
   `owner/repo` slug (strips the `https://github.com/`, `git@github.com:`, or
@@ -17,8 +17,7 @@ Identity fields used for cross-path project matching (`JSO-272`):
   `linear.project_id` field. Empty if not set.
 
 A renamed or relocated clone of this repo is matched back to this same
-`<project-key>` directory whenever **either** field still matches — see
-`skills/vb-wiki/SKILL.md` Step 2b.
+`<project-key>` directory whenever **either** field still matches.
 
 Base architecture: <brief description, filled in / extended as project notes
 accumulate over time — not required on first write>.

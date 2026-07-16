@@ -6,8 +6,6 @@ docs:
   root: ".vibeRig/requirements"
 output:
   language: "zh-CN"
-workspace:
-  worktrees_root: ".worktrees"
 pull_request:
   required: "true"
   provider: "auto"
@@ -15,8 +13,8 @@ pull_request:
   draft: "false"
 linear:
   team_id: "d468277e-24d2-447d-a981-a20e0f1a7693"
-  project_id: "a06bfaa0-13b4-401d-a3e7-3fe1c45cf60c"
-  project_document_id: "7135b388-77cf-4bdf-8418-2e24acb6eab1"
+  project_id: "42fb3e1e-400d-4d35-92b7-271508ee8653"
+  project_document_id: ""
   project_document_title: "VibeRig Project Registration"
 gate_policy:
   ci_required: "project_decides"

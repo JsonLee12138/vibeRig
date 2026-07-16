@@ -1,4 +1,4 @@
-# Project identity matching (Step 3b details)
+# Project identity matching (routing details)
 
 Resolves `PROJECT_KEY` so a renamed or relocated clone of the same repo
 reuses its original `~/.vb-wiki/projects/<key>/` directory instead of
@@ -51,7 +51,7 @@ done
 
 if [ -z "$PROJECT_KEY" ]; then
   PROJECT_KEY="$CANDIDATE_KEY"
-  NEW_PROJECT_META=true    # first-ever write for this project: Step 4 must also create its meta.md
+  NEW_PROJECT_META=true    # first-ever write for this project: the write step must also create its meta.md
 else
   NEW_PROJECT_META=false   # matched — reuse; never create a second directory
 fi
