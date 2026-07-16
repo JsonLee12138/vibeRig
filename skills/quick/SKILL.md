@@ -43,27 +43,33 @@ Return:
 
 1. **Branch lock (execute first, no exceptions)**: Modify in place on the current branch and workspace. `git checkout -b`, `git switch -c`, and worktree creation are strictly forbidden regardless of the current branch — including main. This skill never creates branches, worktrees, or PRs.
 2. Read `.vibeRig/project.yaml` for output language and Linear context when available.
-3. Mark the issue as in-progress with `_save_issue`.
-4. Write a test proving the change before implementing it:
+3. **vb-wiki targeted lookup (exactly once, right after reading the issue, before delegating)**: after reading the issue/confirmed approach, run **exactly one** targeted query against the `vb-wiki` qmd collection keyed off the issue's title/keywords — `npx -y @tobilu/qmd vsearch "<issue title/keywords>" -c vb-wiki`, or the equivalent structured call via the `qmd` MCP `query` tool when running inside an agent session where that's more natural than shelling out. Either form satisfies this step; use whichever fits the calling context.
+   - **0 hits** — this includes `~/.vb-wiki` not existing, the collection not being registered, and any qmd error — treat all of these as 0 hits, never as a failure: inject nothing, mention nothing to the user, do not error, proceed to step 4 exactly as if this step were skipped.
+   - **≥1 hit** above a reasonable relevance threshold: note the matched page's path/conclusion and actually cite it (path and/or quoted finding) in the delegation brief (step 5) and in the final report when it's relevant to the fix approach — do not just log it silently.
+   - This is exactly **one** query per issue, not a query per turn or per `agent-sop` rework round — never re-query mid-task.
+   - If the `qmd` MCP server isn't configured/reachable, treat it the same as 0 hits and continue; never block or fail this skill's flow on it.
+4. Mark the issue as in-progress with `_save_issue`.
+5. Write a test proving the change before implementing it:
    - **Bug fix**: write a failing reproduction test that demonstrates the bug as described in the `bugger` root cause analysis (Prove-It Pattern). Run it — it **must fail** first; if it passes immediately, it's not testing the right thing.
    - **Non-bug small task**: write or adjust the test(s) that prove the confirmed change works, following `test-driven-development` practice where applicable.
    - Include this test in the delegation brief.
-5. Delegate the change to `agent-sop`:
-   - Provide the confirmed approach, affected files, and the test from step 4.
+6. Delegate the change to `agent-sop`:
+   - Provide the confirmed approach, affected files, and the test from step 5.
+   - If step 3 found a relevant vb-wiki hit, include its path/conclusion in the brief.
    - Constraints: follow local patterns, protect unrelated changes, no Linear/status updates, **modify in place on the current branch — do not create branches or worktrees**.
    - Required artifact: implementation where the test now passes, plus parallel quality review (code review + security + test coverage).
-6. Inspect the result and run main-agent validation:
+7. Inspect the result and run main-agent validation:
    - Confirm the test passes.
    - Run targeted tests, lint, and build to check for regressions.
    - For bug fixes: verify the fix addresses the root cause, not just the symptom.
-7. If validation fails, loop through `agent-sop` rework (max 3 rounds). After 2 identical failures, escalate with failed evidence.
-8. Commit the change:
+8. If validation fails, loop through `agent-sop` rework (max 3 rounds). After 2 identical failures, escalate with failed evidence.
+9. Commit the change:
    - Run `git diff --staged --name-only` and confirm only in-scope files are staged.
    - Reference the Linear issue key in the commit message.
-9. Write evidence to Linear with `_save_comment`:
+10. Write evidence to Linear with `_save_comment`:
    - Files changed, test result (before/after), validation result, commit hash.
-10. Update Linear issue to ready-for-acceptance state with `_save_issue`.
-11. Tell the user that `accept-issue` is required for final sign-off and Linear closure.
+11. Update Linear issue to ready-for-acceptance state with `_save_issue`.
+12. Tell the user that `accept-issue` is required for final sign-off and Linear closure.
 
 ## Red Flags
 
@@ -76,6 +82,9 @@ Return:
 - Linear was moved to Done from this skill → only `accept-issue` or `accept-milestone` may set terminal statuses.
 - Validation was skipped because the change "looks right" → run targeted tests before committing; a visual check is not evidence.
 - The same rework brief was sent to the subagent twice without changing the approach → change the approach or escalate after 2 identical failures.
+- The vb-wiki lookup was run more than once for the same issue (e.g. once per rework round) → exactly one query per issue, never a per-turn habit.
+- The vb-wiki lookup returned a hit but it never showed up in the delegation brief or final report → a hit must be cited, not just noted internally.
+- A missing/unreachable qmd server or missing `~/.vb-wiki` was treated as a blocking error → treat it as a 0-hit no-op and continue.
 
 ## Anti-Rationalization
 
@@ -102,6 +111,7 @@ git log -1 --pretty="%s" | grep -q "<issue-key>" && echo "ok" || echo "MISSING I
 ```
 
 - [ ] Confirmed approach exists (bugger Phase 1 + user confirmation for bugs; direct user confirmation for other small tasks).
+- [ ] Exactly one vb-wiki targeted query ran right after reading the issue; 0 hits were a silent no-op, ≥1 hit was cited in the brief/report.
 - [ ] Proving test written and confirmed to fail/demonstrate the gap before the change was implemented.
 - [ ] Change delegated to `agent-sop` with a bounded brief including the test and parallel quality review.
 - [ ] Test passes after the change.
