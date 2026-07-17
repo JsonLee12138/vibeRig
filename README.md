@@ -66,8 +66,8 @@ Typical prompts:
 
 - `Use vb-init for this repo.`
 - `Use intake to record this requirement: ...`
-- `Use define-acceptance for req-0001.`
-- `Use split-milestones for req-0001.` / `Use split-issues for ms-1.`
+- `Use define-acceptance for payment-refactor.`
+- `Use split-milestones for payment-refactor.` / `Use split-issues for ms-1.`
 - `Use task-runner for milestone ms-1 (or Linear issue ABC-123).`
 - `Use accept-issue for ABC-123.` / `Use accept-milestone for ms-1.`
 - `Use record-issue for this small change: ...`

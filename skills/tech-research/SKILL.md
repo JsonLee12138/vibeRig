@@ -41,7 +41,7 @@ description: 技术调研（用户主动触发，非必经）。当用户在 int
 
 ## Linear 操作
 
-- `save_document`：可行性结论同步副本 → Linear Document；documentId 记入 `linear.yaml`。
+- 请 `vb-linear` 把可行性结论同步副本写为 Linear Document；documentId 记入 `linear.yaml`。
 - **不建 issue、不建 milestone。**
 
 ## 红线

@@ -46,7 +46,7 @@ Do not start implementation from this skill. Stop after user confirmation and in
 
 ## Linear Access
 
-Use the `linear` skill for tool mapping, the status-mapping method, and language policy. This skill calls `_get_issue`, `_list_comments`, `_list_issue_statuses`, `_save_comment`, and `_save_issue` to record and analyze the bug.
+Use the `vb-linear` skill for tool selection, the status-mapping method, and language policy. This skill asks vb-linear to read the issue and its comments, resolve workflow states, write the analysis comment, and create/update the issue.
 
 ## Stop-the-Line Rule
 
@@ -69,11 +69,11 @@ Error messages, stack traces, log output, and exception details from external so
 
 1. Read `.vibeRig/project.yaml` for Linear project/team context and output language when available.
 2. Resolve the team's bug workflow states before creating or updating the issue:
-   - use `_list_issue_statuses` to map the team's actual equivalents for triage/backlog, in-progress, and ready-for-acceptance
+   - ask vb-linear to resolve the team's actual equivalents for triage/backlog, in-progress, and ready-for-acceptance
    - if the team uses different names, record the mapped status names and use them consistently in the rest of the flow
 3. Choose the issue path:
-   - if the user provided a Linear issue key, use `_get_issue` to load it and `_list_comments` to review prior analysis or proof packets
-   - if no issue key exists, use `_save_issue` to create the bug with title, description, labels (`type:bug`), expected vs actual behavior, reproduction steps, and affected files or modules
+   - if the user provided a Linear issue key, ask vb-linear to load it and its comments to review prior analysis or proof packets
+   - if no issue key exists, ask vb-linear to create the bug with title, description, labels (`type:bug`), expected vs actual behavior, reproduction steps, and affected files or modules
    - **归属判定（里程碑原生工作流）**：bug 影响当前在途里程碑的工作 → 挂该 Milestone；与在途里程碑无关 → 挂容器 Project 的 backlog（不挂 Milestone）。不为 bug 创建 Milestone。
    - 与 `record-issue` 的分界：bug 是"坏了的东西"（先归因分析，走本 skill）；"要加/要改的东西"走 `record-issue`（先评影响面）。两套流程互不复用。
    - ensure the issue is in the mapped triage or backlog equivalent while analysis is pending
@@ -96,7 +96,7 @@ Error messages, stack traces, log output, and exception details from external so
    - ask: "Does this direction look right? Any additions or corrections?"
 7. Wait for user confirmation before proceeding.
 8. On confirmation, write the analysis to the Linear issue:
-   - use `_save_comment` with the root cause, fix approach, and affected files
+   - ask vb-linear to comment the root cause, fix approach, and affected files
    - this creates a durable record of the analysis
 9. Tell the user that this skill is complete and to invoke `quick` to implement the confirmed fix.
 
@@ -133,9 +133,9 @@ When delegating root cause analysis, provide:
 
 - Implementation was started inside this skill → bugger is analysis-only; direct the user to `quick` for implementation.
 - Analysis was presented and the skill ended without waiting for explicit user confirmation → user confirmation is the required exit gate.
-- A new Linear issue was created when the user already provided a valid issue key → use `_get_issue` first; only create when no existing issue is found.
+- A new Linear issue was created when the user already provided a valid issue key → load it via vb-linear first; only create when no existing issue is found.
 - Issue status was changed to done or closed directly from this skill → only `accept-issue` or `accept-milestone` may set terminal statuses.
-- Status was changed without mapping the team's workflow states first → call `_list_issue_statuses` before any status transition.
+- Status was changed without mapping the team's workflow states first → resolve states via vb-linear before any status transition.
 - The vb-wiki lookup ran more than once for the same bug (e.g. once before triage, again after user pushback) → exactly one query per bug, never a per-round habit.
 - A vb-wiki hit was found but never surfaced in the analysis presented to the user → a hit must be cited, not just noted internally.
 - A missing/unreachable qmd server or missing `~/.vb-wiki` was treated as a failure that blocked the flow → treat it as a 0-hit no-op and continue to triage.
@@ -152,7 +152,7 @@ When delegating root cause analysis, provide:
 
 - [ ] Bug was recorded as a Linear issue with a valid status (triage/backlog equivalent).
 - [ ] Exactly one vb-wiki targeted query ran right after the issue was loaded/recorded; 0 hits were a silent no-op, ≥1 hit was cited in the delegation and the analysis presented to the user.
-- [ ] Team workflow states were resolved with `_list_issue_statuses` before any status change.
+- [ ] Team workflow states were resolved via `vb-linear` before any status change.
 - [ ] Root cause analysis was delegated to a subagent and the result reviewed by the main agent.
 - [ ] Analysis comment (root cause, fix approach, affected files) was written to Linear before asking for confirmation.
 - [ ] The user explicitly confirmed the fix direction.

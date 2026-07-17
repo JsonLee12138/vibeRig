@@ -41,10 +41,7 @@ Internal pipeline: **read Linear → verify terminal state → `insights` → `s
 
 ### 1. Read Linear and verify terminal state
 
-```
-_get_issue(id: <LINEAR-KEY>)
-_list_issue_statuses(teamId: <team>)
-```
+Ask `vb-linear` to read the issue and resolve the team's workflow states.
 
 Check the issue's current status against the team's terminal states (Done / Accepted / Completed / Cancelled / Duplicate).
 **If status is not terminal → exit immediately with:**
@@ -54,16 +51,14 @@ vb-learn requires the issue to be Done/Accepted/Completed/Cancelled/Duplicate be
 Run `accept-milestone` or `accept-issue` first, or close the issue manually.
 ```
 
-聚合粒度（里程碑原生工作流）：入参可以是**里程碑 id / 需求 id / issue key**。里程碑 → 聚合该里程碑下全部 issue（用 `_list_issues` 按 Milestone 过滤 + 读 `requirement.yaml`）；需求 → 聚合其全部里程碑的复盘。Gather from all issues in scope:
+聚合粒度（里程碑原生工作流）：入参可以是**里程碑 id / 需求 id / issue key**。里程碑 → 聚合该里程碑下全部 issue（请 `vb-linear` 按 Milestone 过滤枚举 issue + 读 `requirement.yaml`）；需求 → 聚合其全部里程碑的复盘。Gather from all issues in scope:
 
 - Title, description, acceptance criteria
 - Root-cause analysis or key insight from comments
 - Commit hash(es) and PR URL
 - Validation notes and proof packet comments
 
-```
-_list_comments(issueId: <id>)   # repeat for each sub-task
-```
+Ask `vb-linear` to read comments for each issue in scope, repeating per sub-task.
 
 ### 2. Full content summary (no information loss)
 

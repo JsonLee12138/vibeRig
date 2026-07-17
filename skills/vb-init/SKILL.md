@@ -109,19 +109,19 @@ Claude Code reads `CLAUDE.md` by convention; symlink it to `AGENTS.md` so both p
 
 ### 6. Linear registration
 
-See the `linear` skill for tool mapping and fallback behavior.
+See the `vb-linear` skill for tool selection and fallback behavior.
 
 **6a. 登录校验（先于任何 project 操作）**
 
-调用任意只读 Linear 工具（如 `_list_teams`）探测登录态：
-- 工具返回正常 → 已登录，进入 6b。
-- 工具报鉴权/未授权错误，或 Linear MCP 未连接 → 未登录，触发 Linear OAuth 登录流程，等待用户完成授权后重试探测一次。仍失败则按 Linear 工具不可用处理（见下）。
+请 `vb-linear` 探测登录态（用任意只读能力，如解析 team）：
+- 返回正常 → 已登录，进入 6b。
+- 报鉴权/未授权错误，或 Linear MCP 未连接 → 未登录，触发 Linear OAuth 登录流程，等待用户完成授权后重试探测一次。仍失败则按 Linear 工具不可用处理（见下）。
 
 **6b. Project 注册**（仅在 6a 确认已登录后执行）
-- `_list_teams` / `_get_team` → confirm team.
-- `_search` + `_list_projects` → find existing project (search before creating).
-- `_save_project` → create only if none found. 该 Project 是**常驻容器**：后续所有需求的 Milestone / Issue 都挂在它下面（里程碑原生工作流），不要按需求另建 Project。
-- `_list_documents` + `_save_document` → create/update Project Document.
+- 请 `vb-linear` 解析 team。
+- 请 `vb-linear` 查找已有 project（先查重再建）。
+- 仅当未查到时，请 `vb-linear` 创建 project。该 Project 是**常驻容器**：后续所有需求的 Milestone / Issue 都挂在它下面（里程碑原生工作流），不要按需求另建 Project。
+- 请 `vb-linear` 查找/创建 Project Document。
 - Write resolved Linear ids to `project.yaml`.
 
 Report as **partial** when Linear tools are unavailable (including login declined/failed); do not claim full registration.
@@ -173,7 +173,7 @@ test -L ~/.claude/skills/vb \
 - [ ] `.worktrees/` exists and is listed in `.gitignore`.
 - [ ] `~/.vb-skills` is a git repo with `vb-skill-lock.json`.
 - [ ] `~/.agents/skills/vb` and `~/.claude/skills/vb` both symlink to `~/.vb-skills`.
-- [ ] Linear login was verified (or login was triggered) before any `_save_project` call.
+- [ ] Linear login was verified (or login was triggered) before any project-creation call to `vb-linear`.
 - [ ] Linear registration complete, or partial explicitly reported.
 
 ## Hard Rules
@@ -185,4 +185,4 @@ test -L ~/.claude/skills/vb \
 - Do not make CI mandatory for all projects — record the project's own gate policy.
 - Do not add a `workspace` section or a `worktrees_root` setting to `project.yaml` — the worktree path is always the fixed `.worktrees/`.
 - Do not overwrite an existing real `CLAUDE.md` file with a symlink.
-- Do not call `_save_project` (or any Linear write) before verifying login in step 6a; if not logged in, trigger the OAuth flow first.
+- Do not ask `vb-linear` to create a project (or make any Linear write) before verifying login in step 6a; if not logged in, trigger the OAuth flow first.

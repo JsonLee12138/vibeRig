@@ -28,12 +28,12 @@ description: 里程碑验收（取代 accept）。当用户对某个里程碑说
    - 无冲突 → 直接继续；
    - 有冲突 → 先逐处分析：这处冲突涉及哪些改动、双方各自想干什么、取舍会影响什么；**与用户确认取舍后**再解决合并。不自作主张。
 5. **合并 PR**：集成分支（`milestone/<req-id>-<n>`）→ main 的 PR 已由 `task-runner` 在各 issue 完成过程中发起并持续更新，**本 skill 不新建 PR**。核对该 PR 存在且目标分支正确；补全/更新 PR 正文（里程碑标题、issue 清单、AC 覆盖、本次全量回归证据、残余风险）；确认 CI 通过、无冲突、必需审批齐全后合并该 PR。任一不满足 → 记录阻塞并停止，不置任何终态；若该 PR 不存在，停止并报告，退回 `task-runner` 补发起。本地main分支合并远程main代码。
-6. **issue 状态兜底核对**：`list_issues` 取该里程碑下全部 issue（含 sub-issue），逐个确认状态已是 Done；若有遗漏（如漏走 `accept-issue` 或验收后被改动），`save_issue` 补齐（先 `list_issue_statuses` 解析，不发明状态名）。
-7. **Linear 记录**：
+6. **issue 状态兜底核对**：请 `vb-linear`（见该 skill 的能力映射与规则）枚举该里程碑下全部 issue（含 sub-issue），逐个确认状态已是 Done；若有遗漏（如漏走 `accept-issue` 或验收后被改动），请 `vb-linear` 补齐（先解析团队工作流状态，不发明状态名）。
+7. **Linear 记录**（请 `vb-linear` 执行）：
    - Milestone 验收评论（按书写规范：逐步操作说明 + 每步看到的结果 + PR 链接 + commit）；
-   - `save_status_update` 写 Project Update（该里程碑完成、整体进度）。
+   - 写 Project Update（该里程碑完成、整体进度）。
 8. **更新 requirement.yaml**：在 **main 分支工作区**把该里程碑 `status` 置为 `accepted`。
-9. **insights 复盘**：触发 `insights` 对该里程碑复盘（聚合其名下全部 issue 的证据），结论用 `save_comment` 写入 Linear 评论区（紧随验收评论）。
+9. **insights 复盘**：触发 `insights` 对该里程碑复盘（聚合其名下全部 issue 的证据），结论请 `vb-linear` 写入 Linear 评论区（紧随验收评论）。
 10. **vb-learn 自学习**：待第 9 步复盘评论写入后，触发 `vb-learn <里程碑id>` 从评论区自学习（复盘评论 + 各 issue 的 proof packet + 验收评论）；无可泛化经验时由 vb-learn 自行返回 `skipped`。
 11. **归档判定**：
     - 若这是该需求**最后一个**里程碑：需求 `status: accepted`（main 分支工作区），目录迁入 `requirements/archive/<req-id>/`，并做需求级复盘汇总（insights 汇总各里程碑复盘 → 写入 Linear；`vb-learn <req-id>` 做需求级自学习）；

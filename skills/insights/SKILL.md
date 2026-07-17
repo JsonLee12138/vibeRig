@@ -11,7 +11,7 @@ Use this skill to turn accepted VibeRig work into conservative learning candidat
 
 两个 skill 是上下游，不重复：
 
-- **insights（复盘）**：从已验收的证据生成复盘结论与学习候选，**必须用 `_save_comment` 把复盘结论写入 Linear 评论区**（issue 级写在 issue 上，里程碑级写在 Milestone 验收评论之后）。评论区既给人看，也是 `vb-learn` 的学习输入。
+- **insights（复盘）**：从已验收的证据生成复盘结论与学习候选，**必须通过 `vb-linear` 把复盘结论写入 Linear 评论区**（issue 级写在 issue 上，里程碑级写在 Milestone 验收评论之后）。评论区既给人看，也是 `vb-learn` 的学习输入。
 - **vb-learn（自学习）**：读评论区（复盘评论 + proof packet + 验收评论），提炼可泛化模式，经 `skill-builder` 沉淀为 `~/.vb-skills` 的 skill。
 - 边界：insights **不直接沉淀 skill 到 `~/.vb-skills`**（那是 vb-learn 的职责；insights 只在用户明确确认某个 `skill_update` 候选时经 skill-builder 修改本仓库 `skills/`）；vb-learn 不自己写复盘评论。
 - 调用时机：`accept-issue` 与 `accept-milestone` 验收通过后都先触发 insights 复盘、再触发 vb-learn 自学习。
@@ -85,9 +85,7 @@ Read `.vibeRig/project.yaml` and use `output.language` for human-facing retrospe
 
 1. Confirm the work is accepted or explicitly authorized for retrospective generation. Read `references/post-acceptance-retrospective.md` and follow its gate and evidence-bundle flow.
 2. Read `.vibeRig/project.yaml`, including `output.language`, and the referenced requirement docs.
-3. Read Linear proof packet comments and linked implementation evidence:
-   - use `_get_issue` for issue status, description, branch, links, and relations
-   - use `_list_comments` for Proof Packet comments and reviewer handoff notes
+3. Read Linear proof packet comments and linked implementation evidence — ask `vb-linear` for the issue's status, description, branch, links, relations, and Proof Packet/reviewer handoff comments.
 4. Optionally use `subagent-routing` for independent review or domain-specific insight analysis.
 5. Generate learning candidates:
    - project facts and commands
@@ -132,7 +130,7 @@ Every non-`noop` curation proposal requires explicit user confirmation and must 
 
 ## Output Contract
 
-Prefer a Linear comment or user-facing summary for retrospectives. Format retrospectives using `references/report-template.md`. Use `_save_comment` when writing a retrospective back to the Linear issue. Use `_save_document` only when the user explicitly wants a Linear document-level retrospective or project learning note. Only write local files when the project already has an approved local learning location or the user asks for one.
+Prefer a Linear comment or user-facing summary for retrospectives. Format retrospectives using `references/report-template.md`. Ask `vb-linear` to write the retrospective comment back to the Linear issue. Ask `vb-linear` to write a Linear document only when the user explicitly wants a document-level retrospective or project learning note. Only write local files when the project already has an approved local learning location or the user asks for one.
 
 Do not write proof packets into `.vibeRig/`.
 

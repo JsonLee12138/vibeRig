@@ -48,7 +48,7 @@ Return:
    - **≥1 hit** above a reasonable relevance threshold: note the matched page's path/conclusion and actually cite it (path and/or quoted finding) in the delegation brief (step 5) and in the final report when it's relevant to the fix approach — do not just log it silently.
    - This is exactly **one** query per issue, not a query per turn or per `agent-sop` rework round — never re-query mid-task.
    - If the `qmd` MCP server isn't configured/reachable, treat it the same as 0 hits and continue; never block or fail this skill's flow on it.
-4. Mark the issue as in-progress with `_save_issue`.
+4. Ask `vb-linear` to mark the issue as in-progress.
 5. Write a test proving the change before implementing it:
    - **Bug fix**: write a failing reproduction test that demonstrates the bug as described in the `bugger` root cause analysis (Prove-It Pattern). Run it — it **must fail** first; if it passes immediately, it's not testing the right thing.
    - **Non-bug small task**: write or adjust the test(s) that prove the confirmed change works, following `test-driven-development` practice where applicable.
@@ -66,9 +66,9 @@ Return:
 9. Commit the change:
    - Run `git diff --staged --name-only` and confirm only in-scope files are staged.
    - Reference the Linear issue key in the commit message.
-10. Write evidence to Linear with `_save_comment`:
+10. Ask `vb-linear` to write evidence to Linear:
    - Files changed, test result (before/after), validation result, commit hash.
-11. Update Linear issue to ready-for-acceptance state with `_save_issue`.
+11. Ask `vb-linear` to update the Linear issue to ready-for-acceptance state.
 12. Tell the user that `accept-issue` is required for final sign-off and Linear closure.
 
 ## Red Flags

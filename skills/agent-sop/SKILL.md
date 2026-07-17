@@ -13,7 +13,7 @@ Do not outsource the whole task and wait. Delegate bounded phases only. If subag
 
 Do not require tests for every task. Always make an explicit test decision. Use current MCP and local tools for verification.
 
-Subagents must not mutate Linear status, mutate VibeRig task/run/acceptance status, or make final acceptance calls. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent writes the proof packet and status update to Linear when the task is Linear-backed, using `_save_comment` for proof comments and `_save_issue` for issue status or metadata updates.
+Subagents must not mutate Linear status, mutate VibeRig task/run/acceptance status, or make final acceptance calls. Subagents only return phase evidence and a verdict. After the whole task chain completes, the main agent writes the proof packet and status update to Linear when the task is Linear-backed, asking the `vb-linear` skill to post the proof comment and update issue status/metadata.
 
 ## Core Behaviors
 

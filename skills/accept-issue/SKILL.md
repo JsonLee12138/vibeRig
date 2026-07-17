@@ -28,20 +28,20 @@ description: 单个切片 issue 的验收（取代 accept-bug 的单点验收）
 ## 流程
 
 1. 读 `.vibeRig/project.yaml`（`output.language`、linear 上下文）。
-2. 解析入参（issue id/key 或标题），`get_issue` + `list_comments` 读 issue、proof packet、映射的 AC-ids。
+2. 解析入参（issue id/key 或标题），请 `vb-linear` 读 issue 及其评论（proof packet、映射的 AC-ids）。
 3. 定位 AC：从 `requirements/<req-id>/acceptance.json` 取出该 issue 映射的条目。
 4. 逐条按 `verification` 验证（跑命令 / 照步骤操作），记录每条的实际结果。
 5. 确认用户在当前对话中明确表态验收结论。
-6. **通过**：
+6. **通过**（请 `vb-linear` 执行以下写入）：
    - 确认改动已 commit 到对应分支（挂里程碑的 issue 是该里程碑的集成分支 `milestone/<req-id>-<n>`；不挂里程碑的独立 issue 是它自己的分支，PR 已直接面向 main）；
-   - `save_comment` 写验收评论（按上方书写规范：每条 AC 的操作步骤 + 实际看到的结果 + commit hash）；
-   - `save_issue` 把该 issue **及其全部 sub-issue** 状态改到团队最接近"已验收/Done"的状态（先 `list_issue_statuses` 解析，不发明状态名；逐个 sub-issue 单独 `save_issue`，不遗漏）；
+   - 写验收评论（按上方书写规范：每条 AC 的操作步骤 + 实际看到的结果 + commit hash）；
+   - 把该 issue **及其全部 sub-issue** 状态改到团队最接近"已验收/Done"的状态（先解析团队工作流状态，不发明状态名；逐个 sub-issue 单独更新，不遗漏）；
    - 不挂里程碑的独立 issue：告诉用户下一步是 `merge-issue`，由它负责合并这个 issue 自己的 PR；挂里程碑的 issue：告诉用户合并要等 `accept-milestone`。
 7. **发现问题**：
-   - `save_issue` 创建 `type:acceptance-fix` issue，挂同一 Milestone；描述含问题现象、涉及 AC-id、修复验证方式；
+   - 请 `vb-linear` 创建 `type:acceptance-fix` issue，挂同一 Milestone；描述含问题现象、涉及 AC-id、修复验证方式；
    - 修复在**同一集成分支**上小修（走 `task-runner <fix-issue-id>`），不开新分支新 worktree；
    - 原 issue 状态保持非终态。
-8. **insights 复盘（验收通过后）**：触发 `insights` 对该 issue 复盘，结论用 `save_comment` 写入该 issue 评论区（复盘评论是给人看的，也是 vb-learn 的输入）。
+8. **insights 复盘（验收通过后）**：触发 `insights` 对该 issue 复盘，结论请 `vb-linear` 写入该 issue 评论区（复盘评论是给人看的，也是 vb-learn 的输入）。
 9. **vb-learn 自学习**：待第 8 步复盘评论写入后，触发 `vb-learn <issue-key>` 从评论区自学习（复盘评论 + proof packet + 验收评论）；无可泛化经验时由 vb-learn 自行返回 `skipped` 并说明原因。
 10. 报告：AC 逐条结果、验收评论链接、状态变更、（如有）acceptance-fix issue、复盘评论链接、vb-learn 结果（沉淀的 skill 或 skipped 原因）。
 
@@ -59,7 +59,7 @@ description: 单个切片 issue 的验收（取代 accept-bug 的单点验收）
 - [ ] 用户当前明确表态了验收结论。
 - [ ] 每条映射 AC 按 `verification` 实际验证过，结果已记录。
 - [ ] 验收评论符合书写规范（逐步操作 + 看到的结果 + commit hash），无抽象话单独出现。
-- [ ] 状态经 `list_issue_statuses` 解析后更新，且覆盖该 issue 及其全部 sub-issue；未新开/操作 PR、未动 main。
+- [ ] 状态经 `vb-linear` 解析团队工作流状态后更新，且覆盖该 issue 及其全部 sub-issue；未新开/操作 PR、未动 main。
 - [ ] 发现的问题已建 `type:acceptance-fix` issue 并挂同里程碑。
 - [ ] 验收通过后：insights 复盘评论已写入评论区；
 - [ ] vb-learn（沉淀或 skipped 有原因）。

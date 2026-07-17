@@ -45,12 +45,12 @@ description: Issues 拆分（Rolling Wave，按里程碑滚动执行）。当用
 3. 依据 `architecture.md` 的依赖关系排出实现顺序（自底向上：schema → 模型 → API → 前端），但切片方式保持垂直。
 4. 起草 issue 清单：每个 issue 含目标、映射 AC-ids、验证命令、尺寸、依赖（blocks/blockedBy）。逐条核对三条标准。
 5. 向用户展示清单，确认后写 Linear。
-6. Linear 写入（用共享 `linear` skill 的规则）：
-   - 先 `list_issues` 查重（按 Milestone 过滤）；
-   - `save_issue` 创建，挂对应 Milestone；`blocks`/`blockedBy` 表达切片依赖；打 `req:<req-id>` label；
+6. Linear 写入（请 `vb-linear` 执行，遵守其规则）：
+   - 先请 `vb-linear` 按 Milestone 过滤查重已有 issue；
+   - 请 `vb-linear` 创建 issue，挂对应 Milestone；`blocks`/`blockedBy` 表达切片依赖；打 `req:<req-id>` label；
    - 描述含：目标、本地文档路径引用（不粘贴全文）、AC-ids、验证命令；
    - **只建单：不指派 assignee、不写推荐 subagent** —— subagent 路由在 `task-runner` 执行时现场进行。
-7. 更新 `linear.yaml`（issueKeys）；写一条计划同步评论（issue 清单 + AC 覆盖 + 依赖顺序）。
+7. 更新 `linear.yaml`（issueKeys）；请 `vb-linear` 写一条计划同步评论（issue 清单 + AC 覆盖 + 依赖顺序）。
 
 ## 红线
 
@@ -58,7 +58,7 @@ description: Issues 拆分（Rolling Wave，按里程碑滚动执行）。当用
 - issue 描述里写了推荐 subagent 或直接指派 → 执行时路由是 task-runner 的职责，建单时选定的到执行时往往已不是最优。
 - 某个 issue 不映射任何 AC-id → 不可验证的 issue 不建。
 - 创建了 Checkpoint / QA / 集成类 issue → agent-sop 每任务自带 QA；集成工作说明切片不垂直。
-- 未查重就建单 → 先 `list_issues`。
+- 未查重就建单 → 先请 `vb-linear` 枚举已有 issue。
 - Sub-issue 超过一层 → 层级封顶：Issue → Sub-issue（≤1 层）。
 
 ## 检查清单

@@ -9,8 +9,8 @@
     "version": { "type": "integer", "const": 1 },
     "requirement": {
       "type": "string",
-      "description": "需求 id，如 req-0003",
-      "pattern": "^req-[0-9]{4}$"
+      "description": "需求 id（语义 slug，如 payment-refactor；兼容历史 req-NNNN）",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
     },
     "criteria": {
       "type": "array",

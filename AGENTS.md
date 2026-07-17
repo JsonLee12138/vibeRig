@@ -13,6 +13,10 @@
 
 `pnpm-lock.yaml` 不手动改，改完 `package.json` 后跑 `pnpm install` 让它自动同步。
 
+## Skill Design: Shared Reference Skills
+
+像 `vb-linear` 这类被多个 skill 引用的共享参考 skill，不是独立的用户可触发工作流——调用方只描述需要完成的能力（如"读 issue"、"写评论"），具体走哪个工具由被引用的 skill 自己决定。这条规则约束所有共享参考 skill 的设计，不写进单个 skill 自己的 frontmatter `description`（那里只描述这个 skill 做什么、覆盖哪些能力）。
+
 <!-- inject:viberig:start -->
 ## VibeRig Output Language
 

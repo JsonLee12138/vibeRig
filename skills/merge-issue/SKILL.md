@@ -27,7 +27,7 @@ description: 合并一个不挂在任何里程碑下的独立 issue 自己的 PR
    - CI 未过、必需审批未齐全 → 停止并报告，不合并。
 5. 合并该 PR 到 main。
 6. **同步**：合并后把本地 main 分支与远程 main 同步一致（`git fetch` + `git pull` 或等效操作），确认本地内容和远程一致。
-7. `save_comment` 在该 issue 下记录合并结果（PR 链接、合并 commit hash）。
+7. 请 `vb-linear` 在该 issue 下记录合并结果（PR 链接、合并 commit hash）。
 8. 报告：PR 链接、合并 commit hash、是否遇到冲突及如何解决、本地/远程同步结果。
 
 ## 红线

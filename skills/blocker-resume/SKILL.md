@@ -27,7 +27,7 @@ The user may provide:
 - branch, PR, commit, validation log, or CI URL
 - plain-language blocker summary
 
-If no Linear issue is provided, search the registered Linear Project from `.vibeRig/project.yaml` when Linear tools are available. Use `_list_projects` or `_search` to confirm the project and `_list_issues` to find blocked issues. If multiple blocked issues match, ask the user to choose.
+If no Linear issue is provided, search the registered Linear Project from `.vibeRig/project.yaml` when Linear tools are available. Ask vb-linear to confirm the project and enumerate blocked issues. If multiple blocked issues match, ask the user to choose.
 
 ## Output Contract
 
@@ -58,14 +58,13 @@ Read Linear comments, blocker comments, proof packet comments, and linked valida
 
 ## Linear Access
 
-See the `linear` skill for tool mapping, the status-mapping method, and language policy.
+See the `vb-linear` skill for tool selection, the status-mapping method, and language policy.
 
 ## Workflow
 
 1. Resolve the blocked Linear issue, project output language, and matching local requirement docs:
-   - use `_get_issue` for a named issue
-   - use `_list_issues` for blocked issue queues
-   - use `_list_comments` for blocker comments and prior proof packets
+   - ask vb-linear to read a named issue, or enumerate blocked issue queues
+   - ask vb-linear to read blocker comments and prior proof packets
 2. Confirm the issue is actually blocked or has an unresolved blocker comment.
 3. Classify the blocker:
    - missing product decision
@@ -81,13 +80,13 @@ See the `linear` skill for tool mapping, the status-mapping method, and language
    - Use `task-runner` when implementation or validation can continue now.
    - Use `subagent-routing` for specialized investigation, QA, security, architecture, or implementation rework.
 5. If work resumes, build a concise Task Brief that includes the blocker evidence and expected correction.
-6. After validation, post a Linear comment with `_save_comment`:
+6. After validation, ask vb-linear to post a Linear comment:
    - blocker classification
    - action taken
    - validation commands/results
    - acceptance IDs affected
    - remaining risks or user decisions
-7. Move/update Linear status with `_save_issue` according to the team's workflow only after evidence supports it.
+7. Ask vb-linear to move/update the Linear status according to the team's workflow only after evidence supports it.
 
 ## Red Flags
 
@@ -107,7 +106,7 @@ See the `linear` skill for tool mapping, the status-mapping method, and language
 
 ```bash
 # Confirm the Linear issue key resolves (placeholder — replace with actual key)
-# Use _get_issue in the Linear plugin to verify the issue exists and read its current status
+# Ask vb-linear to read the issue and verify it exists and read its current status
 ```
 
 - [ ] The target issue and requirement docs were resolved.

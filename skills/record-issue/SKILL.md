@@ -35,10 +35,10 @@ description: 记录小需求/小改动的快速入口，不走完整需求流水
 
 ### 3. 建单
 
-用共享 `linear` skill 的规则：
+请 `vb-linear` 执行，遵守其规则：
 
-- 先 `list_issues` 查重；
-- `save_issue` 创建：标题用 `output.language`；描述含**影响面分析结论 + 验证方式**（具体命令或可照做的人工步骤，禁止"改完验证一下"这类抽象话）；
+- 先请 `vb-linear` 查重已有 issue；
+- 请 `vb-linear` 创建 issue：标题用 `output.language`；描述含**影响面分析结论 + 验证方式**（具体命令或可照做的人工步骤，禁止"改完验证一下"这类抽象话）；
 - 不指派、不选 subagent（执行时由 `task-runner` 路由）。
 
 ## 红线

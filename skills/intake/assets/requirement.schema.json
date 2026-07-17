@@ -12,7 +12,11 @@
       "required": ["id", "title", "status", "prd", "created"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^req-[0-9]{4}$" },
+        "id": {
+          "type": "string",
+          "description": "语义 slug（全小写 kebab-case，如 payment-refactor）；兼容历史 req-NNNN",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+        },
         "title": { "type": "string" },
         "status": {
           "type": "string",
@@ -20,8 +24,8 @@
         },
         "prd": {
           "type": ["string", "null"],
-          "description": "关联 PRD id（如 prd-0001），无 PRD 时为 null",
-          "pattern": "^prd-[0-9]{4}$"
+          "description": "关联 PRD id（语义 slug，如 checkout-revamp；兼容历史 prd-NNNN），无 PRD 时为 null",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
         },
         "created": { "type": "string", "format": "date" }
       }
