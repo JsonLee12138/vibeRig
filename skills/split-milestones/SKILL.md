@@ -1,67 +1,77 @@
 ---
 name: split-milestones
-description: 里程碑拆分——第一个写 Linear 结构的 skill。当用户要拆里程碑、把需求拆成 Milestone、或 define-acceptance 完成后进入交付轨时使用。前置门禁：acceptance.json 必须存在。
+description: 将需求按可验收用户价值拆成里程碑。由 pre-development 调用时仅生成本地 draft；老板批准完整开发前方案后才 materialize 到 Linear。也可用于继续已批准需求的里程碑规划。
 ---
 
-# Split Milestones（里程碑拆分）
+# Split Milestones（里程碑规划）
 
-用本 skill 把一个需求切成若干 Linear Milestone。**这是探索轨到交付轨的分界：第一个写 Linear 结构的 skill。**
+先在开发前阶段形成无外部副作用的交付草案，审批后再把已批准计划写入 Linear。
 
-## 前置门禁（DoR）
+## 前置门禁
 
-- `requirements/<req-id>/acceptance.json` 必须存在且通过 schema 校验——没有验收标准不拆分，停止并引导走 `define-acceptance`。
-- 跨模块需求：`architecture.md` 必须存在——模块依赖图直接决定里程碑边界，缺失则停止并引导走 `architecture-design`。
+- `acceptance.json` 存在并通过 schema 校验；
+- `architecture.md`、测试计划、风险登记和 CTO 汇总所需输入已完成，或明确说明不适用；
+- 每条 AC 可分配到一个可交付阶段。
 
-## 契约
+## 两种模式
 
-- 创建 Linear Milestone（挂容器 Project）、回填 `requirement.yaml`、更新 `linear.yaml`。
-- 只切里程碑，**不拆 issue**（issue 走 `split-issues`，按里程碑滚动拆）。
-- 不指派任何人/subagent。
+### Draft 模式
 
-## 里程碑标准（大厂四条，缺一不可）
+由 `pre-development` 在老板审批前调用：
 
-每个候选里程碑必须同时满足：
+1. 读取需求、架构、验收、测试、风险、发布与追踪信息；
+2. 按可验收用户价值和可发布增量拆分，不按模块一一对应；
+3. 架构依赖只约束顺序、并行性和技术边界；
+4. 每条 AC 恰好分配到一个里程碑并回填 `acceptance.json`；
+5. 将里程碑草案写入 `delivery-plan.md` 与 `requirement.yaml`，`linear_id: null`、`status: draft`；
+6. 不向老板逐项确认，方案随 CTO 汇总包一次审批；
+7. 禁止写 Linear。
 
-1. **完成后用户能做一件之前做不了的事**（能写出"用户从此可以…"）；
-2. **有独立的验收标准**：分到了自己的 AC-ids；
-3. **值得向外汇报进度**；
-4. **通常包含 ≥3 个任务**——预估不足 3 个任务时：与相邻里程碑合并；若整个需求都撑不起一个里程碑，判定该需求无需里程碑，停止并引导走 `record-issue`。
+### Materialize 模式
 
-## 流程
+只在 `requirement.planning.owner_approval` 为 `approved`，且状态为 `ready_for_development` 或 `conditionally_approved` 的已满足条件状态时执行：
 
-1. 读 `requirement.yaml`、`acceptance.json`、`architecture.md`（存在时）、`.vibeRig/project.yaml`（linear 上下文与 `output.language`）。
-2. 依据模块依赖图切里程碑：模块边界 = 里程碑边界；模块依赖顺序 = 里程碑先后顺序。单模块小需求可以只有一个里程碑。
-3. 把 `acceptance.json` 的 AC-ids 分配到各里程碑：每条 AC 恰好归属一个里程碑，不遗漏、不重复；回填每条 AC 的 `milestone` 字段。
-4. 对每个候选里程碑逐条核对四条标准，不满足则合并或降级。
-5. 向用户展示拆分方案（里程碑列表 + 各自 AC-ids + 顺序理由），确认后再写 Linear。
-6. Linear 写入（请 `vb-linear` 执行，遵守其规则）：
-   - 先请 `vb-linear` 查重已有 milestone，已存在同名/同需求的先复用或更新；
-   - 请 `vb-linear` 创建 milestone，挂 `project.yaml` `linear.project_id`；
-   - Milestone 描述只放三样：Linear Document 链接 + 本地契约路径（`.vibeRig/requirements/<req-id>/`）+ 该里程碑的 AC-id 清单。**不粘贴文档全文。**
-7. 回填本地文件：
-   - `requirement.yaml`：`milestones` 列表（每项：`id` / `linear_id` / `title` / `module` / `ac_ids` / `status: not_started`），需求 `status` 置为 `planned`；
-   - `linear.yaml`：milestoneIds。
-8. 请 `vb-linear` 在评论区写一条计划同步摘要（里程碑清单 + AC 覆盖）。
+1. 校验待写计划与审批范围一致；
+2. 请 `vb-linear` 按需求和标题查重，优先复用/更新；
+3. 创建或更新挂在容器 Project 下的 Milestone；
+4. 描述仅放 Document 链接、本地契约路径、用户价值、AC IDs，不粘贴全文；
+5. 回填 `linear_id`，状态改为 `not_started`，更新 `linear.yaml`；
+6. 需求状态置为 `planned`，写一条计划同步摘要。
+
+## 里程碑标准
+
+每个候选项必须同时满足：
+
+1. 完成后用户能做一件此前做不到的事，或获得一个可独立衡量的结果；
+2. 有不重不漏的 AC 集合和老板可执行的阶段验收；
+3. 可以独立发布、启用或在隔离环境中演示；
+4. 值得对外汇报进度，通常包含至少 3 个垂直任务；
+5. 风险、依赖、迁移和回滚边界可说明。
+
+纯脚手架、纯数据库、纯 API、纯 UI 或“联调/QA”不能独立成为里程碑；把它们并入产生用户价值的阶段。
+
+## 本地草案内容
+
+每个里程碑至少包含：`id`、标题、用户价值、范围/非目标、主要交付域（兼容 `module` 字段）、AC IDs、测试用例 IDs、风险 IDs、依赖、发布/回滚信号、预计 issue 数和规划置信度。
+
+后续里程碑允许保留较低细节并标为 indicative，但范围、价值、AC、风险和依赖必须在审批前可见。
 
 ## 红线
 
-- acceptance.json 不存在就开拆 → DoR 门禁，停止。
-- 未查重就请 `vb-linear` 建 milestone → 重复里程碑污染 Project，先查后建。
-- 某条 AC 没有归属里程碑、或归属了两个 → AC 分配必须是不重不漏的划分。
-- Milestone 描述里粘贴了 intake/PRD 全文 → 只放链接、路径、AC-ids。
-- 拆出了"不满足四条标准"的里程碑（如纯技术脚手架里程碑）→ 合并或降级走 `record-issue`。
-- 未经用户确认拆分方案就写入 Linear → 先展示后写入。
-- 顺手把 issue 也拆了 → issue 拆分是 `split-issues` 的职责，且要滚动拆。
+- 老板审批前创建或更新 Linear Milestone。
+- 以模块边界代替用户价值边界。
+- AC 遗漏、重复归属或里程碑无可执行验收。
+- Materialize 时没有检查批准状态和计划差异。
+- 把 Issue 拆分或 subagent 路由混入本 skill。
 
-## 检查清单
+## 完成检查
 
-- [ ] DoR 门禁通过（acceptance.json 存在且校验通过）。
-- [ ] 每个里程碑满足四条标准。
-- [ ] AC-ids 对里程碑不重不漏；acceptance.json 的 `milestone` 字段已回填。
-- [ ] 查重后才创建；Milestone 描述只含链接/路径/AC-ids。
-- [ ] `requirement.yaml` milestones 列表已回填（初始 `not_started`），需求状态置 `planned`；`linear.yaml` 已更新。
+- [ ] 每个里程碑满足五项标准，AC 分配不重不漏。
+- [ ] Draft 只写本地，`linear_id` 为 null，状态为 `draft`。
+- [ ] Materialize 前批准状态、审批条件、查重均通过。
+- [ ] 正式 Milestone 与审批版本一致，本地 ID/Linear ID 已回填。
 - [ ] 人读内容使用 `output.language`。
 
 ## 下一步
 
-`split-issues`——只拆第一个（下一个待做的）里程碑，后续里程碑到跟前再拆（Rolling Wave）。
+Draft 模式交给 `split-issues` 生成 Issue 草案并返回 `pre-development`；Materialize 后由 `split-issues` 只创建下一个里程碑的正式 Issues。

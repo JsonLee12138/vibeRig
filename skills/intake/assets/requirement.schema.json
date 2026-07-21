@@ -20,28 +20,51 @@
         "title": { "type": "string" },
         "status": {
           "type": "string",
-          "enum": ["intake", "planned", "in_progress", "accepted", "archived"]
+          "enum": [
+            "intake",
+            "requirement_baselined",
+            "pre_development",
+            "pre_development_blocked",
+            "awaiting_owner_approval",
+            "conditionally_approved",
+            "ready_for_development",
+            "planned",
+            "in_progress",
+            "accepted",
+            "archived"
+          ]
         },
         "prd": {
           "type": ["string", "null"],
-          "description": "关联 PRD id（语义 slug，如 checkout-revamp；兼容历史 prd-NNNN），无 PRD 时为 null",
+          "description": "关联 PRD id；无 PRD 或尚未完成自动判断时为 null",
           "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
         },
-        "created": { "type": "string", "format": "date" }
+        "created": { "type": "string", "format": "date" },
+        "planning": {
+          "type": "object",
+          "required": ["prd_decision", "prd_reason", "owner_approval", "approved_at"],
+          "additionalProperties": false,
+          "properties": {
+            "prd_decision": { "type": "string", "enum": ["pending", "existing", "create", "not_required"] },
+            "prd_reason": { "type": ["string", "null"] },
+            "owner_approval": { "type": "string", "enum": ["pending", "approved", "conditional", "rejected"] },
+            "approved_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
       }
     },
     "milestones": {
       "type": "array",
-      "description": "由 split-milestones 回填；intake 时为空数组",
+      "description": "开发前为本地草案；老板批准后由 split-milestones 写入 Linear id",
       "items": {
         "type": "object",
         "required": ["id", "linear_id", "title", "module", "ac_ids", "status"],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "pattern": "^ms-[0-9]+$" },
-          "linear_id": { "type": "string" },
+          "id": { "type": "string", "pattern": "^(ms-[0-9]+|M[0-9]+)$" },
+          "linear_id": { "type": ["string", "null"] },
           "title": { "type": "string" },
-          "module": { "type": "string" },
+          "module": { "type": "string", "description": "兼容字段；填写主要交付域，不作为里程碑切分依据" },
           "ac_ids": {
             "type": "array",
             "minItems": 1,
@@ -49,8 +72,7 @@
           },
           "status": {
             "type": "string",
-            "description": "四态：未开始 → 进行中 → 待验收 → 已验收",
-            "enum": ["not_started", "in_progress", "pending_acceptance", "accepted"]
+            "enum": ["draft", "not_started", "in_progress", "pending_acceptance", "accepted"]
           }
         }
       }

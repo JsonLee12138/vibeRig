@@ -30,10 +30,8 @@ gate_policy:
   manual_checks: []
 subagents:
   default_research: "researcher"
-  default_planning: "planner"
-  default_implementation: "implementation"
   default_qa: "qa"
+  default_security_audit: "security_auditor"
   default_review: "code_review"
-  default_integration: "integrator"
 `;
 }

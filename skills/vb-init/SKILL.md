@@ -130,7 +130,7 @@ Report as **partial** when Linear tools are unavailable (including login decline
 
 **7a. 安装插件基线 agents**
 
-调用 `built-in-agents`，将 vb-plugin 自带的 8 个基线 agent 渲染到 Codex（`.codex/agents/*.toml`）、Claude Code（`.claude/agents/*.md`）、Cursor（`.cursor/agents/*.md`）三个平台（已存在的跳过）。
+调用 `built-in-agents`，按其 `agents.manifest.json` 将当前基线团队渲染或安全升级到 Codex（`.codex/agents/*.toml`）、Claude Code（`.claude/agents/*.md`）、Cursor（`.cursor/agents/*.md`）三个平台。未修改的旧基线可升级；用户定制文件不覆盖；废弃 Agent 只报告，不自动删除。
 
 **7b. 调用 `update-team` 分析项目**
 

@@ -126,6 +126,10 @@ Subagents must:
 
 Any other need (implementation, test authoring, integration, domain-specific review, architecture, etc.) has no fixed config key — resolve it ad hoc at the point of need: pick the closest matching capability from what's actually available (`.codex/agents/`, `.claude/agents/`, `.cursor/agents/`, or the platform's built-in agent types), and fall back to a generic worker only when nothing closer exists. Record the fallback reason when using a less specific capability.
 
+VibeRig 基线能力优先匹配：实现 → `implementation`；批准的自动化 TC 编写 → `test_engineer`；前端/后端/数据架构调研 → `frontend_architect` / `backend_architect` / `data_architect`；SRE、性能、发布和回滚 → `reliability_engineer`；UI/UX → `uiux_design`；架构攻击 → `architecture_red_team`；跨 Issue 集成就绪 → `integrator`。
+
+`qa` uses `test_design` or `test_review`; `security_auditor` uses `design_threat_model` or `code_security_review`; `uiux_design` uses `report_only` inside pre-development and `artifact_write` only for explicitly authorized artifacts. Put the mode in the Brief so one Agent invocation has one job.
+
 Codex, Claude Code, and Cursor each already provide a native subagent/dispatch mechanism (see [Claude Code subagents](https://code.claude.com/docs/en/agent-view), [Codex subagents](https://developers.openai.com/codex/subagents), [Cursor subagents](https://cursor.com/cn/docs/subagents)) — this skill decides *whether* and *which*, not how the underlying platform dispatches. Use that platform's own mechanism to actually invoke the chosen capability.
 
 If no suitable subagent exists for a non-task phase, the main agent may proceed directly and must report the missing capability as a routing risk. If no suitable subagent exists for Linear task execution, stop and report the missing capability before implementation.

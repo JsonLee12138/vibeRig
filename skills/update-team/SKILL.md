@@ -14,6 +14,7 @@ description: Analyze the current project and reconcile the agent team across Cod
 不允许：
 - 手写平台原生文件（TOML/MD）——新建/更新一律经过 `agent-creator`，避免三个平台的团队漂移不一致。
 - 复制插件基线 agents（由 `built-in-agents` 负责）
+- 更新、删除或重新定义 `built-in-agents/agents.manifest.json` 中的基线 agents
 - 操作用户级全局 agents（`~/.codex/agents/`、`~/.claude/agents/`、`~/.cursor/agents/`）
 - 修改 `project.yaml` 的 `subagents` 以外的任何字段
 - 无推理依据地创建 agent
@@ -85,6 +86,8 @@ ls .cursor/agents/*.md 2>/dev/null
 - **跳过** — 已存在且推理仍需要（`--force` 则移入待更新）
 - **建议删除** — 某平台已存在该 agent 文件，但推理判断整个团队不再需要这个角色
 
+先读取 `built-in-agents/agents.manifest.json`。manifest 中的基线 Agent 不进入“建议删除”，也不由本 skill 更新；即使当前项目暂时不需要某个基线能力，也保留给 VibeRig 的动态路由。
+
 ### 4. 执行变更
 
 **创建/更新**：对每个待创建/待更新的 agent，调用 `agent-creator`，传入：
@@ -101,7 +104,7 @@ ls .cursor/agents/*.md 2>/dev/null
 
 ### 5. 更新 `project.yaml` subagents 段
 
-仅修改 `subagents` 字段，新增已创建 agent 的 key，移除已删除 agent 的 key。
+`subagents` 只允许四个固定偏好键：`default_research`、`default_qa`、`default_security_audit`、`default_review`。只有当本轮创建/删除影响这四种默认能力时才修改对应值；实现、集成、测试编写、架构或领域 Agent 均由 `subagent-routing` 现场发现，不为它们增加配置键。
 
 ### 6. 输出报告
 

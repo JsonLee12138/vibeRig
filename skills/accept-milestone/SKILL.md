@@ -1,74 +1,64 @@
 ---
 name: accept-milestone
-description: 里程碑验收（取代 accept）。当用户对某个里程碑说"验收里程碑"、"验收通过"、"合并"时使用。验收决定必须来自用户当前明确表态。
+description: 对完整里程碑执行证据汇总、增量回归、E2E、老板 UAT、PR 审核与最终合并。当用户要求“验收里程碑”“验收通过并合并”时使用；普通 Issue 不要求预先逐个人工验收。
 ---
 
 # Accept Milestone（里程碑验收）
 
-用本 skill 对**整个里程碑**做最终验收。这是两级验收的上层，负责审核并**合并** `task-runner` 在各 issue 完成过程中已发起并持续更新的集成分支 → main PR；本 skill 不新建 PR。
-
 ## 契约
 
-- 范围：一个里程碑（其下全部 issue 已完成并经 `accept-issue` 或等价验证）。
-- 验收决定必须来自用户当前明确表态。
-- 前置：`requirement.yaml`（main 分支工作区，不是里程碑 worktree 里的副本）中该里程碑 `status: pending_acceptance`；不是则停止并说明差什么（还有 issue 未完成 → `task-runner`；未拆分 → `split-issues`）。
-- 本 skill 不做新的开发工作；发现缺陷走 §缺陷回流。
-- `requirement.yaml` 的所有读写都在 **main 分支工作区**进行，不在里程碑 worktree 里改。
+- 范围是一个 `pending_acceptance` 里程碑及其全部 Issue、sub-issue 和常驻集成 PR。
+- 普通 Issue 只需具备 `task-runner` 的有效技术 Evidence；standalone 不适用。
+- 用户触发“开始验收”只授权检查；只有当前对话中明确批准才允许合并和写终态。
+- 不做新功能开发、不新建 PR。缺陷走“缺陷回流”。
+- `requirement.yaml` 只在 main 分支工作区读写。
 
-## 验收记录书写规范（强制）
+## 证据与回归边界
 
-与 `accept-issue` 相同：写入 Linear 的验收评论必须是**可照做的操作步骤**——第一步做什么、第二步做什么；在哪个文件配置什么；打开哪个网页看到什么。**禁止**"功能正常""验证通过"这类抽象话单独出现。步骤来源：该里程碑全部 AC 的 `verification` 字段展开成人话。
+- 汇总每个 Issue 的 Proof Packet、AC/TC 覆盖、Review、PR CI 和残余风险。
+- 相同 commit、要求环境和测试定义的成功 Unit/Integration/Contract Evidence 直接复用。
+- 只执行 `executionStage: milestone` 的 TC、跨 Issue E2E、里程碑回归集合、失效 Required Gate 和老板 UAT。
+- 不把“全量回归”解释为人工重跑每个 Issue 的全部单元测试。
+- 旧需求没有 TC 时按里程碑 AC 进入 `legacy mode`，仍避免重复执行同一有效命令。
+
+## 验收评论
+
+评论按 `acceptance-guide.md` / `ownerVerification` 展开：前置配置、命令/服务、入口、顺序操作、精确数据、页面/图表状态、失败信号、证据和清理。禁止抽象结论。
 
 ## 流程（严格按顺序）
 
-1. **前置确认**：读 **main 分支工作区**的 `requirement.yaml`，确认目标里程碑存在、状态为 `pending_acceptance`、知道它属于哪个需求/PRD、是不是该需求最后一个里程碑。
-2. **全量回归**：按 `project.yaml` `gate_policy` 跑全部 required commands / manual checks；再逐条验证该里程碑的 AC（按 `verification`）。任何一项失败 → 停止，走缺陷回流，不进入合并。
-3. **拉取最新 main**：`git fetch` 后把最新远程 main rebase/merge 到集成分支——**不基于最新 main 的 PR 不算 PR**。若产生新 commit，push 更新到 `task-runner` 已发起的那个 PR 分支。
-4. **冲突处理**：
-   - 无冲突 → 直接继续；
-   - 有冲突 → 先逐处分析：这处冲突涉及哪些改动、双方各自想干什么、取舍会影响什么；**与用户确认取舍后**再解决合并。不自作主张。
-5. **合并 PR**：集成分支（`milestone/<req-id>-<n>`）→ main 的 PR 已由 `task-runner` 在各 issue 完成过程中发起并持续更新，**本 skill 不新建 PR**。核对该 PR 存在且目标分支正确；补全/更新 PR 正文（里程碑标题、issue 清单、AC 覆盖、本次全量回归证据、残余风险）；确认 CI 通过、无冲突、必需审批齐全后合并该 PR。任一不满足 → 记录阻塞并停止，不置任何终态；若该 PR 不存在，停止并报告，退回 `task-runner` 补发起。本地main分支合并远程main代码。
-6. **issue 状态兜底核对**：请 `vb-linear`（见该 skill 的能力映射与规则）枚举该里程碑下全部 issue（含 sub-issue），逐个确认状态已是 Done；若有遗漏（如漏走 `accept-issue` 或验收后被改动），请 `vb-linear` 补齐（先解析团队工作流状态，不发明状态名）。
-7. **Linear 记录**（请 `vb-linear` 执行）：
-   - Milestone 验收评论（按书写规范：逐步操作说明 + 每步看到的结果 + PR 链接 + commit）；
-   - 写 Project Update（该里程碑完成、整体进度）。
-8. **更新 requirement.yaml**：在 **main 分支工作区**把该里程碑 `status` 置为 `accepted`。
-9. **insights 复盘**：触发 `insights` 对该里程碑复盘（聚合其名下全部 issue 的证据），结论请 `vb-linear` 写入 Linear 评论区（紧随验收评论）。
-10. **vb-learn 自学习**：待第 9 步复盘评论写入后，触发 `vb-learn <里程碑id>` 从评论区自学习（复盘评论 + 各 issue 的 proof packet + 验收评论）；无可泛化经验时由 vb-learn 自行返回 `skipped`。
-11. **归档判定**：
-    - 若这是该需求**最后一个**里程碑：需求 `status: accepted`（main 分支工作区），目录迁入 `requirements/archive/<req-id>/`，并做需求级复盘汇总（insights 汇总各里程碑复盘 → 写入 Linear；`vb-learn <req-id>` 做需求级自学习）；
-    - 若该需求关联 PRD：扫描所有 `requirement.yaml`（main 分支工作区，含 `archive/`），该 PRD 名下需求**全部** accepted 时把 PRD 目录迁入 `prd/archive/`；有任何一个未 accepted 则不动。
-12. **清理 worktree**：确认集成分支已合入且无未推送 commit（`git log origin/<branch>..<branch>` 为空）、工作区干净（`git status --short` 为空）后 `git worktree remove`；两项检查任一不过 → 不删，报告原因。
-13. 报告：回归结果、PR 链接与合并结果、issue 状态核对结果、Linear 记录、requirement.yaml 变更、复盘评论链接、vb-learn 结果、归档结果、清理结果。
+1. **前置**：读 main 工作区 `requirement.yaml`，确认 Milestone、`pending_acceptance`、所属需求/PRD、是否最后一个里程碑；定位 `task-runner` 已维护的集成分支 → main PR。
+2. **Issue Evidence 审核**：枚举全部 Issue/sub-issue，核对当前集成 commit 上 Required TC、Gate 和 Review；普通 Issue 不要求已有 `accept-issue` 评论。缺失、失败或未批准风险阻塞验收。
+3. **同步最新 main**：`git fetch` 后将最新远程 main rebase/merge 到集成分支。冲突必须逐处说明双方意图和影响并与用户确认；不得自行取舍。产生新 commit 时 push 更新原 PR，并使相关 Evidence 失效。
+4. **当前 commit CI**：等待/读取 Required Checks；只接受与同步后 commit 一致的结果。失败时停止并回流。
+5. **里程碑验证**：执行里程碑 TC、跨 Issue E2E、增量回归、失效 Gate 和 `gate_policy.manual_checks`；逐条记录环境、执行者、命令/步骤、结果和证据。
+6. **老板 UAT**：按验收指南完成配置、启动、操作、数据和可视化检查；记录失败信号、证据、清理和残余风险。
+7. **批准门禁**：汇报 TC/Gate/CI/UAT 与风险。用户已明确“通过并合并”时继续；否则等待明确批准、拒绝或条件性结论。
+8. **合并 PR**：确认目标为 main、CI、冲突、必需审批和批准范围均满足；更新 PR 正文（Issue、AC/TC、回归/UAT Evidence、残余风险）后合并，本地 main 同步远程。
+9. **状态与记录**：请 `vb-linear` 把全部 Issue/sub-issue 更新为团队最接近 Done 的状态，写可复现的 Milestone 验收评论和 Project Update；在 main 工作区把 Milestone 置 `accepted`。
+10. **复盘与归档**：依次执行 `insights`、`vb-learn <milestone-id>`；最后一个 Milestone 时归档需求并做需求级复盘/学习，关联 PRD 仅在全部需求 accepted 后归档。
+11. **发布验证**：若本流程包含部署，执行 `post_release` Smoke，并按风险检查日志、指标、告警与回滚；未部署则记录为发布交接项，不伪造 PASS。
+12. **清理**：仅在 PR 已合入、分支无未推送 commit、worktree 干净时移除 worktree；否则保留并报告。
 
 ## 缺陷回流
 
-验收中发现的 bug 走 `bugger`（独立流程：归因分析 → triage）：影响当前在途里程碑 → 挂该里程碑；否则 → 容器 Project backlog。
+失败必须关联 AC-ID/TC-ID、当前 commit、环境和证据。产品缺口回到定向需求评审；实现缺陷走 `bugger`/修复 Issue 并挂当前 Milestone；环境或 CI 故障标明阻塞源。只重跑失败 TC、直接依赖 TC 和失效 Gate。
 
 ## 红线
 
-- 里程碑状态不是 `pending_acceptance` 就开始验收 → 前置不满足，停止。
-- 没拉最新远程 main 就合并 PR → 第 3 步是强制的。
-- 有冲突却没跟用户确认取舍就解决了 → 撤回，逐处分析后与用户确认。
-- 回归没过就合并 → 任何回归失败都阻塞合并。
-- 在本 skill 新建了 PR → PR 由 `task-runner` 在各 issue 完成过程中发起并持续更新，本 skill 只同步、审核、合并。
-- 在里程碑 worktree 里改了 `requirement.yaml` → 必须在 main 分支工作区改。
-- 验收评论是抽象话 → 违反书写规范，重写成逐步操作说明。
-- PRD 名下还有未 accepted 的需求却归档了 PRD → 扫描必须覆盖 `requirements/` 与 `archive/` 全部 requirement.yaml。
-- 未验证推送/干净状态就删 worktree → 两项检查缺一不可。
-- 合并 PR 前没核对该里程碑下全部 issue（含 sub-issue）状态 → 第 6 步是强制的兜底，不能假设 `accept-issue` 一定已正确回写。
+- 在同步最新 main 前完成最终回归并直接复用旧 commit 证据。
+- 无条件重跑全部 Issue 的 Unit/Integration 测试。
+- 普通 Issue 因未走 `accept-issue` 而被拒绝，即使技术 Evidence 完整有效。
+- 用户只说“开始验收”就推断批准并合并。
+- Required TC、CI、UAT 或审批未通过却合并。
+- 自行解决有实质取舍的冲突；或在本 skill 新建 PR。
+- 未部署却把发布 Smoke 标 PASS。
 
-## 检查清单
+## 完成检查
 
-- [ ] 前置：main 分支工作区 requirement.yaml 的 `pending_acceptance` 确认；用户明确表态验收。
-- [ ] 全量回归 + AC 逐条验证通过。
-- [ ] 基于最新远程 main；冲突处理经用户确认。
-- [ ] 合并的是 `task-runner` 已发起的 PR，本 skill 未新建 PR。
-- [ ] PR 合并成功后才写终态；main 分支工作区 requirement.yaml 该里程碑置 `accepted`。
-- [ ] 该里程碑下全部 issue（含 sub-issue）状态已核对为 Done，遗漏已补齐。
-- [ ] 验收评论符合书写规范；Project Update 已写。
-- [ ] insights 复盘评论已写入评论区。
-- [ ] vb-learn （沉淀或 skipped 有原因）。
-- [ ] 归档判定正确执行（需求 / PRD / 需求级复盘汇总，均在 main 分支工作区）。
-- [ ] worktree 清理前通过两项检查。
+- [ ] 前置状态、PR、全部 Issue Evidence 与当前 commit 已核对。
+- [ ] 最新 main 已同步；相关 CI、里程碑 TC、E2E、增量回归和 UAT 通过。
+- [ ] 用户明确批准后才合并并写终态。
+- [ ] 验收评论可复现；全部 Issue/sub-issue、Project Update 和 requirement 状态已更新。
+- [ ] 复盘、自学习、归档、发布交接和 worktree 清理均有结果。
 - [ ] 人读内容使用 `output.language`。

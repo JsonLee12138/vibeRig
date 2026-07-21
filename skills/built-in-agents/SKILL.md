@@ -1,77 +1,88 @@
 ---
 name: built-in-agents
-description: Install vb-plugin baseline agents into the current project across Codex, Claude Code, and Cursor. Use when initializing a VibeRig project or when baseline agents are missing; called by `vb-init`, or run standalone to restore missing baseline agents. Do not use to update or regenerate project-specific agents — that's `update-team`.
+description: Install or reconcile the VibeRig baseline agent team across Codex, Claude Code, and Cursor from provider-neutral JSON specs. Use from `vb-init`, when baseline agents are missing or outdated, or when the user asks to restore/reconcile bundled agents. Project-specific roles belong to `update-team`.
 ---
 
 # Built-in Agents
 
-将 vb-plugin 自带的基线 agent（`assets/*.json` spec）通过 [agent-creator](../agent-creator/SKILL.md) 渲染到 Codex（`.codex/agents/*.toml`）、Claude Code（`.claude/agents/*.md`）、Cursor（`.cursor/agents/*.md`）三个平台。所有操作**幂等**——目标文件已存在则跳过，不覆盖。
+以 [`agents.manifest.json`](./agents.manifest.json) 为权威清单，将 `assets/<agent>.json` 通过 [agent-creator](../agent-creator/SKILL.md) 渲染到：
 
-## Contract
+- Codex：`.codex/agents/<name>.toml`
+- Claude Code：`.claude/agents/<name>.md`
+- Cursor：`.cursor/agents/<name>.md`
 
-单一职责：把 `assets/` 中的基线 agent JSON spec 交给 `agent-creator` 渲染到三个平台的 agent 目录。
+JSON spec 是唯一角色定义；禁止手写平台文件。只管理 manifest 中的基线 Agent，项目特有角色交给 `update-team`。
 
-不允许：
-- 手写平台原生文件（TOML/MD）——必须经过 JSON spec + `agent-creator`，否则下次更新会导致三个平台漂移不一致。
-- 覆盖已存在的 agent 文件（除非传 `--force`）
-- 修改 `project.yaml` 的任何字段（由调用方负责）
-- 创建 `assets/` 中不存在的 agent
-- 未经用户确认，向共享的 `.cursor/mcp.json` 写入或合并内容
+## 角色模型
 
-## 基线 Agents
-
-| Spec 文件 | Agent | 职责 |
+| 阶段 | Agents | 边界 |
 |---|---|---|
-| `code_review.json` | code_review | 代码质量审查 |
-| `integrator.json` | integrator | 跨模块集成 |
-| `qa.json` | qa | QA 验证 |
-| `researcher.json` | researcher | 深度网络搜索、大上下文分析与源驱动调研 |
-| `security_auditor.json` | security_auditor | 安全漏洞扫描 |
-| `self_learner.json` | self_learner | 事后学习（配合 vb-learn）|
-| `test_engineer.json` | test_engineer | 测试编写 |
-| `uiux_design.json` | uiux_design | UI/UX 设计审查 |
+| 开发前证据 | `researcher` | 查证事实，不做最终技术裁决 |
+| 开发前领域 | `frontend_architect`、`backend_architect`、`data_architect`、`security_auditor`、`reliability_engineer`、`qa`、`uiux_design` | 输出领域报告，不写正式需求/架构，不碰 Linear |
+| 架构对抗 | `architecture_red_team` | 只攻击一个指定 focus；不修复、不审批 |
+| 开发执行 | `implementation`、`test_engineer` | 消费 Task Brief/TC；不写 Proof Packet、不验收 |
+| 开发审核 | `code_review`、`security_auditor`、`qa` | 独立只读审核，按风险路由 |
+| 集成交付 | `integrator` | 审核依赖、契约和证据，不合并、不发布 |
 
-每个 spec 已经是完整的 agent-creator intermediate spec（含 `mission` / `scope_allowed` / `scope_not_allowed` / `extra_sections` / `skill_dependencies` / `mcp_servers` 等），`targets` 固定为 `["codex", "claude", "cursor"]`。
+CTO、产品经理、白队和 Final QA 不创建为基线 Agent：CTO/产品经理由主 Agent 和 Skills 承担；白队复用原领域负责人；主 Agent直接综合证据，不增加重复 Final QA。
 
-## Workflow
+## 输入
 
-### 1. 确定安装目标平台
+- `--only <agent,...>`：只处理指定 manifest Agent。
+- `--platforms <codex,claude,cursor>`：默认三个平台。
+- `--force <agent,...>`：明确覆盖指定 Agent 的现有平台文件。
+- `--prune <agent,...>`：仅在用户明确确认后删除 manifest `deprecated` 中的已渲染旧 Agent。
 
-默认三个平台都渲染。可传 `--only <platform,...>`（如 `--only claude,cursor`）只渲染指定平台，其余平台跳过且不报缺失。
+## 安装与升级
 
-### 2. 逐个基线 agent、逐个平台渲染
+1. 读取 manifest，确认每个 `agents[]` 都有 `assets/<name>.json`，spec 的 `name` 与文件名一致。
+2. 读取或创建 `.vibeRig/built-in-agents-lock.json`。每个 `(agent, platform)` 记录：
+   - `specHash`：源 JSON 的 SHA-256；
+   - `renderedHash`：上次写入平台文件后的 SHA-256；
+   - `manifestVersion`。
+3. 对每个目标组合分类：
 
-对 `assets/` 中的每个 JSON spec，对每个目标平台检查对应文件是否已存在：
+| 状态 | 行为 |
+|---|---|
+| 目标不存在 | 用 JSON spec 经 `agent-creator` 渲染并写入 lock |
+| spec 与 lock 相同，目标 hash 与 lock 相同 | 跳过，标记 `current` |
+| spec 已变化，目标仍等于 lock 的 renderedHash | 这是未定制旧基线；重新渲染并更新 lock |
+| 目标与 lock 的 renderedHash 不同 | 视为用户定制；不覆盖，标记 `customized` |
+| 无 lock 但目标已存在 | 视为 legacy/ownership unknown；默认不覆盖，除非 `--force` |
+| 指定 `--force` | 重新渲染指定目标并更新 lock；报告覆盖动作 |
 
-- `.codex/agents/<name>.toml`
-- `.claude/agents/<name>.md`
-- `.cursor/agents/<name>.md`
+lock 只记录管理元数据，不包含 prompt 内容。哈希必须基于实际文件字节计算，不能由 Agent 猜测。
 
-规则：
+所有 spec 的 `mcp_servers` 当前必须为空。共享 MCP 配置由项目负责；未经用户确认，不修改 `.cursor/mcp.json`。
 
-- 已存在且未传 `--force` → 跳过该 (agent, 平台) 组合，记录到报告。
-- 不存在 → 调用 `agent-creator`：这个 JSON 文件本身就是已经确定好的 intermediate spec，直接用它渲染缺失的平台，跳过 agent-creator 工作流里的"澄清职责 / 技能依赖确认"步骤——基线 agent 的边界和技能依赖已经预先审定过，不需要每次安装都重新询问用户。
-- 当前所有基线 spec 的 `mcp_servers` 均为空——基线 agent 需要的 MCP 服务器（`linear`、`pencil`、`gemini-cli`）由插件自带的共享 MCP 配置提供（Codex / Claude Code：`.mcp.json`；Cursor：`mcp.json`），渲染时不写任何按 agent 的 MCP 字段，也无需合并 `.cursor/mcp.json`。
-- 若未来某个 spec 的 `mcp_servers` 非空且目标平台是 Cursor：Cursor 不支持按 agent 分配 MCP（见 agent-creator 的 Capability Matrix），渲染的 `.cursor/agents/<name>.md` 不写任何 MCP 字段。是否把该 agent 需要的 MCP 服务器合并进项目共享的 `.cursor/mcp.json` 是一个独立决定，必须先询问用户；本 skill 只渲染 agent 文件本身，MCP 合并留到用户确认后再做，并在报告中注明"待确认"。
+## 废弃 Agent
 
-### 3. 输出报告
+manifest `deprecated` 只用于识别和迁移提示：
 
-```
-基线 agents 安装结果（按平台）：
-  code_review       → codex: 已写入 | claude: 已写入 | cursor: 已写入
-  researcher        → codex: 跳过（已存在） | claude: 已写入 | cursor: 已写入
-  ...
+- 默认报告已存在的旧 Agent，不自动删除。
+- 用户明确传 `--prune` 后，只删除精确指定 Agent 的三个平台文件和对应 lock 条目。
+- `self_learner` 的替代流程是验收后的 `insights → vb-learn`。
+- 不删除 manifest 未登记的项目 Agent。
 
-汇总：X 个文件写入，Y 个跳过，Z 个待确认 MCP 合并
-```
+## 输出
 
-## Validation
+按 Agent、平台报告：`created`、`updated`、`current`、`customized`、`legacy-skipped`、`pruned`、`failed`。同时报告 spec/manifest 校验、lock 路径、废弃 Agent 和待人工处理项。
+
+## 验证
 
 ```bash
-ls .codex/agents/*.toml .claude/agents/*.md .cursor/agents/*.md 2>/dev/null
+jq -e '.version and (.agents | type == "array") and (.deprecated | type == "array")' \
+  skills/built-in-agents/agents.manifest.json
+
+for name in $(jq -r '.agents[]' skills/built-in-agents/agents.manifest.json); do
+  test -f "skills/built-in-agents/assets/$name.json" || exit 1
+  test "$(jq -r .name "skills/built-in-agents/assets/$name.json")" = "$name" || exit 1
+done
 ```
 
-- [ ] 每个安装目标平台下，8 个基线 agent 都存在（或被 `--only` 明确排除）
-- [ ] 报告列出每个 (agent, 平台) 组合的动作（写入/跳过）
-- [ ] 无文件被静默覆盖
-- [ ] 渲染的 agent 文件不含按 agent 的 MCP 字段；基线 agent 所需 MCP（`pencil`、`gemini-cli`）由共享配置 `.mcp.json` / `mcp.json` 提供
+- [ ] manifest 与 spec 一一对应，无孤立基线 spec。
+- [ ] 每个目标平台文件均由对应 JSON spec 渲染。
+- [ ] 未定制旧基线可升级；用户定制文件不被静默覆盖。
+- [ ] lock hash 对应实际 spec 和平台文件。
+- [ ] 废弃 Agent 未经明确 `--prune` 不删除。
+- [ ] 未修改共享 MCP 配置、项目特有 Agent 或 `project.yaml`。

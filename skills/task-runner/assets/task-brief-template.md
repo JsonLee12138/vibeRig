@@ -1,41 +1,42 @@
 # Task Brief 模板
 
-`task-runner` 向选定 subagent 委派执行时使用。发出前把占位符替换为已解析的任务细节。spec 是动态组装的：只给本 issue 相关的片段，禁止全量文档。
+`task-runner` 委派实现前填写。只注入当前 Issue 所需的最小充分上下文；所有尖括号字段都必须替换。
 
-## 目标
+## Goal 与 Scope
 
-<来自 Linear issue 的任务目标>
+- 目标：<Issue 的单一交付结果>
+- 允许修改：<文件或模块边界>
+- 禁止修改：<受保护范围>
 
-## Spec（动态组装）
+## AC
 
-- issue 描述：<目标 + AC-ids + 文档链接>
-- 接口契约：<architecture.md 中与本 issue 相关的片段，只截相关部分>
-- 验收条目：<acceptance.json 中对应 AC 条目，含 verification>
+- <AC-ID>：<精确业务预期与 verification 摘要>
 
-## 验收标准
+## Test Cases
 
-- AC-...: <预期结果>
+| TC | Level | Automation | Stage | Required | Preconditions / Steps / Expected |
+|---|---|---|---|---|---|
+| <TC-ID> | <level> | <automation> | <executionStage> | <true/false> | <只放本 Issue 相关内容> |
 
-## 约束
+- `automation: required` 的新行为或 Bug 修复先返回 RED 证据。
+- `milestone`、`owner_uat`、`post_release` 或 `manual` TC 只交接，不得伪造 PASS。
+- 旧需求没有 `test-cases.json` 时标记 `legacy mode`，从相关 AC 推导窄范围验证。
 
-- <范围边界>
-- 不回退无关的用户改动
-- subagent 不更新 Linear、不发起/更新/合并 PR
-- 不创建新分支/新 worktree；改动提交前交回主 agent 校验
+## Architecture 与 Risk
 
-## 验证
+- 接口/数据契约：<architecture.md 相关片段>
+- 风险等级：<low / standard / high>
+- 强制审核：<code / test / security / performance 或不适用理由>
 
-- <命令 / 人工检查步骤>
+## Workspace 与约束
 
-## Workspace
-
-- 路径: <本次调用使用的 worktree 绝对路径——顺序路径(b/c)是调用级共享 worktree；并发路径(a)是这个 issue 专属的一次性 worktree>
-- 集成分支: `milestone/<req-id>-<n>`（standalone issue 无集成分支，基准是 main）
+- Workspace：<绝对路径>
+- 集成分支：<里程碑分支；standalone 写无>
+- 不回退无关改动；不创建分支/worktree；不碰 Linear 或 PR；提交前交回主 Agent。
 
 ## 输出契约
 
-- 改动文件
-- 已尝试的验证及输出
-- AC 覆盖情况
-- 残余风险
-- 交接备注
+- 改动文件与范围说明；
+- RED/GREEN 证据及实际命令；
+- TC 覆盖、未执行项和原因；
+- 残余风险与交接事项。

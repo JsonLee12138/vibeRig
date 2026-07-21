@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "agents": [
+    "architecture_red_team",
+    "backend_architect",
+    "code_review",
+    "data_architect",
+    "frontend_architect",
+    "implementation",
+    "integrator",
+    "qa",
+    "reliability_engineer",
+    "researcher",
+    "security_auditor",
+    "test_engineer",
+    "uiux_design"
+  ],
+  "deprecated": [
+    {
+      "name": "self_learner",
+      "replacement": "insights + vb-learn",
+      "reason": "Post-acceptance learning is already orchestrated by accept-issue and accept-milestone; a second write-capable subagent duplicates work and authority."
+    }
+  ]
+}

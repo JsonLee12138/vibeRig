@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pre-development"
+  short_description: "Orchestrate an approval-ready development plan"
+  default_prompt: "Use $pre-development to run the complete VibeRig pre-development process for the confirmed requirement and return the CTO review package."

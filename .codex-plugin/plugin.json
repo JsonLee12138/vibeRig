@@ -1,7 +1,7 @@
 {
   "name": "vibe-rig",
   "version": "1.2.1",
-  "description": "Linear-native requirement planning, local Docs as Code contracts, subagent routing, and accepted-work insights for VibeRig workflows.",
+  "description": "Enterprise pre-development orchestration, approval-ready Docs as Code contracts, Linear-native execution, and subagent routing.",
   "author": {
     "name": "JsonLee12138"
   },
@@ -19,8 +19,8 @@
   "mcpServers": "./.codex.mcp.json",
   "interface": {
     "displayName": "VibeRig",
-    "shortDescription": "Turn requirements into local contracts and Linear tasks.",
-    "longDescription": "VibeRig helps Codex turn ambiguous requirements into local Docs as Code contracts, Linear issues, subagent-routed execution, Linear proof packets, and post-acceptance retrospectives with conservative learning candidates.",
+    "shortDescription": "Turn one owner request into an approval-ready development plan.",
+    "longDescription": "VibeRig interviews the owner once, orchestrates product, domain research, architecture, acceptance, testing, risk, and delivery planning internally, then materializes the approved plan into Linear for subagent-routed execution and evidence-based acceptance.",
     "developerName": "jsonlee",
     "category": "Productivity",
     "capabilities": [
@@ -28,8 +28,8 @@
       "Planning"
     ],
     "defaultPrompt": [
-      "Brainstorm a VibeRig requirement",
-      "Create Linear issues from this VibeRig requirement",
+      "Use VibeRig intake to handle this requirement and prepare the complete pre-development approval package",
+      "Continue the VibeRig pre-development review for this requirement",
       "Run the next VibeRig Linear task",
       "Record human acceptance for a VibeRig Linear task",
       "Generate accepted-work insights"

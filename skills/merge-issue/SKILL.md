@@ -12,7 +12,7 @@ description: 合并一个不挂在任何里程碑下的独立 issue 自己的 PR
 - 范围：一个 issue 自己的、直接面向 main 的 PR。
 - 前置：`accept-issue` 已经对这个 issue 验收通过。
 - **强制前置检查（红线级）**：这个 issue 不属于任何里程碑。检查 main 分支工作区的 `requirement.yaml` 里所有 `milestones[].issues`（或 Linear 上该 issue 的 Milestone 字段）——只要命中任何一个里程碑，立即拒绝执行，告诉用户改走 `accept-milestone`。判断不出归属（比如既查不到 requirement.yaml 也查不到 Linear milestone 字段）时，同样拒绝并停下问用户，不允许自行判定为"没有里程碑"。
-- 不做 AC 验证、不改验收结论、不新建 PR——这些都是 `accept-issue` 已经做完的事。
+- 不重跑 AC/TC、不改验收结论、不新建 PR——这些由 `accept-issue` 的证据审核和人工结论负责。
 - 只做：归属检查 → 可合并性检查 → 合并 → 本地/远程同步 → 记录。
 
 ## 流程
@@ -22,7 +22,7 @@ description: 合并一个不挂在任何里程碑下的独立 issue 自己的 PR
    - 命中里程碑 → 停止，告诉用户这个 issue 属于里程碑 `<milestone-id>`，改走 `accept-milestone`。
    - 无法判定（数据缺失/矛盾）→ 停止并报告，问用户确认归属，不自行假定。
 3. **验收检查**：读该 issue 的 Linear 评论，确认 `accept-issue` 已经给出验收通过的记录。没有 → 停止，告诉用户先走 `accept-issue`。
-4. **PR 检查**：定位该 issue 自己的、面向 main 的 PR；`git fetch origin` 拉最新 main，检查该 PR 是否 mergeable：
+4. **PR 与证据检查**：定位该 issue 自己的、面向 main 的 PR；确认验收记录、Proof Packet 和 Required CI 都对应 PR 当前 commit；`git fetch origin` 拉最新 main，检查该 PR 是否 mergeable：
    - 有冲突 → 和用户逐处确认取舍（这处冲突涉及哪些改动、双方各自想干什么、取舍影响什么）后再处理，不自作主张解决。
    - CI 未过、必需审批未齐全 → 停止并报告，不合并。
 5. 合并该 PR 到 main。
@@ -37,12 +37,14 @@ description: 合并一个不挂在任何里程碑下的独立 issue 自己的 PR
 - `accept-issue` 还没验收通过就合并 → 验收通过是合并的前提，没有就停止。
 - 有冲突时自作主张解决，没有和用户逐处确认取舍 → 必须先确认。
 - 在本 skill 里重新做了 AC 验证或改了验收结论 → 那是 `accept-issue` 的职责，不要重复。
+- Proof Packet、验收记录或 CI 对应旧 commit 却仍合并 → 证据必须与 PR 当前 commit 一致。
 - 合并后没有把本地 main 和远程同步 → 必须同步，避免后续操作基于过期的本地状态。
 
 ## 检查清单
 
 - [ ] 已确认该 issue 不属于任何里程碑（检查过 requirement.yaml 与 Linear milestone 字段）。
 - [ ] 已确认 `accept-issue` 验收通过记录存在。
+- [ ] Proof Packet、验收记录和 Required CI 均对应 PR 当前 commit。
 - [ ] 已 `git fetch` 拉最新 main，确认无冲突（或冲突已与用户确认取舍后解决）、CI 通过、审批齐全。
 - [ ] PR 已合并；本地 main 与远程已同步一致。
 - [ ] 合并结果（PR 链接、commit hash）已写入 Linear 评论。
