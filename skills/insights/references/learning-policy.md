@@ -1,47 +1,37 @@
-# Learning Policy
+# Retrospective Signal Policy
 
-VibeRig learns only from accepted work.
+`insights` compiles accepted evidence for immediate `vb-wiki` use; it does not write knowledge or apply learnings itself.
 
-## Allowed Auto-Apply
+## Keep As A Retrospective Signal
 
-Only auto-apply a candidate when all are true:
+Keep a signal only when all are true:
 
-- `type` is `project_note`
-- confidence is `high`
-- evidence includes an accepted task or accepted planning gate
-- the note is factual and low-risk
-- the target is a Linear retrospective/proof comment, or an explicitly approved project-local learning file
+- the source outcome is explicitly accepted and identified by `acceptance_event`;
+- the statement is supported by an explicit source tied to `accepted_commit` or the accepted non-code record;
+- it can help a future task beyond retelling the completed task;
+- its applicability boundary can be stated;
+- there is a meaningful way to recognize when it may be stale or invalid.
 
-Examples:
+Examples include verified project conventions, stable commands, accepted architecture decisions, recurring failure causes, and validation entry points. An accepted-but-unmerged source is eligible immediately; merge status neither rejects the signal nor lowers its confidence by itself.
 
-- The project validation command is `go test ./...`.
-- The accepted workflow uses `origin/main` as the default base.
+## Discard
 
-## Requires Confirmation
+Use an explicit reason:
 
-Always require user confirmation for:
+- `abandoned_path` — an early approach replaced before acceptance;
+- `not_accepted` — code, behavior, or a conclusion outside the accepted outcome;
+- `transient_environment` — temporary credentials, outages, missing tools, or machine state;
+- `one_off` — task narration with no future retrieval value;
+- `speculative` — an inference not proven by accepted evidence;
+- `insufficient_evidence` — no reliable source or applicability boundary;
+- `sensitive` — credentials, secrets, personal data, or unsafe operational detail.
 
-- `workflow_rule`
-- `skill_update`
-- `user_preference`
-- any candidate with `medium` or `low` confidence
-- any candidate that changes future agent behavior beyond the current project
-- any candidate that modifies `skills/*/SKILL.md`, `AGENTS.md`, `.codex/agents`, or user memory
+Do not use `unmerged` as a discard reason. When content changes after acceptance, the old signal remains traceable to its event but the changed content needs a new acceptance event before it can replace or extend knowledge.
 
-## Do Not Learn
+## Authority Boundary
 
-Do not create candidates from:
-
-- failed attempts that were abandoned
-- transient environment failures
-- missing credentials
-- uninstalled tools
-- one-off task narratives
-- unmerged or unaccepted code
-- claims that a tool is broken
-- speculative preferences
-- early implementation paths later replaced by the accepted solution
-
-## Development-Time Use
-
-During implementation, read confirmed learnings as guidance when the project has an approved learning location. Do not update learning files or Linear retrospective comments until the post-acceptance finalizer runs.
+- Writing a retrospective Linear record does not itself write the wiki; the acceptance caller invokes `vb-wiki` immediately afterward.
+- `insights` never proposes tools. Acceptance authorizes `vb-wiki` to evaluate and present at most one separate confirmation question after a knowledge commit, but it never authorizes creating or updating the skill.
+- An `aggregation_event` derives only from completed child acceptance events; it is not human acceptance and cannot introduce or strengthen a signal.
+- `insights` must not call `skillos-lite`, `skill-builder`, or `vb-learn`.
+- During implementation, read existing confirmed knowledge when useful but do not write new retrospective signals.

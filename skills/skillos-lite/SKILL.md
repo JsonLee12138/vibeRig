@@ -1,19 +1,19 @@
 ---
 name: skillos-lite
-description: Curate VibeRig skill evolution proposals from accepted Linear work using SkillOS-style insert/update/deprecate/noop operations. Use from insights after human acceptance, or when the user asks for evidence-backed skill curation, self-evolution candidates, or SkillOS-lite proposals. Do not use during active implementation or without accepted-work evidence.
+description: Curate insert/update/deprecate/noop proposals for the VibeRig skill library only when the user explicitly requests a skill-library audit or SkillOS-style curation. Do not run from acceptance, insights, or default self-learning, and never apply changes directly.
 ---
 
 # SkillOS Lite
 
-Use this skill to convert accepted-work evidence into conservative skill curation proposals.
+Use this skill to convert an explicit user request plus accepted-work evidence into conservative skill-library curation proposals.
 
 This is a proposal generator only. It must not directly edit `skills/*/SKILL.md`, `AGENTS.md`, user memory, or workflow rules.
 
 ## Contract
 
-Use this skill to propose `insert`, `update`, `deprecate`, or `noop` operations for VibeRig skills after accepted work.
+Use this skill to propose `insert`, `update`, `deprecate`, or `noop` operations for VibeRig skills when the user explicitly asks to curate the skill library.
 
-Do not use this skill for implementation, validation, final human acceptance, speculative memory capture, direct skill edits, or learning from failed/unmerged/unaccepted work.
+Do not use this skill for implementation, validation, final human acceptance, default self-learning, automatic post-acceptance finalization, speculative memory capture, direct skill edits, or learning from failed/unmerged/unaccepted work. `insights` and `vb-wiki` must not invoke it automatically; creation of one user-approved global tool skill belongs to `vb-learn`.
 
 Stop with `noop` when accepted evidence is missing, the affected skill cannot be identified, the proposed change would rely on abandoned attempts, or the risk cannot be bounded from the evidence.
 
@@ -21,6 +21,7 @@ Stop with `noop` when accepted evidence is missing, the affected skill cannot be
 
 Required:
 
+- Explicit current-conversation request to audit or curate the VibeRig skill library.
 - Accepted Linear issue, PR, commit, or explicit user authorization tied to accepted work.
 - Human acceptance evidence or terminal accepted/done status.
 - Proof packet, validation result, review note, or equivalent evidence.
@@ -31,7 +32,7 @@ Optional:
 - Linear comments, proof packet comments, review comments, git diff, changed files, CI links, screenshots, and logs.
 - Related skill paths under `skills/`.
 
-If required evidence is missing, return a `noop` proposal explaining the missing acceptance boundary.
+If explicit curation authority or required evidence is missing, return a `noop` proposal explaining the missing boundary.
 
 ## Output Contract
 
@@ -60,23 +61,24 @@ Never propose physical deletion from a single accepted task.
 
 ## Workflow
 
-1. Read `.vibeRig/project.yaml` and use `output.language` for human-facing summaries.
-2. Confirm the accepted-work boundary from Linear, proof packet, PR merge, or explicit user authorization.
-3. Build a compact evidence bundle:
+1. Confirm the user explicitly requested skill-library curation. A request to “learn”, “record experience”, or accept delivered work is not sufficient; redirect those cases to `vb-wiki`.
+2. Read `.vibeRig/project.yaml` and use `output.language` for human-facing summaries.
+3. Confirm the accepted-work boundary from Linear, proof packet, PR merge, or explicit user authorization.
+4. Build a compact evidence bundle:
    - accepted AC ids and residual risk decision
    - validation commands and results
    - PR, commit, and changed files
    - Linear review comments and proof packet findings
    - relevant requirement docs
-4. Identify related skills by matching evidence against `skills/*/SKILL.md` names, descriptions, contracts, and validation sections.
-5. Classify the curation need as `insert`, `update`, `deprecate`, or `noop`.
-6. Score confidence and risk:
+5. Identify related skills by matching evidence against `skills/*/SKILL.md` names, descriptions, contracts, and validation sections.
+6. Classify the curation need as `insert`, `update`, `deprecate`, or `noop`.
+7. Score confidence and risk:
    - `high` confidence requires direct accepted evidence and a narrow target.
    - `medium` confidence fits plausible but incomplete evidence.
    - `low` confidence is only a prompt for human review.
    - `high` risk changes future workflow gates, acceptance policy, security boundaries, or broad routing behavior.
-7. Emit proposals using `references/proposal-schema.md`.
-8. If a proposal is confirmed by the user, invoke `skill-builder` with the target skill, change summary, evidence, and validation plan. Do not edit the skill directly.
+8. Emit proposals using `references/proposal-schema.md`.
+9. If a proposal is confirmed by the user, invoke `skill-builder` with the target skill, change summary, evidence, and validation plan. Do not edit the skill directly.
 
 ## Context Loading
 
@@ -89,6 +91,7 @@ Avoid reading unrelated skill packages. Inspect only skills that plausibly match
 ## Red Flags
 
 - A non-`noop` proposal was generated without accepted-work evidence → all non-`noop` operations require evidence tied to accepted, merged, or user-authorized work.
+- This skill was called automatically from `insights`, `vb-wiki`, or an acceptance workflow → stop; default learning writes wiki knowledge and never performs library curation.
 - `confidence: high` was assigned to a proposal based on a single task → high confidence requires direct and narrow evidence; one task is usually medium.
 - A proposal directly edits a skill file instead of returning a structured proposal → `skillos-lite` is proposal-only; hand confirmed proposals to `skill-builder`.
 - An `insert` proposal duplicates a capability that already exists in an existing skill → inspect `skills/*/SKILL.md` names, descriptions, and contracts before proposing a new skill.
@@ -107,10 +110,11 @@ Before reporting proposals, verify:
 
 ```bash
 # Confirm related skill directories exist for update/deprecate proposals
-ls /skills/<target_skill>/SKILL.md 2>/dev/null && echo "ok" || echo "SKILL NOT FOUND"
+ls skills/<target_skill>/SKILL.md 2>/dev/null && echo "ok" || echo "SKILL NOT FOUND"
 ```
 
 - [ ] Every non-`noop` proposal is tied to accepted work.
+- [ ] The current conversation explicitly requested skill-library curation.
 - [ ] Every non-`noop` proposal has evidence, target, confidence, risk, and validation plan.
 - [ ] `requires_confirmation` is `true` for `insert`, `update`, and `deprecate`.
 - [ ] No proposal directly applies a skill update.

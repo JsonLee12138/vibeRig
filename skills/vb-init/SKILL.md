@@ -1,17 +1,17 @@
 ---
 name: vb-init
-description: Initialize or reconcile a project for the Linear-native VibeRig workflow. Use when the user asks to set up VibeRig, create .vibeRig project registration, connect to Linear, configure CI gates, set up the agent team, or wire the global ~/.vb-skills learned-skill store. Do not use to create requirements, tasks, or implementation branches.
+description: Initialize or reconcile a project for the Linear-native VibeRig workflow. Use when the user asks to set up VibeRig, create .vibeRig project registration, connect to Linear, configure CI gates, set up the agent team, or wire the global ~/.vb-skills approved tool-skill store. Do not use to create requirements, tasks, or implementation branches.
 ---
 
 # VB Init
 
-Prepare a project for the Linear-native VibeRig workflow: local docs structure, `.vibeRig/project.yaml`, Linear registration, Codex agent team, and the global learned-skill store at `~/.vb-skills`.
+Prepare a project for the Linear-native VibeRig workflow: local docs structure, `.vibeRig/project.yaml`, Linear registration, Codex agent team, and the global user-approved tool-skill store at `~/.vb-skills`. The default self-learning knowledge store `~/.vb-wiki` remains lazy and is bootstrapped by `vb-wiki` on its first explicitly accepted write.
 
 All steps are **idempotent** — re-running skips what already exists.
 
 ## Contract
 
-Single responsibility: initialise or reconcile **one project** and its global skill store. Stop and ask when the Linear team/project choice cannot be inferred safely.
+Single responsibility: initialise or reconcile **one project** and its optional global tool-skill store. Stop and ask when the Linear team/project choice cannot be inferred safely.
 
 Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 
@@ -32,7 +32,7 @@ Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 ├── .cursor/agents/*.md
 └── .worktrees/                  (fixed path — not configurable)
 
-~/.vb-skills/                    (global learned-skill git repo, one per machine)
+~/.vb-skills/                    (user-approved tool-skill git repo, one per machine)
 ├── .git/
 └── vb-skill-lock.json
 
@@ -60,7 +60,9 @@ grep -qxF '.worktrees/' .gitignore 2>/dev/null || printf '%s\n' '.worktrees/' >>
 Pre-install `insights`, `skill-builder`, `skillos-lite` at project level via `find-skills`.
 Log missing skills in the init report; do not abort.
 
-### 3. Global learned-skill store (idempotent)
+### 3. Global approved tool-skill store (idempotent)
+
+This store is not the default learning destination. It is prepared so an explicitly authorized `vb-learn` invocation can install a tool skill later; ordinary accepted-work learning goes to the lazy `~/.vb-wiki` store.
 
 ```bash
 # a. Init git repo
@@ -139,7 +141,7 @@ Report as **partial** when Linear tools are unavailable (including login decline
 ### 8. Report
 
 Project YAML, AGENTS.md, docs root, output language, Linear Project/Document status,
-gate policy, agent team (created / existed / skipped), global store status.
+gate policy, agent team (created / existed / skipped), approved tool-skill store status, and the fact that `vb-wiki` bootstraps its knowledge store lazily.
 
 ## Validation
 
@@ -153,7 +155,7 @@ test -L .claude/skills && echo "symlink ok"
 ls .agents/skills/insights/ .agents/skills/skill-builder/ .agents/skills/skillos-lite/
 ls .codex/agents/*.toml .claude/agents/*.md .cursor/agents/*.md
 
-# Global learned-skill store
+# Global approved tool-skill store
 git -C ~/.vb-skills rev-parse --git-dir && echo "vb-skills git ok"
 ls ~/.vb-skills/vb-skill-lock.json
 test -L ~/.agents/skills/vb \

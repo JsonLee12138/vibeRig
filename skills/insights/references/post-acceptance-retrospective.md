@@ -1,46 +1,50 @@
-# Post-Acceptance Retrospective
+# Post-Acceptance Retrospective Gate
 
-Use this flow only after the accepted-work gate passes.
-
-Render human-facing retrospective prompts, summaries, and reports in
-`.vibeRig/project.yaml` `output.language`. Keep evidence-bundle YAML keys,
-candidate type names, stable IDs, local paths, commands, branch names, Linear
-keys, acceptance IDs, schema keys, and code symbols unchanged.
+Use this flow immediately after explicit human acceptance. Render human-facing content in `.vibeRig/project.yaml` `output.language`; keep IDs, paths, commands, schema keys, code symbols, hashes, and URLs unchanged.
 
 ## Required Gate
 
-At least one accepted signal must be present:
+For `event_kind: acceptance`, exactly one condition gates the write:
 
-- Linear issue moved to the team's accepted/done state after validation
-- proof packet comment shows validation passed and reviewer accepted
-- PR merged or human handoff accepted
+1. **Accepted** — required validation/review evidence passed and the human explicitly accepted the identified outcome.
 
-Do not run this retrospective for active implementation or speculative planning.
+Merge is not a gate. Record one of these values as provenance:
+
+- `accepted_unmerged` — accepted PR/branch content is not yet merged;
+- `accepted_in_milestone` — an accepted Issue remains inside a later Milestone delivery;
+- `merged` — the accepted result is already merged;
+- `authoritative_branch` — the accepted result already lives on the authoritative branch without a pending PR;
+- `no_merge_required` — the accepted outcome is not code-backed.
+
+If acceptance is missing, return `deferred: acceptance_missing` with zero writes. If the accepted result is unmerged, continue now; do not downgrade confidence solely because it is unmerged.
+
+For `event_kind: aggregation`, do not create an acceptance gate. Require `aggregate_only: true`, a canonically verified `aggregation_event`, and a complete `aggregation_event.derived_from` list whose child events have `insights: completed` and wiki `committed` / `zero_atoms`. Missing children return `deferred: child_acceptance_incomplete`; aggregation may only restate, cross-link, or deduplicate child evidence.
 
 ## Evidence Bundle
 
-Expected fields:
-
 ```yaml
-requirement_id: VB-123
-linear_issue: VB-456
+scope_id: VB-456
+scope_type: issue
 status: accepted
+event_kind: acceptance
+source_kind: code
+acceptance_event:
+  id: acceptance:VB-456:<accepted-source-fingerprint>:r1
+  record: <acceptance-comment-url-or-id>
 gate:
   validation_passed: true
   acceptance_passed: true
+  human_accepted: true
   code_review_passed: true
+delivery_state: accepted_unmerged
 sources:
-  brief: .vibeRig/requirements/VB-123/brief.md
-  contract: .vibeRig/requirements/VB-123/contract.json
-  architecture: .vibeRig/requirements/VB-123/architecture.md
-  acceptance: .vibeRig/requirements/VB-123/acceptance.md
-  validation: .vibeRig/requirements/VB-123/validation.md
-linear:
-  proof_packet_comment: "<url-or-comment-id>"
-  issue_url: "<url>"
+  acceptance_record: <issue-comment-or-project-update-id>
+  proof_packet_record: <comment-url-or-id>
+  issue_url: <url>
 git:
-  branch: "<branch>"
-  head_sha: "<sha>"
+  branch: <accepted-branch>
+  accepted_commit: <sha>
+  merged_commit: <optional-sha>
   changed_files: []
 validation:
   commands: []
@@ -48,41 +52,75 @@ validation:
 review:
   acceptance_notes: ""
   code_review_notes: ""
+retrospective_signals: []
+discarded_signals: []
+residual_risks: []
 ```
 
 ## Finalizer Prompt
 
 ```text
-Review only accepted work.
+Review only the explicitly accepted outcome identified by acceptance_event.
 
-Use the provided evidence:
-- Linear issue and proof packet comment
-- local Docs as Code requirement contract
-- implementation diff
-- validation results
-- review notes
+Produce a retrospective evidence package immediately, even when the accepted
+commit is not merged. This is not a knowledge page and not a skill proposal.
+Reconstruct the accepted path from Linear, requirement contracts,
+accepted_commit or the accepted non-code record, validation, and review.
+Treat delivery_state and an optional merged_commit as provenance, never as a
+permission gate.
 
-Extract durable learnings only if they are proven by the accepted outcome.
+For each retrospective signal, state exactly one claim and include:
+- confidence
+- evidence references
+- applicability
+- project/global/unknown scope hint
+- signals that would invalidate or require re-checking the claim
 
-Do not learn from:
-- failed attempts that were abandoned
-- transient environment issues
-- unmerged code
-- one-off task details
-- speculative preferences
+For accepted-but-unmerged code, include post-acceptance content drift,
+conflict resolution, acceptance withdrawal, and later re-acceptance among the
+invalidation signals when relevant. Do not lower confidence merely because
+delivery_state is accepted_unmerged.
 
-Classify each candidate as:
-project_note, workflow_rule, skill_update, or user_preference.
+Discard abandoned or unaccepted paths, transient environment failures,
+one-off narrative, speculative conclusions, unsupported preferences, and
+sensitive material. Record the discard reason instead of mixing it into an
+accepted signal.
 
-When the accepted evidence suggests a reusable skill-library change, also run
-`skillos-lite` to emit curation proposals. Classify each proposal as
-`insert`, `update`, `deprecate`, or `noop`. Do not apply curation proposals
-without explicit user confirmation, and route confirmed skill changes through
-`skill-builder`.
+Do not name, propose, create, update, or deprecate any skill. Do not invoke
+skillos-lite or skill-builder. Tool promotion is evaluated later by vb-wiki,
+after the immediate wiki write succeeds and under separate user authority.
 
-Auto-apply only low-risk high-confidence project notes.
-For workflow rules, skill updates, and user preferences, produce a proposal unless the policy explicitly allows automatic application.
+Zero retrospective signals is a valid result. Still report the accepted
+outcome, evidence, friction, discarded signals, delivery_state, and residual
+risks; never invent a signal merely to avoid an empty section.
 
-If there is no durable learning, output:
-Nothing to save.
+Before writing, resolve the event host: Issue comments for Issue scope;
+registered Project Updates for Milestone/requirement scope. Search only that
+host for the exact fixed marker
+<!-- VibeRig-Record: retrospective:<event-id> -->. Ignore acceptance/phase
+records carrying only their own typed marker. With pending/failed, adopt exactly one
+structurally complete retrospective record whose event kind, scope, accepted/derived
+source, and required sections match. Zero matches permits one append. Multiple
+or malformed retrospective-kind matches return retrospective_record_conflict with zero writes.
+With completed, validate and return the referenced record; never append a
+replacement merely because phase persistence was interrupted.
+
+When prior_acceptance_events are supplied for a Milestone, cite their
+outcomes but emit only integration, cross-Issue, Milestone TC/E2E/UAT, or
+other genuinely uncovered signals. Do not copy Issue signals into the
+Milestone event.
+```
+
+## Aggregation Prompt Delta
+
+```text
+This is event_kind: aggregation, not human acceptance. Verify every
+acceptance event named by aggregation_event.derived_from has insights: completed and wiki:
+committed/zero_atoms. Summarize and
+cross-link only claims already present in those child retrospectives. Emit no
+new claim, confidence upgrade, or tool candidate. Recompute the canonical
+SHA-256 digest from aggregation_event.derived_from and require it to match
+aggregation_event.id. Use aggregation_event.id
+for idempotency and return child_acceptance_incomplete if any child is
+missing or incomplete.
 ```

@@ -1,10 +1,18 @@
 # VB Wiki Index
 
 <!--
-Append-only flat index of every page in this wiki. One line per touched
-page (created / updated / superseded), newest appended last. Never edit or
-remove existing lines; corrections are new appended lines.
+Current-state retrieval catalog. Every canonical page appears exactly once,
+sorted by repository-relative path using raw UTF-8 byte order. Regenerate this
+file deterministically from committed canonical page frontmatter plus the
+current operation's exact planned page bytes. This file is mutable and
+rebuildable; git and log.md preserve history.
 
 Format:
-- [[page-slug]] — scope: global|project — dir: <tech-dir> — type: <type> — one-line summary
+- [[relative/path-without-.md]] — one-line summary
+
+Parse only the first literal `]] — ` delimiter; the remainder is the whole
+normalized summary. Rich SEO fields stay in canonical page frontmatter/qmd.
+
+This catalog routes retrieval only. Open the canonical page and check its
+applicability, status, and invalidation signals before using a claim.
 -->

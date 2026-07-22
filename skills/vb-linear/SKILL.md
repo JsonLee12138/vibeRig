@@ -36,6 +36,15 @@ Callers ask for a capability; this is what it resolves to.
 | Read or create a milestone | `list_milestones` / `get_milestone` / `save_milestone` | `split-milestones` creates (check for duplicates first); `task-runner` / `accept-milestone` read. Milestone description holds only a Document link + local contract path + AC-ids — never the full document text. |
 | Read or write a status update (Project Update) | `get_status_updates` / `save_status_update` | `accept-milestone` writes health/progress after milestone acceptance. |
 
+## VibeRig Event Record Hosts
+
+VibeRig event records must use one real, searchable host for their entire lifecycle:
+
+- Issue / sub-issue acceptance → that Issue's comments (`list_comments` / `save_comment`).
+- Milestone acceptance, Milestone delivery, requirement aggregation, and PRD/requirement finalization → the registered Linear Project's Project Updates (`get_status_updates` / `save_status_update`). Milestones do not have a comment capability.
+
+Put `<!-- VibeRig-Event: <event-id> -->` in every event record, plus a typed marker `<!-- VibeRig-Record: <kind>:<event-id> -->`. Use `kind: acceptance` for the single acceptance record, `retrospective` for the single insights record, `delivery-intent` for the pre-merge write-ahead record, `delivery` for the canonical pending delivery record, and `phase` for append-only state overlays. For acceptance, retrospective, delivery-intent, or delivery, zero exact typed-marker matches permits one write, one structurally valid match is adopted, and multiple/malformed/conflicting matches fail closed; never append a second canonical record. Retrospective adoption ignores other legitimate kinds; phase recovery selects the newest structurally valid typed phase record while preserving earlier references. Search/write only within the mapped host and registered project. Never write acceptance or delivery intent to one host and later search another. Callers refer to the result generically as a `linear_record`; an Issue result may additionally expose `comment_id`, while a Project Update exposes `status_update_id`.
+
 ## Status Mapping Rule
 
 Resolve the team's actual workflow states before any status change.

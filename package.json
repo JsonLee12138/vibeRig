@@ -30,10 +30,11 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsx src/cli/index.ts",
-    "lint": "eslint src eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml",
-    "lint:fix": "eslint src eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml --fix",
+    "lint": "eslint src scripts/*.mjs eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml",
+    "lint:fix": "eslint src scripts/*.mjs eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml --fix",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm run typecheck"
+    "test:learning-flow": "node scripts/validate-learning-flow.mjs",
+    "test": "pnpm run typecheck && pnpm run test:learning-flow"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",

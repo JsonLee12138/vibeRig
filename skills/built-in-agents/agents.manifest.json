@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "agents": [
     "architecture_red_team",
     "backend_architect",
@@ -18,8 +18,8 @@
   "deprecated": [
     {
       "name": "self_learner",
-      "replacement": "insights + vb-learn",
-      "reason": "Post-acceptance learning is already orchestrated by accept-issue and accept-milestone; a second write-capable subagent duplicates work and authority."
+      "replacement": "insights + vb-wiki",
+      "reason": "Explicit acceptance immediately triggers an evidence retrospective and wiki knowledge write; merge only reconciles delivery provenance, and a second write-capable subagent would duplicate work and authority."
     }
   ]
 }

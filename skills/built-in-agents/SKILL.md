@@ -61,7 +61,7 @@ manifest `deprecated` 只用于识别和迁移提示：
 
 - 默认报告已存在的旧 Agent，不自动删除。
 - 用户明确传 `--prune` 后，只删除精确指定 Agent 的三个平台文件和对应 lock 条目。
-- `self_learner` 的替代流程是验收后的 `insights → vb-learn`。
+- `self_learner` 的替代流程是显式验收通过后立即执行 `insights → vb-wiki`；merge 状态只作来源元数据，只有用户另行明确授权时，`vb-wiki` 才把一个工具晋升提案交给 `vb-learn`。
 - 不删除 manifest 未登记的项目 Agent。
 
 ## 输出

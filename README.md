@@ -1,6 +1,6 @@
 # VibeRig
 
-VibeRig is a multi-platform AI coding plugin for Linear-native software delivery. It turns rough requirements into local Docs as Code contracts, maps accepted planning output into Linear issues, routes execution through suitable subagents, and records proof, acceptance, and learning back into Linear.
+VibeRig is a multi-platform AI coding plugin for Linear-native software delivery. It turns rough requirements into local Docs as Code contracts, maps accepted planning output into Linear issues, routes execution through suitable subagents, records proof and acceptance in Linear, and immediately distils accepted experience into a local knowledge base.
 
 Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
@@ -15,9 +15,18 @@ flowchart TD
     Materialize --> TaskRunner["task-runner\nTC-driven delivery · risk review · PR/CI"]
     TaskRunner -.->|"standalone / high risk / spot check"| AcceptIssue["accept-issue\nEvidence audit · human sign-off"]
     AcceptIssue -.->|"issues found"| TaskRunner
-    TaskRunner -->|"milestone technical gates ready"| AcceptMs["accept-milestone\nIncremental regression · E2E · UAT · merge"]
-    AcceptMs --> Done([✅ Done])
-    AcceptMs -."auto".-> Insights[/"insights → vb-learn\nRetrospective comment → self-learning"/]
+    AcceptIssue -->|"accepted"| Insights[/"insights\nImmediate retrospective"/]
+    TaskRunner -->|"milestone technical gates ready"| AcceptMs["accept-milestone\nRegression · E2E · UAT · acceptance"]
+    AcceptMs -->|"accepted, before merge"| Insights
+    Insights --> Wiki["vb-wiki\nDefault knowledge capture"]
+    Wiki --> Delivery{"Pending delivery?"}
+    Delivery -->|"no"| Learned([✅ Acceptance learning complete])
+    Delivery -->|"standalone PR"| MergeIssue["merge-issue\nMerge + reconcile only"]
+    Delivery -->|"milestone PR + separate approval"| MilestoneMerge["accept-milestone\nMerge + reconcile only"]
+    MergeIssue --> Delivered([✅ Delivered])
+    MilestoneMerge --> Delivered
+    Learned -."separate user approval".-> Learn["vb-learn\nCreate or refine one tool skill"]
+    Delivered -."separate user approval".-> Learn
     TaskRunner -->|"Blocked"| Blocker["blocker-resume\nUnblock & resume"]
     Blocker --> TaskRunner
 
@@ -63,6 +72,8 @@ Typical prompts:
 - `Continue pre-development for payment-refactor.` (only to resume or address returned items)
 - `Use task-runner for milestone ms-1 (or Linear issue ABC-123).`
 - `Use accept-issue for ABC-123.` (standalone, high risk, or spot check) / `Use accept-milestone for ms-1.`
+- `Learn from ABC-123 and save the experience to the knowledge base.` (uses `vb-wiki`)
+- `Turn this confirmed capability into a tool skill.` (uses `vb-learn` and requires explicit authority)
 - `Use record-issue for this small change: ...`
 
 Project-local files created or used by VibeRig:
@@ -113,9 +124,10 @@ Linear is the task and status surface. Local requirement documents are contracts
 - `split-issues`: drafts the full issue landscape before approval, then materializes only the next milestone with Rolling Wave vertical slices; no assignee or subagent.
 - `record-issue`: fast lane for small changes — impact analysis → single issue; escalates to the full pipeline when impact is large.
 - `task-runner`: executes a milestone or issue with AC/TC-driven TDD, targeted verification, risk-routed review, current-commit CI, the correct PR path, and per-TC Proof Packets.
-- `accept-issue`: evidence audit and human sign-off for standalone, high-risk, or explicitly sampled issues; reuses valid current-commit evidence and runs only missing, invalid, or manual checks. Ordinary milestone issues do not require individual sign-off.
-- `accept-milestone`: syncs latest main, aggregates Issue Evidence, runs milestone regression, E2E, and owner UAT, then reviews and merges the standing PR and completes state, learning, and archival.
-- `insights`: generates post-acceptance retrospectives and writes them as Linear comments (input for `vb-learn`).
+- `accept-issue`: evidence audit and human sign-off for standalone, high-risk, or explicitly sampled issues; once accepted, it immediately runs `insights → vb-wiki` against the accepted commit, even before merge or Milestone acceptance. Ordinary milestone issues do not require individual sign-off.
+- `accept-milestone`: syncs latest main, aggregates Issue Evidence, runs milestone regression, E2E, and owner UAT, then records acceptance and immediately runs `insights → vb-wiki`; merging the standing PR remains a separate authority and delivery step.
+- `insights`: writes an evidence-backed retrospective immediately after explicit acceptance, including accepted-but-unmerged work, for `vb-wiki`; it creates neither knowledge pages nor skill candidates.
+- `vb-wiki`: the default long-term-memory editor. It immediately compiles explicitly accepted evidence into current, concept-centered global/project notes; maintains a separate current-state retrieval catalog plus optional qmd search; queries canonical pages rather than logs/snippets; and lints contradictions, staleness, duplicates, broken links, and retrieval drift. Merge state is provenance, while tool promotion still requires a separate decision after the knowledge commit.
 - `blocker-resume`: inspects blocked Linear work and either resumes through task execution or asks for the missing decision.
 
 ### Implementation Skills
@@ -123,7 +135,7 @@ Linear is the task and status surface. Local requirement documents are contracts
 - `agent-sop`: risk-routes implementation, targeted verification, and reviewers without always invoking Test QA, Final QA, and every specialist review.
 - `bugger`: records a bug in Linear, analyzes root cause, and proposes a fix approach for user confirmation. Use before `quick`.
 - `quick`: implements a small, already-confirmed single-issue task (a confirmed bug fix or a tiny scoped change) in place, no branch/worktree, commits, records evidence in Linear, and hands off to `accept-issue`.
-- `merge-issue`: merges a standalone issue's own PR to main after `accept-issue` has passed, for issues that aren't tied to any milestone.
+- `merge-issue`: merges a standalone issue's PR to main after `accept-issue` passes; it verifies the PR still matches the accepted commit and uses `reconcile_only` instead of repeating retrospective, knowledge editing, or promotion.
 - `incremental-implementation`: delivers changes in thin vertical slices. Use for any change touching more than one file.
 - `source-driven-development`: grounds every implementation decision in official documentation for version-sensitive framework code.
 - `test-driven-development`: drives implementation and bug fixes with tests (Prove-It Pattern).
@@ -139,7 +151,8 @@ Linear is the task and status surface. Local requirement documents are contracts
 
 ### Skill Curation Skills
 
-- `skillos-lite`: proposes SkillOS-style `insert`, `update`, `deprecate`, or `noop` skill curation operations from accepted work; confirmed changes still go through `skill-builder`.
+- `vb-learn`: creates or refines exactly one global tool skill only when the user explicitly requests it or approves one `vb-wiki` promotion proposal.
+- `skillos-lite`: proposes `insert`, `update`, `deprecate`, or `noop` operations only when the user explicitly requests skill-library curation; it is not part of default post-acceptance learning.
 - `skill-builder`: creates or updates Codex skills with reliable trigger descriptions, concise SKILL.md workflows, and validation checklists.
 
 ### Routing and Agent Skills
@@ -167,7 +180,7 @@ Linear is the task and status surface. Local requirement documents are contracts
 - `code_review`: independent correctness, maintainability, architecture-contract, and evidence review.
 - `integrator`: cross-Issue dependency, contract, current-commit evidence, and milestone integration-readiness review.
 
-VibeRig dynamically selects the minimum necessary team through `subagent-routing`; unaffected specialists are not invoked. Project-specific payment, billing, compliance, framework, or domain roles remain the responsibility of `update-team`. Subagents must not update Linear, write Proof Packets, or make final acceptance decisions. Post-acceptance learning runs directly through `insights → vb-learn`; there is no separate `self_learner` agent.
+VibeRig dynamically selects the minimum necessary team through `subagent-routing`; unaffected specialists are not invoked. Project-specific payment, billing, compliance, framework, or domain roles remain the responsibility of `update-team`. Subagents must not update Linear, write Proof Packets, or make final acceptance decisions. The default learning path runs immediately after explicit acceptance as `insights → vb-wiki`; there is no separate `self_learner` agent, and `vb-learn` runs only under separate user authority.
 
 ## Workflow
 
@@ -179,5 +192,5 @@ VibeRig dynamically selects the minimum necessary team through `subagent-routing
    - concurrent milestone issues open a PR into the integration branch, merged by `task-runner` only after quality gates and current-commit CI pass;
    - issues run sequentially inside the milestone loop keep updating the one standing integration-branch → main PR, merged only by `accept-milestone`;
    - a standalone issue with no milestone opens its own PR straight to main, merged by `merge-issue` after `accept-issue` passes. When all issues in a milestone finish, the milestone becomes `pending_acceptance`.
-6. Ordinary milestone issues flow directly from valid technical Evidence to `accept-milestone`; use `accept-issue` only for standalone, high-risk, or sampled work. Milestone acceptance runs latest-main sync → current-commit CI → milestone TCs/incremental regression/E2E → owner UAT → explicit approval → standing-PR merge → state/learning/archival, without rerunning every issue's already-valid unit evidence.
+6. Ordinary milestone issues flow directly from valid technical Evidence to `accept-milestone`; use `accept-issue` only for standalone, high-risk, or sampled work. Milestone acceptance runs latest-main sync → current-commit CI → milestone TCs/incremental regression/E2E → owner UAT → explicit acceptance → immediate `insights → vb-wiki` → separately authorized standing-PR merge → state/archival, without rerunning every issue's already-valid unit evidence. Standalone acceptance also runs `insights → vb-wiki` immediately; `merge-issue` later performs delivery and reconciliation only.
 7. For small changes use `record-issue` (impact analysis → single issue). For bugs use `bugger` → `quick` → `accept-issue`.

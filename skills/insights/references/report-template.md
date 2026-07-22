@@ -1,76 +1,83 @@
-# Report Template
+# Retrospective Report Template
 
-Render filled report titles, headings, table headers, and prose in
-`.vibeRig/project.yaml` `output.language`. Keep candidate type names, stable
-IDs, local paths, commands, branch names, Linear keys, acceptance IDs, schema
-keys, and code symbols unchanged.
+Render headings and prose in `.vibeRig/project.yaml` `output.language`. Keep schema field names, stable IDs, paths, commands, branch names, URLs, hashes, Linear keys, acceptance IDs, and code symbols unchanged.
 
-## Task Retrospective
+## Issue Or Milestone Retrospective
 
 ```md
-# Task Retrospective: <REQ> <TASK-ID>
+<!-- VibeRig-Event: <ACCEPTANCE-EVENT-ID> -->
+<!-- VibeRig-Record: retrospective:<ACCEPTANCE-EVENT-ID> -->
+# Retrospective: <SCOPE-ID>
 
 ## Accepted Outcome
 
 - Status:
-- Branch:
-- PR:
+- Acceptance event:
+- Acceptance record:
+- Delivery state:
+- Accepted commit or non-code record:
+- Merged commit (optional provenance):
 - Validation:
-- Acceptance refs:
 
 ## What Changed
 
-- Files:
+- Files or records:
 - Behavior:
-- Tests:
+- Tests and gates:
 
 ## Evidence
 
-- Task contract:
+- Requirement contract:
+- Proof Packet:
 - Acceptance notes:
 - Code review notes:
-- Linear comment evidence:
+- Delivery result (optional):
 
-## Friction
+## Material Friction
 
-- Failures:
+- Failures and root causes:
 - Rework:
-- Scope issues:
-- Missing inputs:
+- Scope or input gaps:
 
-## Learning Candidates
+## Retrospective Signals
 
-| ID | Type | Confidence | Auto Apply | Target |
-| --- | --- | --- | --- | --- |
+| ID | Statement | Confidence | Scope Hint | Applicability | Evidence | Invalidation Signals |
+| --- | --- | --- | --- | --- | --- | --- |
 
-## Skill Curation Proposals
+## Discarded Signals
 
-| ID | Operation | Target Skill | Confidence | Risk | Requires Confirmation |
-| --- | --- | --- | --- | --- | --- |
+| ID | Text | Reason |
+| --- | --- | --- |
 
-## Applied Learnings
+## Residual Risks
 
-- Nothing applied.
+- None noted.
 ```
 
-## Requirement Insights
+## Requirement Retrospective
 
 ```md
-# Requirement Insights: <REQ>
+<!-- VibeRig-Event: <AGGREGATION-EVENT-ID> -->
+<!-- VibeRig-Record: retrospective:<AGGREGATION-EVENT-ID> -->
+# Requirement Retrospective: <REQUIREMENT-ID>
 
-## Summary
+## Aggregation Event
 
-## Task Outcomes
+- Event ID:
+- Derived from acceptance events:
+- Completeness check:
+
+## Acceptance Events
+
+## Milestone Outcomes
 
 ## Recurring Friction
 
-## Planning Quality
+## Planning And Validation Quality
 
-## Validation Quality
+## Retrospective Signals
 
-## Learning Candidates
+## Discarded Signals
 
-## Skill Curation Proposals
-
-## Confirmed Learnings
+## Residual Risks
 ```
