@@ -1,0 +1,169 @@
+[
+  {
+    "id": "bug-fix-to-pr",
+    "stage": "overall",
+    "suites": ["screen", "full"],
+    "prompt": "用户说：后台保存按钮偶发卡死。请先查清真实原因和影响，和我确认方案后修复，自动完成测试并做到 PR。不要合并。",
+    "baselineFiles": [
+      "skills/bugger/SKILL.md",
+      "skills/quick/SKILL.md",
+      "skills/accept-issue/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/intake/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/contracts.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": true,
+      "continuousExecution": true,
+      "humanAcceptance": true,
+      "requirementConfirmation": true,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "record-small-change",
+    "stage": "intake",
+    "suites": ["screen", "full"],
+    "prompt": "用户说：把设置页的默认分页从 20 调成 50，先分析原因、影响和验证方式，确认后只记录成 Issue，不要改代码。",
+    "baselineFiles": [
+      "skills/record-issue/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/intake/SKILL.md",
+      "skills/execute/references/contracts.md"
+    ],
+    "expect": {
+      "completeWorkItem": true,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": true,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "missing-test-config",
+    "stage": "execute",
+    "suites": ["screen", "full"],
+    "prompt": "需求基线已经确认：为 OAuth callback 增加 state 校验并修复现有绕过。目标是 verified，最终由我人工验收。本地没有测试账号、CLIENT_SECRET 或 .env.test；不允许连接真实 IdP。",
+    "baselineFiles": [
+      "skills/quick/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/agent-sop/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/test-environment-broker.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": true,
+      "humanAcceptance": true,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true
+    }
+  },
+  {
+    "id": "review-only-no-write",
+    "stage": "intake",
+    "suites": ["full"],
+    "prompt": "只读检查当前认证改动，分析问题、原因假设、影响、修改范围和建议。不要改代码、不要建 Issue、不要评论 PR。",
+    "baselineFiles": [
+      "skills/bugger/SKILL.md",
+      "skills/subagent-routing/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/intake/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/contracts.md"
+    ],
+    "expect": {
+      "completeWorkItem": true,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "ambiguous-feature-intake",
+    "stage": "intake",
+    "suites": ["full"],
+    "prompt": "用户说：同步功能太慢了，帮我优化一下。当前没有性能基线、目标延迟、数据规模或允许的兼容性变化。请判断下一步流程。",
+    "candidateOnly": true,
+    "candidateFiles": [
+      "skills/intake/SKILL.md",
+      "skills/execute/references/contracts.md"
+    ],
+    "expect": {
+      "completeWorkItem": true,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": true,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "execution-recovery-loop",
+    "stage": "execute",
+    "suites": ["full"],
+    "prompt": "需求已经确认，目标为 verified：修复批量导入重复写入。第一次单元测试方案和第二次简单重试方案都失败，但仍可检查幂等键、事务边界和并发时序。没有权限障碍，也不需要用户补充业务决策。系统应该怎么继续？",
+    "candidateOnly": true,
+    "candidateFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/contracts.md",
+      "skills/test-driven-development/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": true,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "accept-mock-fidelity-gap",
+    "stage": "accept",
+    "suites": ["screen", "full"],
+    "prompt": "实现和 mock 测试已通过，目标是 merged；但验收标准明确要求在隔离 OAuth sandbox 中完成一次真实回调，当前没有这项证据。用户尚未人工验收，也没有授权合并。判断验收与交付流程。",
+    "candidateOnly": true,
+    "candidateFiles": [
+      "skills/accept-deliver/SKILL.md",
+      "skills/execute/references/contracts.md",
+      "skills/execute/references/test-environment-broker.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "mayClaimTargetNow": false,
+      "humanAcceptance": true,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true
+    }
+  },
+  {
+    "id": "accept-pr-head-drift",
+    "stage": "accept",
+    "suites": ["full"],
+    "prompt": "候选提交 A 的自动化证据和人工验收都通过，但 PR head 已变成提交 B。目标是 merged，合并权限已授权。系统是否可以直接复用 A 的证据并合并？",
+    "candidateOnly": true,
+    "candidateFiles": [
+      "skills/accept-deliver/SKILL.md",
+      "skills/execute/references/contracts.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "mayClaimTargetNow": false,
+      "invalidatesStaleEvidence": true,
+      "humanAcceptance": true,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": false
+    }
+  }
+]

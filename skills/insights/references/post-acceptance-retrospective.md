@@ -52,6 +52,14 @@ validation:
 review:
   acceptance_notes: ""
   code_review_notes: ""
+  handoff_notes: ""
+routing_observations: []
+routing_analysis:
+  observation_count: 0
+  comparable_count: 0
+  excluded_route_ids: []
+  comparison_groups: []
+  default_changed: false
 retrospective_signals: []
 discarded_signals: []
 residual_risks: []
@@ -93,6 +101,16 @@ after the immediate wiki write succeeds and under separate user authority.
 Zero retrospective signals is a valid result. Still report the accepted
 outcome, evidence, friction, discarded signals, delivery_state, and residual
 risks; never invent a signal merely to avoid an empty section.
+
+When the accepted Evidence Packet contains route observations, validate and
+copy their raw facts, bind outcomes to the accepted source, and classify
+confounders. Compare only equivalent task families, risk, oracle, fidelity,
+provider/platform, and policy versions. A single observation never changes a
+default. Keep routing notes even when the knowledge result is zero-atoms.
+Never invent missing token, latency, price, model, reasoning, or Agent data.
+Protected acceptance, security, merge, release, production, destructive, or
+irreversible decisions are exploit-only; optional experiments are read-only
+shadow observations.
 
 Before writing, resolve the event host: Issue comments for Issue scope;
 registered Project Updates for Milestone/requirement scope. Search only that

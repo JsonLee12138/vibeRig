@@ -1,16 +1,16 @@
 ---
 name: vb-wiki
 description: >-
-  Maintain the git-backed ~/.vb-wiki as compiled long-term memory: ingest
-  explicitly accepted evidence, query canonical knowledge, lint its health,
-  and maintain its retrieval catalog. Use for “学习 VB-42”, “记录经验”,
-  “沉淀到 wiki”, “查知识库”, “vb-wiki lint”, replies to a pending vb-wiki
-  tool-promotion proposal, skill-to-note conversion, or consolidation.
+  Maintain the git-backed ~/.vb-wiki as compiled long-term memory: query
+  canonical knowledge, ingest novelty-gated accepted evidence, lint health,
+  and maintain retrieval. Use for explicit knowledge queries/writes,
+  insights handoffs marked novel/conflict, “vb-wiki lint”, pending promotion
+  replies, skill-to-note conversion, or consolidation.
 ---
 
 # VB Wiki
 
-`vb-wiki` is VibeRig's default self-learning sink and long-term-memory editor. It compiles immutable accepted evidence into a persistent, current synthesis rather than another Issue summary. Canonical pages hold knowledge; a separate retrieval projection makes that knowledge findable; schema and maintenance protocols keep both accurate. Only after a knowledge commit may one pattern be considered for promotion into a separately authorized tool skill.
+`vb-wiki` is VibeRig's long-term-memory editor and explicit query surface. It compiles novelty-gated accepted evidence into a persistent, current synthesis rather than another Issue summary. Ordinary accepted work with `zero-atoms` does not load this write workflow.
 
 ## Contract
 
@@ -29,9 +29,8 @@ description: >-
 
 | Caller | Condition |
 |---|---|
-| `accept-issue` | Immediately after the human acceptance comment and `insights` retrospective, including milestone-bound or unmerged work |
-| `accept-milestone` | Immediately after Milestone acceptance and `insights`, before any separately authorized merge |
-| `accept-milestone` / `merge-issue` reconciliation | After delivery, with `reconcile_only: true`; compare content and supplement delivery provenance without re-distilling |
+| `accept-deliver` / `insights` | Only for `novel` or `conflict` results, including accepted-but-unmerged work |
+| `accept-deliver` reconciliation | After delivery, with `reconcile_only: true`; compare content and supplement delivery provenance without re-distilling |
 | User (accepted Linear scope) | “学习 VB-42”; resolve VB-42 through the Linear acceptance path, never manual-note authority |
 | User (standalone manual note) | “记录这个 pattern”, “沉淀一下”, “记到知识库”, “更新 vb-wiki”, with a sourced statement supplied in the conversation |
 | User (pending promotion reply) | Explicit yes/no to the one persisted `vb-wiki` candidate; bind the reply and resume its promotion phase before any `vb-learn` handoff |

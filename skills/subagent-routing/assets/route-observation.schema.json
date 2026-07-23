@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://viberig.dev/schemas/route-observation.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "routeId",
+    "phase",
+    "taskFamily",
+    "risk",
+    "capability",
+    "agent",
+    "platform",
+    "model",
+    "reasoningEffort",
+    "policyAction",
+    "profileVersion",
+    "oracleFingerprint",
+    "selectedAt",
+    "prediction",
+    "outcome"
+  ],
+  "properties": {
+    "routeId": {
+      "type": "string",
+      "pattern": "^route:[a-zA-Z0-9._-]+:[a-f0-9]{64}$"
+    },
+    "phase": { "enum": ["intake", "pre-development", "execute", "accept", "other"] },
+    "taskFamily": { "type": "string", "minLength": 1 },
+    "risk": { "enum": ["L0", "L1", "L2", "L3"] },
+    "capability": { "type": "string", "minLength": 1 },
+    "agent": { "type": "string", "minLength": 1 },
+    "platform": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "reasoningEffort": { "type": "string", "minLength": 1 },
+    "policyAction": { "enum": ["exploit", "explore", "shadow", "fallback", "inherit"] },
+    "profileVersion": { "type": "string", "minLength": 1 },
+    "oracleFingerprint": { "type": "string", "minLength": 1 },
+    "comparisonKey": { "type": "string", "minLength": 1 },
+    "selectedAt": { "type": "string", "format": "date-time" },
+    "prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["why", "expectedQuality", "escalationSignals"],
+      "properties": {
+        "why": { "type": "string", "minLength": 1 },
+        "expectedQuality": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "expectedLatencyMs": { "type": ["integer", "null"], "minimum": 0 },
+        "expectedInputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "escalationSignals": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "validatedByMainAgent"],
+      "properties": {
+        "status": { "enum": ["pending", "accepted", "accepted_with_rework", "failed", "blocked", "discarded"] },
+        "validatedByMainAgent": { "type": "boolean" },
+        "qualityScore": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "oracleSatisfied": { "type": ["boolean", "null"] },
+        "reworkRounds": { "type": "integer", "minimum": 0 },
+        "blockingFindingCount": { "type": "integer", "minimum": 0 },
+        "criticalFailure": { "type": "boolean" },
+        "latencyMs": { "type": ["integer", "null"], "minimum": 0 },
+        "inputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "cachedInputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "outputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "reasoningOutputTokens": { "type": ["integer", "null"], "minimum": 0 },
+        "cost": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["amount", "currency", "source"],
+          "properties": {
+            "amount": { "type": ["number", "null"], "minimum": 0 },
+            "currency": { "type": ["string", "null"] },
+            "source": { "enum": ["provider", "catalog", "unknown"] }
+          }
+        },
+        "failureClasses": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "confounders": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

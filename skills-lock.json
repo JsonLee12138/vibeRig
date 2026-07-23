@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "andrej-karpathy-perspective": {
+      "source": "alchaincyf/karpathy-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "a0c4476f6ffdeabf1ed31a3503bec995d0637c703ccf43ca9ed0acccff361773"
+    },
     "skill-builder": {
       "source": "JsonLee12138/vibeRig",
       "sourceType": "github",

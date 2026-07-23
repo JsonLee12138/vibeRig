@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "route",
+    "targetMode",
+    "humanGates",
+    "workItemFields",
+    "continuesUntilTarget",
+    "requiresManualSkillSelection",
+    "testEnvironmentStrategy",
+    "distinguishesEvidenceFidelity",
+    "hasCompletionOracle",
+    "mayClaimTargetNow",
+    "invalidatesStaleEvidence",
+    "externalWritePolicy",
+    "notes"
+  ],
+  "properties": {
+    "route": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "targetMode": {
+      "type": "string",
+      "enum": ["diagnosed", "recorded", "planned", "verified", "committed", "pr_ready", "merged", "released", "unclear"]
+    },
+    "humanGates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "requirement_confirmation",
+          "blocker_decision",
+          "human_acceptance",
+          "delivery_authorization",
+          "skill_handoff",
+          "test_configuration"
+        ]
+      }
+    },
+    "workItemFields": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "problem",
+          "expected_outcome",
+          "evidence",
+          "causal_model",
+          "proposed_change",
+          "alternatives",
+          "impact",
+          "scope",
+          "acceptance_oracle",
+          "test_strategy",
+          "risk",
+          "dependencies",
+          "delivery_target"
+        ]
+      }
+    },
+    "continuesUntilTarget": { "type": "boolean" },
+    "requiresManualSkillSelection": { "type": "boolean" },
+    "testEnvironmentStrategy": {
+      "type": "string",
+      "enum": ["not_applicable", "ask_user", "mock_or_fake", "ephemeral", "sandbox", "adaptive"]
+    },
+    "distinguishesEvidenceFidelity": { "type": "boolean" },
+    "hasCompletionOracle": { "type": "boolean" },
+    "mayClaimTargetNow": { "type": "boolean" },
+    "invalidatesStaleEvidence": { "type": "boolean" },
+    "externalWritePolicy": {
+      "type": "string",
+      "enum": ["respects_authority", "writes_before_confirmation", "unclear"]
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

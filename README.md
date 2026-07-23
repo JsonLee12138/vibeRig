@@ -1,39 +1,26 @@
 # VibeRig
 
-VibeRig is a multi-platform AI coding plugin for Linear-native software delivery. It turns rough requirements into local Docs as Code contracts, maps accepted planning output into Linear issues, routes execution through suitable subagents, records proof and acceptance in Linear, and immediately distils accepted experience into a local knowledge base.
+VibeRig is a goal-driven software-development harness. It uses three human stages—requirement discovery and confirmation, an autonomous Execute Goal Loop, and evidence-based human acceptance—to turn natural-language goals into Docs as Code contracts, verified changes, and traceable delivery without making users orchestrate internal skills.
 
 Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
 ```mermaid
-flowchart TD
-    S([▶ Start]) --> Init["vb-init\nInitialize project · once per project"]
-    Init --> Intake["intake\nOwner confirms requirement baseline"]
-    Intake --> PreDev["pre-development\nInternal pre-development review"]
-    PreDev --> OwnerReview["CTO owner report\nPlan + risks + acceptance guide"]
-    OwnerReview -->|approved| Materialize["Materialize plan\nCreate Linear Milestones / Issues"]
-    OwnerReview -->|returned/conditional| PreDev
-    Materialize --> TaskRunner["task-runner\nTC-driven delivery · risk review · PR/CI"]
-    TaskRunner -.->|"standalone / high risk / spot check"| AcceptIssue["accept-issue\nEvidence audit · human sign-off"]
-    AcceptIssue -.->|"issues found"| TaskRunner
-    AcceptIssue -->|"accepted"| Insights[/"insights\nImmediate retrospective"/]
-    TaskRunner -->|"milestone technical gates ready"| AcceptMs["accept-milestone\nRegression · E2E · UAT · acceptance"]
-    AcceptMs -->|"accepted, before merge"| Insights
-    Insights --> Wiki["vb-wiki\nDefault knowledge capture"]
-    Wiki --> Delivery{"Pending delivery?"}
-    Delivery -->|"no"| Learned([✅ Acceptance learning complete])
-    Delivery -->|"standalone PR"| MergeIssue["merge-issue\nMerge + reconcile only"]
-    Delivery -->|"milestone PR + separate approval"| MilestoneMerge["accept-milestone\nMerge + reconcile only"]
-    MergeIssue --> Delivered([✅ Delivered])
-    MilestoneMerge --> Delivered
-    Learned -."separate user approval".-> Learn["vb-learn\nCreate or refine one tool skill"]
-    Delivered -."separate user approval".-> Learn
-    TaskRunner -->|"Blocked"| Blocker["blocker-resume\nUnblock & resume"]
-    Blocker --> TaskRunner
-
-    SmallEntry(["✏️ Small change"]) --> RecordIssue["record-issue\nImpact analysis → single issue"]
-    RecordIssue --> TaskRunner
-    BugEntry(["🐛 Bug found"]) --> Bugger["bugger\nRecord & analyze"]
-    Bugger --> Quick["quick\nImplement fix"] --> AcceptIssue
+flowchart LR
+    S([▶ Natural-language goal]) --> Init["vb-init\nOnce per project"]
+    Init --> Intake["Stage 1 · intake\nDiscovery + complete Work Item"]
+    Intake --> Gate1{"Human confirmation\nRequirement baseline"}
+    Gate1 -->|"revise"| Intake
+    Gate1 -->|"confirm + write docs"| Execute["Stage 2 · execute\nGoal Loop"]
+    Execute --> Work["Implement · test environment\nVerify · risk review · PR/CI"]
+    Work --> Oracle{"Completion Oracle"}
+    Oracle -->|"autonomously solvable"| Execute
+    Oracle -->|"real authority/product gate"| Decision["Consolidated human decision"]
+    Decision --> Execute
+    Oracle -->|"satisfied"| Accept["Stage 3 · accept-deliver\nEvidence audit + human UAT"]
+    Accept -->|"return"| Execute
+    Accept -->|"accepted"| Delivery{"Delivery authorized?"}
+    Delivery -->|"no"| Accepted([✅ Accepted])
+    Delivery -->|"yes"| Delivered([✅ Merged / released])
 ```
 
 ## Contents
@@ -63,18 +50,17 @@ Chinese guides: [codex](docs/install/zh-CN/codex.zh-CN.md) · [claude](docs/inst
 
 ## Manual Usage
 
-Use VibeRig by asking Codex to run the relevant skill in a target project.
+Describe the desired outcome in the target project. VibeRig infers the stage; explicit skill names are mainly for initialization, knowledge queries, and maintenance.
 
 Typical prompts:
 
 - `Use vb-init for this repo.`
-- `Use intake to handle this requirement: ...` (it automatically runs the pre-development review after baseline confirmation)
-- `Continue pre-development for payment-refactor.` (only to resume or address returned items)
-- `Use task-runner for milestone ms-1 (or Linear issue ABC-123).`
-- `Use accept-issue for ABC-123.` (standalone, high risk, or spot check) / `Use accept-milestone for ms-1.`
+- `Login sometimes times out. Find the real cause, confirm the direction with me, fix it, and take it to a PR.`
+- `I want team-level permissions. First help me discover the complete requirement.`
+- `Continue ABC-123 and keep repairing and verifying until its goal is reached.`
+- `Help me accept ABC-123 and give me exact UAT steps.`
 - `Learn from ABC-123 and save the experience to the knowledge base.` (uses `vb-wiki`)
 - `Turn this confirmed capability into a tool skill.` (uses `vb-learn` and requires explicit authority)
-- `Use record-issue for this small change: ...`
 
 Project-local files created or used by VibeRig:
 
@@ -88,6 +74,7 @@ Project-local files created or used by VibeRig:
     <req-id>/
       requirement.yaml   # status + PRD decision + owner approval + milestones
       intake.md
+      work-item.json      # problem, causal model, proposal, impact, scope, acceptance, tests, target
       prd.md              # only when a new PRD is automatically required
       research/<domain>.md
       research/feasibility.md
@@ -114,28 +101,25 @@ Linear is the task and status surface. Local requirement documents are contracts
 ### Core Workflow Skills
 
 - `vb-init`: initializes `.vibeRig/project.yaml`, `.vibeRig/prd/`, `.vibeRig/requirements/` (with archives), `.worktrees/`, Linear container-project registration, gate policy, PR policy, default routing, and builds the project agent team.
-- `intake`: the only default human-facing entry for new requirements; runs a product-manager interview, obtains one owner baseline confirmation, then automatically starts pre-development.
-- `pre-development`: orchestrates PRD decisions, domain research, CTO architecture red/white-team review, acceptance and testing, risk/release planning, delivery drafts, and DoR into one owner approval package.
+- `intake`: unified discovery for features, bugs, small changes, debt, and risks; inspects current reality, builds a complete Work Item, and writes it only after one human confirmation.
+- `execute`: holds the Goal Contract and continuously implements, resolves test environments, verifies, reviews, and reaches the technical delivery target.
+- `accept-deliver`: audits Evidence, guides human UAT, records explicit acceptance, and performs separately authorized merge or release actions.
+- `pre-development`: internal L2/L3 capability for research, architecture, AC/TC, risk, and delivery planning; it does not add another human approval stage.
 - `prd-brainstorm`: either interviews for a standalone product PRD or synthesizes one internally from confirmed Intake context without repeating owner questions.
 - `tech-research`: internal domain research protocol for frontend, backend, data, security, operations, QA, and other routed subagents; the main agent owns synthesis and files.
 - `architecture-design`: CTO synthesis of domain evidence, including independent red-team attacks, white-team responses, and final decisions.
 - `define-acceptance`: creates structured ACs, engineering checks, and an owner-executable `acceptance-guide.md`; approved with the full package.
 - `split-milestones`: drafts milestones by independently acceptable user value before approval, then materializes the approved plan into Linear.
 - `split-issues`: drafts the full issue landscape before approval, then materializes only the next milestone with Rolling Wave vertical slices; no assignee or subagent.
-- `record-issue`: fast lane for small changes — impact analysis → single issue; escalates to the full pipeline when impact is large.
-- `task-runner`: executes a milestone or issue with AC/TC-driven TDD, targeted verification, risk-routed review, current-commit CI, the correct PR path, and per-TC Proof Packets.
-- `accept-issue`: evidence audit and human sign-off for standalone, high-risk, or explicitly sampled issues; once accepted, it immediately runs `insights → vb-wiki` against the accepted commit, even before merge or Milestone acceptance. Ordinary milestone issues do not require individual sign-off.
-- `accept-milestone`: syncs latest main, aggregates Issue Evidence, runs milestone regression, E2E, and owner UAT, then records acceptance and immediately runs `insights → vb-wiki`; merging the standing PR remains a separate authority and delivery step.
-- `insights`: writes an evidence-backed retrospective immediately after explicit acceptance, including accepted-but-unmerged work, for `vb-wiki`; it creates neither knowledge pages nor skill candidates.
-- `vb-wiki`: the default long-term-memory editor. It immediately compiles explicitly accepted evidence into current, concept-centered global/project notes; maintains a separate current-state retrieval catalog plus optional qmd search; queries canonical pages rather than logs/snippets; and lints contradictions, staleness, duplicates, broken links, and retrieval drift. Merge state is provenance, while tool promotion still requires a separate decision after the knowledge commit.
-- `blocker-resume`: inspects blocked Linear work and either resumes through task execution or asks for the missing decision.
+- `record-issue` and `bugger`: legacy compatibility surfaces that normalize into `intake`.
+- `quick`, `task-runner`, and `blocker-resume`: legacy execution surfaces that restore or create a Goal Contract and enter `execute`.
+- `accept-issue`, `accept-milestone`, and `merge-issue`: legacy acceptance/delivery surfaces that select an `accept-deliver` scope or mode.
+- `insights`: produces an evidence-backed retrospective and novelty decision; accepted work with no reusable knowledge ends as `zero-atoms`.
+- `vb-wiki`: supports explicit project-knowledge queries; writes are triggered by novelty, repeated defects, milestones, or batch thresholds instead of every acceptance.
 
 ### Implementation Skills
 
-- `agent-sop`: risk-routes implementation, targeted verification, and reviewers without always invoking Test QA, Final QA, and every specialist review.
-- `bugger`: records a bug in Linear, analyzes root cause, and proposes a fix approach for user confirmation. Use before `quick`.
-- `quick`: implements a small, already-confirmed single-issue task (a confirmed bug fix or a tiny scoped change) in place, no branch/worktree, commits, records evidence in Linear, and hands off to `accept-issue`.
-- `merge-issue`: merges a standalone issue's PR to main after `accept-issue` passes; it verifies the PR still matches the accepted commit and uses `reconcile_only` instead of repeating retrospective, knowledge editing, or promotion.
+- `agent-sop`: internal `execute` protocol for risk-adaptive implementation, verification, and review; L0 does not require a subagent, while L2/L3 add independent checks as needed.
 - `incremental-implementation`: delivers changes in thin vertical slices. Use for any change touching more than one file.
 - `source-driven-development`: grounds every implementation decision in official documentation for version-sensitive framework code.
 - `test-driven-development`: drives implementation and bug fixes with tests (Prove-It Pattern).
@@ -180,17 +164,14 @@ Linear is the task and status surface. Local requirement documents are contracts
 - `code_review`: independent correctness, maintainability, architecture-contract, and evidence review.
 - `integrator`: cross-Issue dependency, contract, current-commit evidence, and milestone integration-readiness review.
 
-VibeRig dynamically selects the minimum necessary team through `subagent-routing`; unaffected specialists are not invoked. Project-specific payment, billing, compliance, framework, or domain roles remain the responsibility of `update-team`. Subagents must not update Linear, write Proof Packets, or make final acceptance decisions. The default learning path runs immediately after explicit acceptance as `insights → vb-wiki`; there is no separate `self_learner` agent, and `vb-learn` runs only under separate user authority.
+VibeRig uses `subagent-routing` to choose the minimum capability set first, then select model/reasoning from provider-, task-family-, risk-, and accepted-observation evidence; L0 defaults to no subagent. Reversible low-risk work with a deterministic oracle may use at most 10% reproducible challenger exploration, while acceptance, security, merge, release, and other protected paths exploit only. Subagents must not update Linear, write Proof Packets, or make final acceptance decisions. After acceptance, `insights` retains model/agent route observations and comparable-group analysis; `insights → vb-wiki` remains novelty- or batch-gated, and `vb-learn` still requires separate user authority.
 
 ## Workflow
 
-1. Initialize the project with `vb-init` (container Linear Project, `.vibeRig/prd/` and `.vibeRig/requirements/` with archives).
-2. The owner only needs to invoke `intake`. A product-manager interview completes goals, actors, flows, business rules, scope, constraints, success metrics, and acceptance concerns; the owner confirms the consolidated requirement baseline once.
-3. `intake` automatically enters `pre-development`: it decides whether a PRD is needed, routes domain subagents for feasibility research, has the CTO synthesize architecture through red/white-team review, and produces acceptance criteria, an owner verification guide, tests, risk/release plans, traceability, and local Milestone/Issue drafts. No Linear planning objects are created yet.
-4. The CTO reports once through `pre-development-review.md`, covering the recommendation, cost/timeline, risks, delivery plan, and executable owner acceptance steps. Approval materializes Linear Milestones and only the next milestone's Issues; a return reruns only affected stages.
-5. Execute with `task-runner <milestone-id or issue-id>`, human-invoked only: one persistent integration branch (`milestone/<req-id>-<n>`) per milestone; sequential work reuses the invocation worktree, while concurrent issues alone receive disposable worktrees. Task Briefs contain only related ACs, TCs, contracts, and risks. Every issue produces a commit, the proper PR/standing-PR update, and per-TC evidence:
-   - concurrent milestone issues open a PR into the integration branch, merged by `task-runner` only after quality gates and current-commit CI pass;
-   - issues run sequentially inside the milestone loop keep updating the one standing integration-branch → main PR, merged only by `accept-milestone`;
-   - a standalone issue with no milestone opens its own PR straight to main, merged by `merge-issue` after `accept-issue` passes. When all issues in a milestone finish, the milestone becomes `pending_acceptance`.
-6. Ordinary milestone issues flow directly from valid technical Evidence to `accept-milestone`; use `accept-issue` only for standalone, high-risk, or sampled work. Milestone acceptance runs latest-main sync → current-commit CI → milestone TCs/incremental regression/E2E → owner UAT → explicit acceptance → immediate `insights → vb-wiki` → separately authorized standing-PR merge → state/archival, without rerunning every issue's already-valid unit evidence. Standalone acceptance also runs `insights → vb-wiki` immediately; `merge-issue` later performs delivery and reconciliation only.
-7. For small changes use `record-issue` (impact analysis → single issue). For bugs use `bugger` → `quick` → `accept-issue`.
+1. Initialize once with `vb-init`; local harness operation does not depend on Linear being available.
+2. Describe the goal naturally. `intake` inspects the repository and existing records, discovers a complete Work Item, and asks for one requirement-baseline confirmation before writing `intake.md`, `work-item.json`, and `requirement.yaml`.
+3. L0/L1 work enters `execute` directly. L2/L3 work internally uses `pre-development` for technical planning without creating a new human approval stage.
+4. `execute` loops through Understand → Plan → Implement → Verify → Review → Repair. Missing test configuration is resolved with fixtures, fakes, stubs, ephemeral dependencies, or sandboxes. It pauses only for product decisions, authority boundaries, non-simulatable real environments, or three no-progress attempts.
+5. Once the Completion Oracle is satisfied, `accept-deliver` audits current-commit Evidence and presents the shortest exact human UAT. Rejected work returns to the same Goal Loop.
+6. Explicit acceptance creates an acceptance record. Commit, PR, merge, and release actions follow the requested target and separate authority; merge or release is never inferred from acceptance alone.
+7. Evidence is retained by default. Accepted subagent/model route observations enter the retrospective; `update-team` changes derived routing only with at least five comparable samples, no quality or Critical-safety regression, and a material cost or latency gain. Knowledge compilation and tool-skill promotion keep their separate novelty and explicit-authority gates.

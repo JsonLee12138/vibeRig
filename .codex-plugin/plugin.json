@@ -1,7 +1,7 @@
 {
   "name": "vibe-rig",
   "version": "1.2.1",
-  "description": "Enterprise pre-development orchestration, approval-ready Docs as Code contracts, Linear-native execution, and subagent routing.",
+  "description": "Goal-driven software-development harness with confirmed requirements, continuous execution, evidence, and human acceptance.",
   "author": {
     "name": "JsonLee12138"
   },
@@ -19,8 +19,8 @@
   "mcpServers": "./.codex.mcp.json",
   "interface": {
     "displayName": "VibeRig",
-    "shortDescription": "Turn one owner request into an approval-ready development plan.",
-    "longDescription": "VibeRig interviews the owner once, orchestrates product, domain research, architecture, acceptance, testing, risk, and delivery planning internally, then materializes the approved plan into Linear for subagent-routed execution and evidence-based acceptance.",
+    "shortDescription": "Confirm the real goal, execute to evidence, then accept.",
+    "longDescription": "VibeRig discovers and confirms a complete Work Item, continuously implements and verifies it through a risk-adaptive Goal Loop, then guides evidence-based human acceptance and separately authorized delivery.",
     "developerName": "jsonlee",
     "category": "Productivity",
     "capabilities": [
@@ -28,11 +28,11 @@
       "Planning"
     ],
     "defaultPrompt": [
-      "Use VibeRig intake to handle this requirement and prepare the complete pre-development approval package",
-      "Continue the VibeRig pre-development review for this requirement",
-      "Run the next VibeRig Linear task",
-      "Record human acceptance for a VibeRig Linear task",
-      "Generate accepted-work insights"
+      "Help me discover the complete requirement, confirm it with me once, then write the baseline",
+      "Execute this confirmed Work Item and keep repairing and verifying until the target is reached",
+      "Continue this VibeRig issue or milestone from its current evidence",
+      "Guide me through human acceptance and perform only the delivery actions I explicitly authorize",
+      "Analyze and record this problem as a complete Work Item"
     ]
   }
 }

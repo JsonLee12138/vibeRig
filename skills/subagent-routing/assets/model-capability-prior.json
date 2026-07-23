@@ -1,0 +1,72 @@
+{
+  "$schema": "./model-capability-prior.schema.json",
+  "version": "codex-workflow-2026-07-23-v1",
+  "provider": "codex-chatgpt",
+  "measuredAt": "2026-07-23",
+  "runner": "codex-cli 0.144.6",
+  "evidence": "docs/design/evidence/workflow-model-matrix-2026-07-23.zh-CN.md",
+  "pricing": {
+    "status": "unavailable",
+    "reason": "The active custom provider exposed tokens and latency but no dollar or ChatGPT-credit rates."
+  },
+  "routes": [
+    {
+      "taskFamily": "orchestration",
+      "phase": "overall",
+      "default": { "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-sol", "reasoningEffort": "low" },
+      "quality": { "earned": 12, "total": 12 },
+      "durationMs": 18213,
+      "confidence": "provisional",
+      "boundary": "Use Terra as the default coordinator; escalate open-ended, high-value, or unusually ambiguous work to Sol."
+    },
+    {
+      "taskFamily": "bounded-intake",
+      "phase": "intake",
+      "default": { "model": "gpt-5.6-luna", "reasoningEffort": "low" },
+      "challenger": { "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+      "quality": { "earned": 27, "total": 27 },
+      "durationMs": 44017,
+      "confidence": "provisional",
+      "boundary": "Use only for bounded classification, normalization, read-only analysis, and requirement shaping with a deterministic oracle."
+    },
+    {
+      "taskFamily": "deterministic-execute",
+      "phase": "execute",
+      "default": { "model": "gpt-5.4-mini", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-luna", "reasoningEffort": "low" },
+      "quality": { "earned": 22, "total": 22 },
+      "durationMs": 30758,
+      "confidence": "experimental",
+      "boundary": "Only workflow routing was benchmarked. Use for confirmed, reversible, tightly scoped work; escalate on cross-module ambiguity, repeated failure, or risk."
+    },
+    {
+      "taskFamily": "acceptance-and-delivery",
+      "phase": "accept",
+      "default": { "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+      "shadow": { "model": "gpt-5.6-sol", "reasoningEffort": "low" },
+      "quality": { "earned": 50, "total": 50 },
+      "durationMs": 83434,
+      "confidence": "provisional",
+      "boundary": "Do not explore in the decision path. A challenger may run read-only in shadow mode but cannot decide acceptance, authority, merge, or release."
+    },
+    {
+      "taskFamily": "complex-escalation",
+      "phase": "any",
+      "default": { "model": "gpt-5.6-sol", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-terra", "reasoningEffort": "medium" },
+      "quality": null,
+      "durationMs": null,
+      "confidence": "heuristic",
+      "boundary": "Use for open-ended, high-impact, adversarial, or unusually ambiguous work. Increase reasoning only after task framing and context reduction fail."
+    }
+  ],
+  "invalidationSignals": [
+    "model slug or provider changes",
+    "Codex model catalog changes",
+    "VibeRig routing or Skill prompt changes",
+    "Completion Oracle or scoring rubric changes",
+    "three comparable accepted observations contradict a route",
+    "one Critical safety, authority, or evidence-fidelity failure"
+  ]
+}

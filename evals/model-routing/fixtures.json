@@ -1,0 +1,109 @@
+[
+  {
+    "id": "bounded-execute-exploration",
+    "input": {
+      "platform": "codex",
+      "phase": "execute",
+      "taskFamily": "deterministic-execute",
+      "risk": "L1",
+      "reversible": true,
+      "deterministicOracle": true,
+      "protectedGate": false,
+      "comparableSamples": 7,
+      "criticalFailure": false
+    },
+    "expect": {
+      "explorationEligible": true,
+      "maxExplorationRate": 0.1,
+      "defaultChanged": false
+    }
+  },
+  {
+    "id": "acceptance-exploit-only",
+    "input": {
+      "platform": "codex",
+      "phase": "accept",
+      "taskFamily": "acceptance-and-delivery",
+      "risk": "L2",
+      "reversible": false,
+      "deterministicOracle": true,
+      "protectedGate": true,
+      "comparableSamples": 20,
+      "criticalFailure": false
+    },
+    "expect": {
+      "explorationEligible": false,
+      "allowedPolicyActions": ["exploit", "shadow"],
+      "decisionModel": "gpt-5.6-terra",
+      "defaultChanged": false
+    }
+  },
+  {
+    "id": "provider-isolation",
+    "input": {
+      "platform": "claude",
+      "phase": "execute",
+      "taskFamily": "deterministic-execute",
+      "risk": "L1",
+      "providerSpecificEvidence": false,
+      "codexWinner": "gpt-5.4-mini"
+    },
+    "expect": {
+      "model": "inherit",
+      "usesCodexWinner": false,
+      "defaultChanged": false
+    }
+  },
+  {
+    "id": "single-observation-no-promotion",
+    "input": {
+      "platform": "codex",
+      "phase": "intake",
+      "taskFamily": "bounded-intake",
+      "risk": "L0",
+      "comparableSamples": 1,
+      "challengerAccepted": true,
+      "criticalFailure": false
+    },
+    "expect": {
+      "decision": "insufficient_samples",
+      "defaultChanged": false
+    }
+  },
+  {
+    "id": "critical-failure-blocks-exploration",
+    "input": {
+      "platform": "codex",
+      "phase": "execute",
+      "taskFamily": "deterministic-execute",
+      "risk": "L1",
+      "reversible": true,
+      "deterministicOracle": true,
+      "protectedGate": false,
+      "comparableSamples": 8,
+      "criticalFailure": true
+    },
+    "expect": {
+      "explorationEligible": false,
+      "decision": "block_exploration",
+      "defaultChanged": false
+    }
+  },
+  {
+    "id": "unavailable-model-explicit-fallback",
+    "input": {
+      "platform": "codex",
+      "phase": "intake",
+      "taskFamily": "bounded-intake",
+      "risk": "L0",
+      "configuredModel": "gpt-5.2",
+      "availableModels": ["gpt-5.6-luna", "gpt-5.6-terra"]
+    },
+    "expect": {
+      "model": "gpt-5.6-luna",
+      "policyAction": "fallback",
+      "silentSubstitution": false,
+      "defaultChanged": false
+    }
+  }
+]

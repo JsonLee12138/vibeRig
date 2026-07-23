@@ -1,4 +1,4 @@
 interface:
   display_name: "Subagent Routing"
-  short_description: "Choose and brief specialized subagents"
-  default_prompt: "Use $subagent-routing to decide whether specialized subagent delegation is warranted, choose the best available capability, prepare a bounded Subagent Brief, and enforce that subagents do not update Linear/status or make final acceptance decisions."
+  short_description: "Route subagent capability and model efficiently"
+  default_prompt: "Use $subagent-routing to choose capability before model, apply provider-specific accepted evidence and safe exploration rules, prepare a bounded Subagent Brief and route observation, then validate the result without delegating final acceptance or authority."

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generatedAt", "catalogFingerprint", "policyFingerprint", "sources", "routes"],
+  "properties": {
+    "version": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "catalogFingerprint": { "type": "string", "minLength": 1 },
+    "policyFingerprint": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "platform",
+          "phase",
+          "taskFamily",
+          "capability",
+          "default",
+          "confidence",
+          "sampleCount",
+          "qualityFloor",
+          "escalationSignals"
+        ],
+        "properties": {
+          "platform": { "type": "string", "minLength": 1 },
+          "phase": { "type": "string", "minLength": 1 },
+          "taskFamily": { "type": "string", "minLength": 1 },
+          "capability": { "type": "string", "minLength": 1 },
+          "default": { "$ref": "#/$defs/modelSelection" },
+          "challenger": { "$ref": "#/$defs/modelSelection" },
+          "fallback": { "$ref": "#/$defs/modelSelection" },
+          "confidence": { "enum": ["heuristic", "experimental", "provisional", "trusted"] },
+          "sampleCount": { "type": "integer", "minimum": 0 },
+          "qualityFloor": { "type": "number", "minimum": 0, "maximum": 1 },
+          "explorationRate": { "type": "number", "minimum": 0, "maximum": 0.1 },
+          "blockedForExploration": { "type": "boolean" },
+          "escalationSignals": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "modelSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "reasoningEffort"],
+      "properties": {
+        "model": { "type": "string", "minLength": 1 },
+        "reasoningEffort": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

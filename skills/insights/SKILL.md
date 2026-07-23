@@ -1,115 +1,104 @@
 ---
 name: insights
-description: >-
-  Create evidence-backed retrospectives immediately after explicit human
-  acceptance, including accepted-but-unmerged Linear work, and write them to
-  the scope's mapped Linear record host for vb-wiki; do not create skills.
+description: 将已人工验收的 Evidence 编译为证据化复盘，记录 Subagent/model 路由结果与可比学习样本，并判断是否存在值得写入 vb-wiki 的新颖知识。由 accept-deliver 在 novelty、重复缺陷、Milestone、模型路由观察或批量阈值命中时内部调用；也可在用户明确要求复盘时使用。零知识是成功结果，不创建 Skill，也不凭单次结果自动改模型默认值。
 ---
 
 # Insights
 
-Compile the explicitly accepted outcome into a human-readable retrospective and a small set of evidence-backed signals. The mapped Linear record is the immediate handoff to `vb-wiki`; it is not itself the knowledge store and never authorizes a skill change.
+从 accepted Evidence 中提取真正会改变未来判断或执行方式的知识。不要把每次验收都变成重型学习事务。
 
-## Contract
+## 进入条件
 
-- Single responsibility: explain what was accepted, what evidence proves it, what friction mattered, and which signals may help future work.
-- Explicit human acceptance is the only gate for a new retrospective. Run immediately after acceptance; do not wait for PR merge, the authoritative branch, or `accept-milestone`. Requirement aggregation may only replay completed child acceptance events and is never represented as a new human acceptance.
-- For code-backed work, anchor every conclusion to the exact `accepted_commit`. Record merge state as provenance only. If content materially changes after acceptance, the changed result requires new acceptance and a new retrospective event.
-- Write through `vb-linear`: Issue scopes use Issue comments; Milestone/requirement scopes use the registered Project's Project Updates. Do not invent Milestone comments or write `~/.vb-wiki`, `~/.vb-skills`, project skill files, user memory, or local proof packets.
-- Do not generate `skill_update`, SkillOS curation proposals, skill names, or skill-creation questions. Tool-worthiness belongs exclusively to `vb-wiki` after its knowledge write succeeds.
+满足至少一项时运行：
 
-## Input Contract
+- 用户明确要求复盘或沉淀；
+- 出现此前未记录的因果机制、约束、失败模式或验证方法；
+- 同类缺陷或返工重复出现；
+- Milestone/requirement 需要跨 Issue 综合；
+- 达到项目配置的批量编译阈值；
+- 高风险验收要求立即保存决策依据。
 
-Acceptance-event mode requires:
+普通任务只有 changed files、命令、时间线或已知结论时，返回 `zero-atoms`，不加载完整 `vb-wiki` 写入协议。
 
-- Accepted Issue, Milestone, requirement, PR, or explicit retrospective scope.
-- An explicit human acceptance record plus validation/review evidence tied to the accepted outcome.
-- A stable `acceptance_event.id` in the form `acceptance:<scope-id>:<accepted-source-fingerprint>:r<revision>`, resolved through [the acceptance learning state](references/acceptance-learning-state.md), so retries resume rather than duplicate.
-- For code-backed work, the exact `accepted_commit`; for non-code work, the accepted final record.
-- `delivery_state`: `accepted_unmerged`, `accepted_in_milestone`, `merged`, `authoritative_branch`, or `no_merge_required`.
+存在合法 route observation 但没有新知识时仍可返回 `zero-atoms`。模型/Agent 观测写入本次 retrospective record，供 `update-team` 和后续 `subagent-routing` 聚合；它本身不强制 Wiki transaction。
 
-Aggregation mode requires:
+## 输入
 
-- `aggregate_only: true` and `event_kind: aggregation`;
-- canonical `aggregation_event.id` computed from the exact nested child IDs by [the acceptance learning state](references/acceptance-learning-state.md);
-- `aggregation_event.derived_from`: every completed child acceptance event; resolve each ID to its retrospective comment.
+- explicit acceptance event；
+- accepted source 或完整 commit；
+- Work Item、Goal Contract、Evidence Packet；
+- UAT、Review、CI、失败和返工记录；
+- Evidence Packet 中 schema-valid `routingObservations`，在 retrospective 中归一化为 `routing_observations`；字段包括 capability、Agent、model/reasoning、policy action、预测、实际指标与 confounders；
+- prior knowledge matches（若 Task Context 已查询则复用，不重复查询）；
+- delivery state 只作 provenance。
 
-Aggregation has no `human_accepted` field and may not introduce a claim absent from its child events.
+没有人工验收时返回 `deferred: acceptance_missing`。聚合模式只能重放已完成的子 acceptance event，不制造新验收事实。
 
-Optional:
+## Novelty Gate
 
-- Requirement docs, Proof Packet comments, CI links, screenshots, logs, owner UAT notes, merge-result evidence, and residual-risk decisions.
-- `prior_acceptance_events` for a Milestone retrospective; already processed Issue signals are cited, while only cross-Issue/integration/UAT delta enters the new signal list.
+候选结论必须同时满足：
 
-In acceptance-event mode, missing explicit acceptance returns `deferred: acceptance_missing` with no comment. In aggregation mode, any missing/incomplete child event returns `deferred: child_acceptance_incomplete`. `accepted_unmerged` is valid and must not be deferred.
+1. 有 accepted Evidence；
+2. 不只是任务时间线或 changed-file 摘要；
+3. 能改变未来设计、诊断、验证或运维决策；
+4. 有适用范围和失效条件；
+5. 与现有 canonical knowledge 不重复。
 
-## Evidence Sources
+模型路由观测不是天然的 knowledge atom。只有跨多个可比 accepted events 形成稳定、可失效、会改变未来路由的结论时，才进入 Novelty Gate；单次 observation 只做运行笔记。
 
-Prefer explicit evidence over conversation memory. For a Milestone, use all Issues/sub-issues at the accepted integration commit but emit only signals not already covered by `prior_acceptance_events`; for a requirement, aggregate completed accepted Milestone retrospectives without making new claims.
-
-1. Linear descriptions, relations, statuses, comments, Proof Packets, acceptance comments, and optional merge-result comments.
-2. `.vibeRig/requirements/{requirement-id}/requirement.yaml`, `intake.md`, `acceptance.json`, and other approved requirement contracts.
-3. Accepted git diff/commit, PR description, CI, validation output, screenshots, logs, and review notes.
-
-Never treat abandoned attempts, transient environment failures, unaccepted code, or unsupported conversation recollection as accepted evidence. An accepted but unmerged commit is valid evidence when the acceptance record identifies it exactly.
-
-## Language Policy
-
-Read `.vibeRig/project.yaml` and render the Linear record and user-facing report in `output.language`. Do not translate stable IDs, paths, commands, branch names, URLs, commit hashes, Linear keys, acceptance IDs, schema keys, or code symbols.
+| 结果 | 动作 |
+|---|---|
+| `zero-atoms` | 记录 Evidence 已审查，不调用 `vb-wiki` 写入 |
+| `novel` | 生成最小 retrospective signals，交给 `vb-wiki` |
+| `batch_pending` | 保存候选与证据，等待阈值编译 |
+| `conflict` | 标记与现有知识冲突，交给 `vb-wiki` lint/consolidate |
 
 ## Workflow
 
-1. Read [the post-acceptance gate](references/post-acceptance-retrospective.md) and [the acceptance learning state](references/acceptance-learning-state.md). Select acceptance-event or aggregation mode; prove the corresponding gate and capture `delivery_state` without using it as a merge gate.
-2. Read `.vibeRig/project.yaml`, resolve `output.language`, and gather the scope's authoritative Linear, requirement, accepted-commit, validation, and review evidence.
-3. Build an evidence bundle conforming to [the insights schema](references/insights.schema.json). Acceptance mode names `acceptance_event`; aggregation mode stores child IDs only at `aggregation_event.derived_from` and verifies the canonical digest. Every code-backed acceptance bundle names `accepted_commit`; `merged_commit` is optional provenance.
-4. Reconstruct the accepted outcome and material friction. Separate the accepted path from early or unaccepted paths that were replaced. For a Milestone, cite prior Issue events and compile only integration/UAT/cross-Issue delta.
-5. Produce the minimum useful `retrospective_signals`. Each signal contains:
-   - one evidence-backed statement;
-   - confidence (`high` / `medium` / `low`);
-   - exact evidence references;
-   - applicability and scope hint (`project` / `global` / `unknown`);
-   - invalidation signals, including post-acceptance content drift when relevant.
-6. Put rejected material in `discarded_signals` with an explicit reason from [the retrospective-signal policy](references/learning-policy.md). Zero retrospective signals is a valid result; do not invent one.
-7. Resolve the record host before writing: Issue → its comments; Milestone/requirement → registered Project Updates. Search that host for the exact typed report marker `<!-- VibeRig-Record: retrospective:<event-id> -->`, ignoring acceptance/phase records for the same event. Adopt exactly one complete matching retrospective; append exactly once only when none exists; fail closed on duplicate/malformed retrospective-kind matches. Render [the report template](references/report-template.md), ask `vb-linear` to append it to the same host, then persist/return the generic record reference for immediate `vb-wiki` use.
+1. 读取 [post-acceptance-retrospective.md](./references/post-acceptance-retrospective.md) 与 [learning-policy.md](./references/learning-policy.md)；
+2. 验证 acceptance event、accepted source 和 Evidence；
+3. 重建最终接受路径，排除已放弃尝试和未接受代码；
+4. 与 Task Context 中已有知识匹配；必要时只查询一次；
+5. 校验 route observations；缺字段、未由主 Agent 验证或无法绑定当前 accepted source 的样本标记为 excluded，不回忆性补数；
+6. 按 provider、platform、task family、risk、oracle fingerprint、evidence fidelity 与 policy version 建立 comparison group；
+7. 将模型、Agent role prompt、上下文、Skill/policy、环境、工具和主 Agent 返工分开做 credit assignment；有 confounder 的样本保留审计但不进入直接 A/B；
+8. 记录 accepted outcome、quality score、rework、failure classes、latency、token 与真实 provider cost；价格不可见时保持 unknown；
+9. 根据 [adaptive model routing](../subagent-routing/references/model-routing.md) 判断 incumbent、challenger、exploration eligibility 和 promotion/demotion 状态。少于 5 个可比样本不改变默认；
+10. 应用 Novelty Gate；
+11. 对保留信号记录 statement、confidence、evidence、applicability、scope 与 invalidation；
+12. 对丢弃信号记录原因；
+13. `novel` 或 `conflict` 时通过稳定 event id 交给 `vb-wiki`；`zero-atoms` 直接结束；
+14. 不提出 Skill 名称，不调用 `vb-learn`。
 
-## Output Contract
+## 输出
 
-Return:
+- scope、acceptance event、accepted source 和 delivery provenance；
+- `zero-atoms`、`novel`、`batch_pending` 或 `conflict`；
+- retained/discarded signal counts；
+- Evidence 引用、适用范围和失效条件；
+- route observation count、comparison groups、excluded/confounded samples、当前 incumbent、eligible challenger 和 next-trial reason；
+- `vb-wiki` handoff 或不写入理由。
 
-- scope, event kind and event ID, acceptance/derived evidence, accepted source and `delivery_state` when applicable;
-- Linear retrospective record reference (`comment_id` or `status_update_id`);
-- retrospective-signal and discarded-signal counts;
-- residual risks or the applicable deferred reason.
+## 红线
 
-Do not claim completion unless the mapped record is written and every retrospective signal has evidence, applicability, and invalidation guidance.
+- 每次验收无条件运行完整 Wiki transaction；
+- 为避免空结果编造“经验”；
+- 把 changed files、测试命令或 Issue 时间线当知识；
+- 从未验收工作提取结论；
+- 自动创建或修改 Skill；
+- 从一次成功推出全局“最佳模型”；
+- 把不同 provider、任务族、风险、oracle 或证据保真度混成一个比分；
+- 为了探索让 challenger 拥有 accept/security/merge/release/生产副作用决策权；
+- 在 provider 未提供价格时编造美元或 credits；
+- 因知识写入失败撤销已成立的验收。
 
-## Red Flags
+## 完成检查
 
-- A PR is explicitly accepted but unmerged → write the retrospective now with `delivery_state: accepted_unmerged`; never defer it for merge.
-- A “learning candidate” names a skill or invokes `skillos-lite` / `skill-builder` → remove it; this skill only compiles retrospective signals.
-- A signal has no source or no applicability boundary → discard it as insufficiently grounded.
-- “Nothing reusable was learned” is treated as failure → correct it to a successful zero-signal retrospective.
-
-## Anti-Rationalization
-
-| Rationalization | Reality |
-|---|---|
-| “The PR is not merged, so the retrospective must wait.” | The user's acceptance is the retrospective boundary; merge state is provenance. |
-| “This looks reusable, so I should propose a skill.” | Reusability alone describes knowledge too. `vb-wiki` owns the later tool-promotion gate. |
-| “A retrospective should preserve every detail.” | Linear and git preserve raw evidence; this output keeps only evidence needed to explain the accepted outcome and useful signals. |
-
-## Validation
-
-```bash
-jq -e '.properties.acceptance_event and .properties.aggregation_event and .properties.delivery_state and .properties.retrospective_signals and .properties.discarded_signals and (.properties.durable_signals | not) and (.properties.learning_candidates | not)' \
-  skills/insights/references/insights.schema.json
-grep -q "Retrospective Signals" skills/insights/references/report-template.md
-```
-
-- [ ] Acceptance mode has explicit human acceptance; aggregation mode has only completed child events and no fabricated human gate.
-- [ ] Code-backed evidence identifies `accepted_commit`; merge state did not gate the retrospective.
-- [ ] Existing phase state was reused; Milestone output contains only delta beyond `prior_acceptance_events`.
-- [ ] The exact operation marker resolved to zero or one structurally valid record in the mapped host; retry did not append a duplicate or search a nonexistent Milestone comment stream.
-- [ ] Every retrospective signal has evidence, applicability, scope hint, confidence, and invalidation signals.
-- [ ] No skill proposal, SkillOS action, wiki write, user-memory write, or project-skill edit occurred.
-- [ ] Human-facing text uses `output.language`.
+- [ ] 所有保留信号有 accepted Evidence、适用范围和失效条件。
+- [ ] 已检查重复、冲突与 novelty。
+- [ ] `zero-atoms` 未调用重型 Wiki 写入。
+- [ ] 结果使用稳定 event id，重试不重复写。
+- [ ] 没有 Skill 提案或自动晋升。
+- [ ] 所有 route observations 绑定 accepted source，主 Agent 已验证 outcome。
+- [ ] 直接 A/B 只使用同 comparison group 且无阻断 confounder 的样本。
+- [ ] 少于 5 个可比样本没有改变默认；Critical 安全/权限/证据失败已阻止探索。

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viberig.dev/schemas/evidence-packet.schema.json",
+  "title": "VibeRig Evidence Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "workItemId", "targetMode", "commit", "items", "blockingFindings", "residualRisks", "oracleSatisfied"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "workItemId": { "type": "string", "minLength": 1 },
+    "targetMode": { "type": "string", "minLength": 1 },
+    "commit": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40,64}$" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "condition", "result", "commandOrCheck", "environment", "fidelity", "executor", "time", "notes"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "condition": { "type": "string", "minLength": 1 },
+          "result": { "type": "string", "enum": ["PASS", "FAIL", "SKIP", "BLOCKED"] },
+          "commandOrCheck": { "type": "string", "minLength": 1 },
+          "environment": { "type": "string", "minLength": 1 },
+          "fidelity": {
+            "type": "string",
+            "enum": ["mock", "fake", "stub", "ephemeral", "sandbox", "real"]
+          },
+          "executor": { "type": "string", "minLength": 1 },
+          "time": { "type": "string", "format": "date-time" },
+          "notes": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "routingObservations": {
+      "type": "array",
+      "items": {
+        "$ref": "../../subagent-routing/assets/route-observation.schema.json"
+      }
+    },
+    "blockingFindings": { "type": "array", "items": { "type": "string" } },
+    "residualRisks": { "type": "array", "items": { "type": "string" } },
+    "oracleSatisfied": { "type": "boolean" }
+  }
+}

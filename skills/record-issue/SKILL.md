@@ -1,58 +1,33 @@
 ---
 name: record-issue
-description: 记录小需求/小改动的快速入口，不走完整需求流水线。当用户提出一个单点改动、小功能、小优化，且明显撑不起一个里程碑时使用。与 bugger 是两个独立 skill：record-issue 面向"要加/要改的东西"，bugger 面向"坏了的东西"。
+description: 兼容旧的“小需求/小改动记录”调用。用户显式调用 record-issue，或旧提示要求快速建单时使用；将输入归一化到 intake 的统一 Work Item，确认完整问题、原因或限制、方案、影响、范围、验收和测试策略后再记录。新工作优先直接使用自然语言或 intake。
 ---
 
-# Record Issue（记录小需求）
+# Record Issue Compatibility
 
-用本 skill 快速记录一个小需求/小改动为单个 Linear issue，跳过完整流水线（intake → … → split-issues）。
+这是兼容入口，不再维护独立的小改动流程。
 
-**与 `bugger` 的分界**：`record-issue` 处理"要加/要改的东西"（先评影响面）；`bugger` 处理"坏了的东西"（先归因分析）。两套流程互不复用——东西坏了就走 `bugger`。
+## 转发
 
-## 契约
+1. 读取用户描述、仓库、现有需求和 Issue；
+2. 将 `origin` 推断为 `limitation`、`opportunity`、`maintenance` 或 `risk`，不与 Bug 流程分叉；
+3. 设置默认 `targetMode=recorded`；
+4. 进入 `intake` 完成脑暴与人工基线确认；
+5. 确认后一次性写入完整 Work Item，并按用户目标决定是否继续 `execute`。
 
-- 产出一个 Linear issue（挂当前活跃 Milestone 或容器 Project backlog）。
-- 不创建 Milestone、不创建需求目录、不写 requirement.yaml。
-- 影响面大时**必须停止**并引导升级为完整需求流程。
+如果用户实际要求实现，将 `targetMode` 提升为 `verified`、`committed` 或 `pr_ready`，确认后自动进入 `execute`，不要要求再次调用 `task-runner`。
 
-## 流程
+## 约束
 
-### 1. 影响面分析
+- 不直接创建信息不完整的 Issue；
+- 不因“看起来很小”跳过影响、scope、验收或测试策略；
+- 不要求用户判断它是不是 Bug；
+- 不创建独立流程状态；
+- Linear 不可用时保留本地权威 Work Item。
 
-建单前先分析并向用户报告：
+## 完成检查
 
-- **涉及模块**：改动会碰哪些模块/文件？
-- **是否触碰现有 AC**：会不会改变某个已验收/在途需求的验收标准语义？
-- **是否影响在途 issue**：其他里程碑正在做的 issue 会不会被这个改动波及？
-
-### 2. 归属判定
-
-| 情况 | 处理 |
-|---|---|
-| 与当前活跃里程碑同模块、不破坏其 AC | 挂该 Milestone |
-| 与任何在途里程碑无关的小改动 | 挂容器 Project 的 backlog（不挂 Milestone） |
-| **影响面大**：跨模块 / 需要新 AC / 会改变现有 AC 语义 | **停止建单**，引导走完整流程（`intake` 起步） |
-
-### 3. 建单
-
-请 `vb-linear` 执行，遵守其规则：
-
-- 先请 `vb-linear` 查重已有 issue；
-- 请 `vb-linear` 创建 issue：标题用 `output.language`；描述含**影响面分析结论 + 验证方式**（具体命令或可照做的人工步骤，禁止"改完验证一下"这类抽象话）；
-- 不指派、不选 subagent（执行时由 `task-runner` 路由）。
-
-## 红线
-
-- 跳过影响面分析直接建单 → 影响面分析是本 skill 存在的理由。
-- 影响面大却继续建单 → 停止，引导 `intake`；小需求入口不是绕过 DoR 的后门。
-- 记录的其实是 bug → 转 `bugger`，两套流程不混用。
-- 建了 Milestone 或需求目录 → 小需求不建结构，撑得起结构就该走完整流程。
-- 描述里没有验证方式 → 不可验证的 issue 不建。
-
-## 检查清单
-
-- [ ] 影响面分析三项（模块 / 现有 AC / 在途 issue）已完成并写入描述。
-- [ ] 归属判定正确（Milestone / backlog / 升级完整流程）。
-- [ ] 查重后创建；描述含验证方式。
-- [ ] 未指派、未选 subagent；未建 Milestone。
-- [ ] 人读内容使用 `output.language`。
+- [ ] 已进入 `intake` 统一契约。
+- [ ] 用户确认前没有写外部记录。
+- [ ] Issue 含完整 Work Item，而不是只有标题与验证一句话。
+- [ ] 需要实现时已连续进入 `execute`。

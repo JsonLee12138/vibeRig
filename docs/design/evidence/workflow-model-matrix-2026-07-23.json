@@ -1,0 +1,60 @@
+{
+  "date": "2026-07-23",
+  "runner": "codex-cli 0.144.6",
+  "calls": {
+    "evaluation": 169,
+    "successful": 162,
+    "failed": 7,
+    "probe": 1
+  },
+  "catalog": {
+    "visible": [
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      "gpt-5.5",
+      "gpt-5.4",
+      "gpt-5.4-mini",
+      "gpt-5.2"
+    ],
+    "runnable": [
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      "gpt-5.5",
+      "gpt-5.4",
+      "gpt-5.4-mini"
+    ],
+    "unavailable": {
+      "gpt-5.2": "Not supported when using Codex with a ChatGPT account"
+    }
+  },
+  "coreRubricLowEffort": {
+    "baseline": { "earned": 164, "total": 258, "rate": 0.6357 },
+    "candidate": { "earned": 463, "total": 480, "rate": 0.9646 }
+  },
+  "acceptanceRetest": [
+    { "model": "gpt-5.6-terra", "effort": "low", "earned": 50, "total": 50, "durationMs": 83434 },
+    { "model": "gpt-5.6-sol", "effort": "low", "earned": 46, "total": 50, "durationMs": 96029 },
+    { "model": "gpt-5.6-luna", "effort": "low", "earned": 44, "total": 50, "durationMs": 73309 }
+  ],
+  "routingRecommendation": {
+    "orchestrator": "gpt-5.6-terra/low",
+    "intakeBounded": "gpt-5.6-luna/low",
+    "executeDeterministic": "gpt-5.4-mini/low",
+    "acceptDeliver": "gpt-5.6-terra/low",
+    "complexEscalation": "gpt-5.6-sol/low-or-medium"
+  },
+  "pricing": {
+    "status": "unavailable",
+    "reason": "The active custom provider exposes usage tokens but no dollar or ChatGPT-credit rates."
+  },
+  "minimalProbe": {
+    "model": "gpt-5.4-mini",
+    "effort": "low",
+    "inputTokens": 17693,
+    "cachedInputTokens": 3456,
+    "outputTokens": 16,
+    "reasoningOutputTokens": 9
+  }
+}

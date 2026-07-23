@@ -2,6 +2,14 @@
 
 `insights` compiles accepted evidence for immediate `vb-wiki` use; it does not write knowledge or apply learnings itself.
 
+## Model And Subagent Routing Notes
+
+Every schema-valid route observation tied to the accepted source may be retained in the retrospective record even when the novelty result is `zero-atoms`. This is append-only operational evidence, not an automatic model preference.
+
+Only compare observations with the same provider/platform, task family, risk band, oracle fingerprint, evidence fidelity, and material routing policy. Preserve confounded samples for audit but exclude them from direct A/B ranking. Follow `subagent-routing/references/model-routing.md` for exploration, promotion, demotion, and protected Gate rules.
+
+Never convert a routing observation directly into a tool Skill. A stable cross-event route conclusion may become project knowledge through the normal Novelty Gate, but model defaults remain a derived `update-team` decision.
+
 ## Keep As A Retrospective Signal
 
 Keep a signal only when all are true:

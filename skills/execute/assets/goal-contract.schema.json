@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viberig.dev/schemas/goal-contract.schema.json",
+  "title": "VibeRig Goal Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "workItemId",
+    "objective",
+    "targetMode",
+    "scope",
+    "authority",
+    "requiredEvidence",
+    "risk",
+    "budget",
+    "currentState",
+    "attemptHistory",
+    "externalGates"
+  ],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "workItemId": { "type": "string", "minLength": 1 },
+    "objective": { "type": "string", "minLength": 1 },
+    "targetMode": {
+      "type": "string",
+      "enum": ["diagnosed", "recorded", "planned", "verified", "committed", "pr_ready", "merged", "released"]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["included", "excluded"],
+      "properties": {
+        "included": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "excluded": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspaceWrite", "externalWrite", "commit", "push", "pullRequest", "merge", "deploy"],
+      "properties": {
+        "workspaceWrite": { "type": "boolean" },
+        "externalWrite": { "type": "boolean" },
+        "commit": { "type": "boolean" },
+        "push": { "type": "boolean" },
+        "pullRequest": { "type": "boolean" },
+        "merge": { "type": "boolean" },
+        "deploy": { "type": "boolean" }
+      }
+    },
+    "requiredEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "condition", "minimumFidelity"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "condition": { "type": "string", "minLength": 1 },
+          "minimumFidelity": {
+            "type": "string",
+            "enum": ["mock", "fake", "stub", "ephemeral", "sandbox", "real"]
+          }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "reasons"],
+      "properties": {
+        "level": { "type": "string", "enum": ["L0", "L1", "L2", "L3"] },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxAgents", "maxReviewers", "maxNoProgressAttempts"],
+      "properties": {
+        "maxAgents": { "type": "integer", "minimum": 0 },
+        "maxReviewers": { "type": "integer", "minimum": 0 },
+        "maxNoProgressAttempts": { "type": "integer", "minimum": 1, "maximum": 3 }
+      }
+    },
+    "currentState": {
+      "type": "string",
+      "enum": ["capture", "understand", "frame", "plan", "implement", "verify", "review", "repair", "test_env_resolve", "authority_gate", "deliver", "done", "blocked"]
+    },
+    "attemptHistory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["attempt", "hypothesis", "action", "result", "progress"],
+        "properties": {
+          "attempt": { "type": "integer", "minimum": 1 },
+          "hypothesis": { "type": "string" },
+          "action": { "type": "string" },
+          "result": { "type": "string" },
+          "progress": { "type": "boolean" }
+        }
+      }
+    },
+    "externalGates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "reason", "requiredInput"],
+        "properties": {
+          "type": { "type": "string" },
+          "reason": { "type": "string" },
+          "requiredInput": { "type": "string" }
+        }
+      }
+    }
+  }
+}

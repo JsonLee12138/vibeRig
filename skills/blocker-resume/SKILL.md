@@ -1,125 +1,26 @@
 ---
 name: blocker-resume
-description: Use when a VibeRig Linear issue is blocked and the main agent should inspect the blocker, referenced local docs, proof comments, validation logs, and current git state, then either resume through task-runner or ask for the missing decision/input.
+description: 兼容旧的 VibeRig 阻塞恢复调用。用户要求恢复、继续、解除 blocker，或提供被阻塞的 Issue、PR、测试日志时使用；读取历史尝试和当前证据，恢复 execute Goal Loop。只有产品决策、权限、不可模拟真实环境或连续三次无进展才向用户请求输入。
 ---
 
-# Blocker Resume
+# Blocker Resume Compatibility
 
-Use this workflow when a Linear-backed VibeRig task is blocked and the user wants AI-assisted recovery.
+恢复是 `execute` 的原生状态，不再是一条独立人工流程。
 
-VibeRig no longer resumes backend runs or command-mode Codex sessions. Recovery happens in the current Codex main-agent session using Linear issue context, local Docs as Code, and `task-runner`.
+## 恢复
 
-## Contract
+1. 读取 Work Item、Goal Contract、Linear 评论、本地文档、git、PR/CI、Evidence 和 attempt history；
+2. 重新计算当前状态，不相信旧的“blocked”或“done”描述；
+3. 将阻塞分类为实现、验证、测试环境、范围/契约、外部状态或 authority；
+4. 可自行解决时进入 `execute` 的 `REPAIR`、`TEST_ENV_RESOLVE` 或 `REPLAN`；
+5. 只有真实 Gate 才向用户提交一个收敛后的请求；
+6. 解除后更新 Evidence 和外部状态。
 
-Use this skill to inspect a blocked VibeRig Linear issue, classify the blocker, and either resume safely through `task-runner` or ask for the exact missing input.
+相同失败第二次出现必须改变策略。连续三次没有新证据或状态进展才保持 blocked。
 
-Do not use this skill for normal task execution, final acceptance, or retrospective learning. Use `task-runner` for executable work, `accept-issue`/`accept-milestone` for sign-off, and `insights` after accepted work.
+## 完成检查
 
-Stop and report when the blocker depends on a product decision, credentials, missing external system state, or ambiguous ownership that cannot be resolved from Linear and local docs.
-
-## Input Contract
-
-The user may provide:
-
-- Linear issue key or URL
-- requirement id
-- local docs path under `.vibeRig/requirements/`
-- branch, PR, commit, validation log, or CI URL
-- plain-language blocker summary
-
-If no Linear issue is provided, search the registered Linear Project from `.vibeRig/project.yaml` when Linear tools are available. Ask vb-linear to confirm the project and enumerate blocked issues. If multiple blocked issues match, ask the user to choose.
-
-## Output Contract
-
-Return or write:
-
-- Blocked Linear issue key/url and matching requirement docs.
-- Blocker classification and evidence.
-- Next action: ask user, resume through `task-runner`, update docs with approval, or keep blocked.
-- Linear comment/status updates made, or the reason they were skipped.
-- Validation evidence and remaining blocker.
-
-Do not claim an issue is unblocked unless the blocking evidence is resolved and Linear has been updated or the user was told why it could not be updated.
-
-## Evidence To Gather
-
-- Linear issue title, description, status, labels, assignee, comments, and proof packet comments.
-- Referenced local docs（里程碑原生工作流）:
-  - `requirement.yaml`（需求状态 + 里程碑四态：not_started / in_progress / pending_acceptance / accepted）
-  - `intake.md`
-  - `architecture.md`
-  - `acceptance.json`
-- 状态信号源：**milestone 进度 + issue 状态**（不再有 parent issue）。判断"卡在哪"先看 `requirement.yaml` 的里程碑状态，再看该里程碑下 Linear issue 的状态分布。
-- Current git status, branch, changed files, commit/PR links when available.
-- Validation logs or CI URLs referenced from Linear comments.
-- Prior subagent handoff notes.
-
-Read Linear comments, blocker comments, proof packet comments, and linked validation or CI evidence before classifying whether the blocker is resolved.
-
-## Linear Access
-
-See the `vb-linear` skill for tool selection, the status-mapping method, and language policy.
-
-## Workflow
-
-1. Resolve the blocked Linear issue, project output language, and matching local requirement docs:
-   - ask vb-linear to read a named issue, or enumerate blocked issue queues
-   - ask vb-linear to read blocker comments and prior proof packets
-2. Confirm the issue is actually blocked or has an unresolved blocker comment.
-3. Classify the blocker:
-   - missing product decision
-   - missing credentials or external service
-   - validation failure
-   - architecture/acceptance contradiction
-   - implementation defect
-   - stale branch or merge conflict
-   - unclear task scope
-4. Decide the next action:
-   - Ask the user when the blocker requires a product decision, credentials, or external state.
-   - Update local docs only when the blocker proves the contract is wrong and the user approves the doc change.
-   - Use `task-runner` when implementation or validation can continue now.
-   - Use `subagent-routing` for specialized investigation, QA, security, architecture, or implementation rework.
-5. If work resumes, build a concise Task Brief that includes the blocker evidence and expected correction.
-6. After validation, ask vb-linear to post a Linear comment:
-   - blocker classification
-   - action taken
-   - validation commands/results
-   - acceptance IDs affected
-   - remaining risks or user decisions
-7. Ask vb-linear to move/update the Linear status according to the team's workflow only after evidence supports it.
-
-## Red Flags
-
-- The blocker was classified without reading Linear comments or local docs → classification must be evidence-based, not assumed.
-- Resumed implementation happened directly in `blocker-resume` instead of going through `task-runner` → any implementation work must route through `task-runner`.
-- Linear status was changed to unblocked before evidence was resolved → issue stays blocked until the blocking condition is removed.
-- A subagent updated Linear during investigation → subagents must return findings only; the main agent owns all Linear writes.
-
-## Anti-Rationalization
-
-| Rationalization | Reality |
-|---|---|
-| "The blocker is obvious from the description, I don't need to read Linear comments" | Prior analysis comments, proof packet comments, and review notes are the exact place where the blocker details and prior attempts are recorded. Reading them takes 30 seconds. Missing them causes wrong classifications. |
-| "I'll resume implementation directly here to save time" | `blocker-resume` classifies and unblocks; `task-runner` executes. Mixing execution into `blocker-resume` bypasses the worktree policy, subagent routing, and proof packet requirements. |
-
-## Validation
-
-```bash
-# Confirm the Linear issue key resolves (placeholder — replace with actual key)
-# Ask vb-linear to read the issue and verify it exists and read its current status
-```
-
-- [ ] The target issue and requirement docs were resolved.
-- [ ] The blocker classification is backed by Linear comments, local docs, git state, validation output, or CI evidence.
-- [ ] Any resumed implementation went through `task-runner`.
-- [ ] Any Linear status change used an existing team status, not an invented one.
-- [ ] Human-facing Linear comments and summaries use `output.language` when configured.
-- [ ] Remaining user decisions, credentials, or external blockers are stated explicitly.
-
-## Guardrails
-
-- Do not call VibeRig backend run, resume, rerun, task, or dashboard tools.
-- Do not edit SQLite files, local runtime state, or generated dashboard data.
-- Do not create a local proof packet directory.
-- Do not mark an issue unblocked or done unless the blocker evidence is resolved.
-- Do not let subagents update Linear.
+- [ ] 已读取 prior attempts 和当前事实。
+- [ ] 可模拟配置或可修复失败没有转交用户。
+- [ ] 恢复后进入同一 Goal Loop。
+- [ ] 真正 Gate 只请求最小必要输入。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Execute Goal Loop"
+  short_description: "Run a verified goal loop for confirmed software work"
+  default_prompt: "根据已确认的需求基线进入 Goal Loop，持续实现和验证直到目标状态完成或遇到真实权限阻塞。"

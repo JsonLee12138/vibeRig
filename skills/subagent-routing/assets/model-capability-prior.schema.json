@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "provider", "measuredAt", "evidence", "routes", "invalidationSignals"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "minLength": 1 },
+    "provider": { "type": "string", "minLength": 1 },
+    "measuredAt": { "type": "string", "format": "date" },
+    "runner": { "type": "string" },
+    "evidence": { "type": "string", "minLength": 1 },
+    "pricing": { "type": "object" },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["taskFamily", "phase", "default", "confidence", "boundary"],
+        "properties": {
+          "taskFamily": { "type": "string", "minLength": 1 },
+          "phase": { "type": "string", "minLength": 1 },
+          "default": { "$ref": "#/$defs/modelSelection" },
+          "challenger": { "$ref": "#/$defs/modelSelection" },
+          "fallback": { "$ref": "#/$defs/modelSelection" },
+          "shadow": { "$ref": "#/$defs/modelSelection" },
+          "quality": {
+            "type": ["object", "null"],
+            "properties": {
+              "earned": { "type": "number", "minimum": 0 },
+              "total": { "type": "number", "exclusiveMinimum": 0 }
+            },
+            "required": ["earned", "total"],
+            "additionalProperties": false
+          },
+          "durationMs": { "type": ["integer", "null"], "minimum": 0 },
+          "confidence": { "enum": ["heuristic", "experimental", "provisional", "trusted"] },
+          "boundary": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "invalidationSignals": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "modelSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "reasoningEffort"],
+      "properties": {
+        "model": { "type": "string", "minLength": 1 },
+        "reasoningEffort": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

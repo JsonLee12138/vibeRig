@@ -5,7 +5,7 @@ description: Initialize or reconcile a project for the Linear-native VibeRig wor
 
 # VB Init
 
-Prepare a project for the Linear-native VibeRig workflow: local docs structure, `.vibeRig/project.yaml`, Linear registration, Codex agent team, and the global user-approved tool-skill store at `~/.vb-skills`. The default self-learning knowledge store `~/.vb-wiki` remains lazy and is bootstrapped by `vb-wiki` on its first explicitly accepted write.
+Prepare a project for the VibeRig Harness: local docs structure, `.vibeRig/project.yaml`, optional Linear registration, Codex agent team, and the global user-approved tool-skill store at `~/.vb-skills`. The knowledge store `~/.vb-wiki` remains lazy and is bootstrapped by `vb-wiki` on its first novelty-gated accepted write.
 
 All steps are **idempotent** — re-running skips what already exists.
 

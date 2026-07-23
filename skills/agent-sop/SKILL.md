@@ -1,13 +1,13 @@
 ---
 name: agent-sop
-description: 编排实现、Bug 修复、重构和交付任务的分阶段 Subagent 协作、风险审核、证据验证与返工。用于需要能力路由和工程质量门禁的开发任务；不负责需求发现、最终人工验收或 PR/Linear 副作用。
+description: execute Goal Loop 内部使用的实现、Bug 修复、重构、风险审核、证据验证与返工协议。仅在开发任务需要能力路由或工程质量门禁时加载；不作为用户入口，不负责需求发现、最终人工验收或 PR/Linear 副作用。
 ---
 
 # Agent SOP
 
 ## 契约
 
-主 Agent 负责范围与风险判断、能力路由、真实验证、证据综合、返工和最终报告。Subagent 只完成有边界的阶段并返回证据，不更新 Linear/VibeRig 状态、不操作 PR、不作最终验收决定。
+主 Agent 持有 Goal Contract，负责范围与风险判断、能力路由、真实验证、证据综合、返工和 Completion Oracle。Subagent 只完成有边界的阶段并返回证据，不更新 Linear/VibeRig 状态、不操作 PR、不作最终验收决定。
 
 不要把整个任务外包后等待。没有可用 Subagent 时主 Agent 可以直接完成对应阶段，但必须记录原因。保护无关用户改动，只修改任务范围。
 
@@ -23,7 +23,10 @@ description: 编排实现、Bug 修复、重构和交付任务的分阶段 Subag
 2. 发现需求、架构或代码冲突时停止猜测，指出冲突与取舍。
 3. 优先简单、局部、可回滚的实现，不做顺手重构。
 4. Subagent 自述不是证据；主 Agent 必须读取 diff 和真实命令输出。
-5. 不为所有任务强制测试，但必须有明确测试决策。
+5. 不为所有任务强制新增测试，但必须有明确验证决策和 Evidence。
+6. Skill 切换、一次验证失败和可模拟配置缺失不是人工 Gate；返回 `execute` 继续循环。
+7. Subagent 先按 capability 匹配，再由 `subagent-routing` 选择 model/reasoning；便宜模型只能在质量与安全约束之后优化。
+8. 每次委派保留 route observation；没有真实 token、耗时或 provider 价格时写 `null/unknown`，不得回忆性补数。
 
 ## 测试范围
 
@@ -35,6 +38,8 @@ VibeRig Issue 优先从 `test-cases.json` 与 `traceability.json` 读取相关 T
 - 旧需求没有 TC 时进入 `legacy mode`，根据 AC、风险和现有测试模式作窄范围决策。
 
 纯文档、静态内容、无行为配置可不新增测试，但仍执行适当静态检查并记录理由。
+
+测试配置或外部依赖缺失时读取 `execute/references/test-environment-broker.md`，自动建立充分保真的 fake、stub、ephemeral dependency 或 sandbox。不得把“没有 `.env.test`”直接变成人工阻塞。
 
 ## 风险与审核路由
 
@@ -49,12 +54,14 @@ VibeRig Issue 优先从 `test-cases.json` 与 `traceability.json` 读取相关 T
 ## 执行流程
 
 1. **分析**：确定目标、范围、相关 AC/TC、架构约束、风险、未知项和 Gate。
-2. **测试准备**：普通任务由 `implementation` 按相关 TC 做 TDD；仅在复杂/高风险自动化、Bug 复现需要独立所有权时，单独委派 `test_engineer` 编写批准的 TC。测试范围不清时使用 `qa / test_review` 审核，不让 `test_engineer` 从零设计产品测试策略。
-3. **实现**：优先委派 `implementation`；只有项目专用 Agent 更匹配时才替换。Brief 只含相关范围、TC、契约和风险；禁止无关修改。
+2. **测试准备**：由当前实现者按相关 TC 做 TDD；仅在复杂/高风险自动化、Bug 复现需要独立所有权时，单独委派 `test_engineer` 编写批准的 TC。测试范围不清时使用 `qa / test_review` 审核，不让 `test_engineer` 从零设计产品测试策略。
+3. **实现**：L0 默认主 Agent 直接完成；L1 根据隔离价值选择主 Agent 或一个 `implementation`；L2/L3 优先让实现与审核分离。Brief 只含相关范围、TC、契约和风险；禁止无关修改。
 4. **主 Agent 定向验证**：读取 diff，执行受影响 TC、项目快速 Gate 和必要 Smoke；记录命令、结果、commit/工作区与跳过原因。
 5. **风险审核**：按风险表执行 `code_review`、`qa / test_review`、`security_auditor / code_security_review`、`reliability_engineer / operational_review`，要求结构化 Findings 与 Verdict，不让 Reviewer 修改代码。
 6. **CI 门禁**：Linear/PR 任务读取当前 commit 的 Required Checks；相同 commit、环境和测试定义的成功证据直接复用。
-7. **证据综合**：主 Agent综合 TC、Gate、Review 和 CI，给出 `PASS`、`REWORK` 或 `BLOCKED`。不再额外委派一个重复的 Final QA。
+7. **证据综合**：主 Agent综合 TC、Gate、Review 和 CI，给出 `PASS`、`REWORK` 或 `BLOCKED`。`REWORK` 返回 `execute` 下一轮；只有真实 Gate 或连续三次无进展才 `BLOCKED`。不再额外委派一个重复的 Final QA。
+
+每个发生 Subagent 路由的步骤都将 pending observation 更新为实际 outcome。模型导致的返工、Agent prompt 不匹配、上下文缺失、环境故障和 oracle 缺陷分开分类；不要把所有失败都归因于模型。
 
 ## Reviewer 输出
 
@@ -82,7 +89,7 @@ VibeRig Issue 优先从 `test-cases.json` 与 `traceability.json` 读取相关 T
 
 把失败返回给产生该问题的阶段。返工 Brief 只包含失败证据、期望修正、相关文件/命令、保护范围和返回证据。
 
-同族问题默认最多三轮；同一偏差连续两轮重复、方向明显错误、需要业务决策/权限/外部状态时停止并升级。每轮修复后只重跑失败 TC、直接依赖 TC 和失效 Gate。
+同族问题默认最多三轮；同一偏差第二次出现时必须改变假设、工具、测试层级或实现策略。连续三次没有新增证据或状态进展，或需要业务决策/权限/不可模拟外部状态时停止并升级。每轮修复后只重跑失败 TC、直接依赖 TC 和失效 Gate。
 
 ## 红线
 

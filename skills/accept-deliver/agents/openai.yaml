@@ -1,0 +1,4 @@
+interface:
+  display_name: "Accept and Deliver"
+  short_description: "Audit evidence, guide human acceptance, and deliver"
+  default_prompt: "读取当前 Evidence Packet，引导我完成人工验收，并在明确授权范围内完成交付。"

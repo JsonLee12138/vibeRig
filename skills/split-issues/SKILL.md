@@ -1,6 +1,6 @@
 ---
 name: split-issues
-description: 把已规划里程碑拆成可验证的垂直 Issue。由 pre-development 调用时为所有里程碑生成本地草案；老板批准后按 Rolling Wave 只将下一个里程碑 materialize 到 Linear。不指派人员或 subagent。
+description: 把已确认 Work Item 的里程碑拆成可验证垂直 Issue。由 pre-development 内部生成草案，并在需求基线已确认后按 Rolling Wave materialize；不作为人工流程入口，不指派人员或 subagent。
 ---
 
 # Split Issues（Issue 规划）
@@ -61,7 +61,7 @@ Issue 中的 TC 只表达责任范围，不保存运行结果。`manual`、`owne
 
 - 审批前建 Linear Issue，或 Materialize 多个未来里程碑。
 - Issue 没有 AC、测试用例或可执行验证。
-- 把 subagent/assignee 选择固化在规划阶段；执行路由仍属于 `task-runner`。
+- 把 subagent/assignee 选择固化在规划阶段；执行路由属于 `execute`。
 - 为了技术分层创建无法独立验证的壳任务。
 - 细化时偷偷扩大已批准范围。
 
@@ -77,4 +77,4 @@ Issue 中的 TC 只表达责任范围，不保存运行结果。`manual`、`owne
 
 ## 下一步
 
-老板批准且近期 Issues materialize 后，才进入现有 `task-runner` 开发流程。
+需求基线已确认且近期 Issues materialize 后，更新 Goal Contract 并进入 `execute`。

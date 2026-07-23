@@ -39,6 +39,20 @@ Render headings and prose in `.vibeRig/project.yaml` `output.language`. Keep sch
 - Rework:
 - Scope or input gaps:
 
+## Model And Subagent Routing
+
+| Route ID | Phase | Task Family | Capability / Agent | Model / Reasoning | Policy | Quality / Rework | Latency / Tokens / Cost | Confounders |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+### Routing Analysis
+
+- Comparable groups:
+- Excluded observations:
+- Incumbent:
+- Eligible challenger:
+- Next safe trial:
+- Default changed: false
+
 ## Retrospective Signals
 
 | ID | Statement | Confidence | Scope Hint | Applicability | Evidence | Invalidation Signals |

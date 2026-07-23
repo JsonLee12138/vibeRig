@@ -2,14 +2,14 @@
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "viberig",
   "version": "1.2.1",
-  "description": "VibeRig — enterprise pre-development orchestration, approval-ready contracts, Linear-native execution, and subagent routing.",
+  "description": "VibeRig — a goal-driven software-development harness with three explicit human control stages.",
   "owner": {
     "name": "JsonLee12138"
   },
   "plugins": [
     {
       "name": "vibe-rig",
-      "description": "Enterprise pre-development orchestration, approval-ready Docs as Code contracts, Linear-native execution, and subagent routing.",
+      "description": "Goal-driven software-development harness with confirmed requirements, continuous execution, evidence, and human acceptance.",
       "version": "1.2.1",
       "author": {
         "name": "jsonlee"

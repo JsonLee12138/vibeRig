@@ -1,39 +1,28 @@
 # VibeRig
 
-VibeRig 是一个面向 Linear-native 软件交付的多平台 AI 编码插件。它把模糊需求整理成本地 Docs as Code 契约，把已确认的计划映射到 Linear issues，通过合适的 subagents 执行任务，把证据与验收结果写回 Linear，并在验收通过后立即把经验沉淀到本地知识库。
+VibeRig 是一个目标驱动的软件开发 Harness。它通过“需求脑暴与确认 → Execute Goal Loop → 人工验收与授权交付”三个阶段，把自然语言目标变成 Docs as Code 契约、可验证实现和可追溯 Evidence；用户不需要学习或手工串联内部 Skills。
 
 英文文档：[README.md](./README.md)
 
 ```mermaid
-flowchart TD
-    S([▶ 开始]) --> Init["vb-init\n初始化项目（每个项目执行一次）"]
-    Init --> Intake["intake\n老板确认需求基线"]
-    Intake --> PreDev["pre-development\n内部开发前评审"]
-    PreDev --> OwnerReview["CTO 向老板汇报\n方案 + 风险 + 验收指南"]
-    OwnerReview -->|批准| Materialize["计划正式化\n创建 Linear Milestone / Issues"]
-    OwnerReview -->|退回/附条件| PreDev
-    Materialize --> TaskRunner["task-runner\nTC 驱动开发 · 风险审核 · PR/CI"]
-    TaskRunner -.->|"standalone / 高风险 / 抽查"| AcceptIssue["accept-issue\n证据审核 · 人工单点验收"]
-    AcceptIssue -.->|"发现问题"| TaskRunner
-    AcceptIssue -->|"验收通过"| Insights[/"insights\n立即复盘"/]
-    TaskRunner -->|"里程碑技术门禁就绪"| AcceptMs["accept-milestone\n回归 · E2E · UAT · 验收"]
-    AcceptMs -->|"验收通过（合并前）"| Insights
-    Insights --> Wiki["vb-wiki\n默认知识沉淀"]
-    Wiki --> Delivery{"是否还有待交付内容？"}
-    Delivery -->|"无"| Learned([✅ 验收学习完成])
-    Delivery -->|"standalone PR"| MergeIssue["merge-issue\n合并 + reconcile only"]
-    Delivery -->|"Milestone PR + 另行授权"| MilestoneMerge["accept-milestone\n合并 + reconcile only"]
-    MergeIssue --> Delivered([✅ 已交付])
-    MilestoneMerge --> Delivered
-    Learned -."用户另行授权".-> Learn["vb-learn\n创建或更新一个工具 skill"]
-    Delivered -."用户另行授权".-> Learn
-    TaskRunner -->|"任务阻塞"| Blocker["blocker-resume\n解除阻塞并恢复执行"]
-    Blocker --> TaskRunner
-
-    SmallEntry(["✏️ 小需求"]) --> RecordIssue["record-issue\n影响面分析 → 单个 issue"]
-    RecordIssue --> TaskRunner
-    BugEntry(["🐛 发现 Bug"]) --> Bugger["bugger\n记录 & 分析 Bug"]
-    Bugger --> Quick["quick\n实现修复"] --> AcceptIssue
+flowchart LR
+    S([▶ 自然语言目标]) --> Init["vb-init\n每个项目一次"]
+    Init --> Intake["阶段 1 · intake\n脑暴、调研、完整 Work Item"]
+    Intake --> Gate1{"人工确认\n真实需求基线"}
+    Gate1 -->|"修订"| Intake
+    Gate1 -->|"确认并写文档"| Execute["阶段 2 · execute\nGoal Loop"]
+    Execute --> Work["实现 · 自动测试环境\n验证 · 风险审核 · PR/CI"]
+    Work --> Oracle{"Completion Oracle"}
+    Oracle -->|"未满足且可自主解决"| Execute
+    Oracle -->|"真实权限/产品阻塞"| Decision["收敛后的人工决策"]
+    Decision --> Execute
+    Oracle -->|"满足"| Accept["阶段 3 · accept-deliver\nEvidence 审计 + 人工 UAT"]
+    Accept -->|"退回"| Execute
+    Accept -->|"通过"| Delivery{"是否明确授权交付？"}
+    Delivery -->|"否"| Accepted([✅ 已验收])
+    Delivery -->|"是"| Delivered([✅ 合并 / 发布])
+    Accepted -.-> Knowledge["novelty / 批量知识沉淀"]
+    Delivered -.-> Knowledge
 ```
 
 ## 目录
@@ -63,18 +52,17 @@ English: [codex](docs/install/en/codex.md) · [claude](docs/install/en/claude.md
 
 ## 人工使用方法
 
-在目标项目中，直接让 Codex 使用对应的 VibeRig skill。
+在目标项目中直接描述目标。VibeRig 自动识别阶段；只有初始化、明确查询知识或维护 Skill 时才需要记住具体名称。
 
 常用提示词：
 
 - `用 vb-init 初始化这个仓库`
-- `用 intake 处理这个需求：...`（确认需求后会自动跑完开发前评审）
-- `继续 req-0001 的 pre-development`（仅用于恢复中断或处理退回项）
-- `用 task-runner 执行里程碑 ms-1（或 Linear issue ABC-123）`
-- `用 accept-issue 验收 ABC-123`（standalone、高风险或抽查）/ `用 accept-milestone 验收 ms-1`
+- `这个登录问题偶发超时，帮我分析真实原因，确认方案后修复并做到 PR`
+- `我想增加团队级权限，先和我把完整需求想清楚`
+- `继续执行 ABC-123，未完成时自行修复和验证`
+- `验收 ABC-123，给我可以照做的 UAT 步骤`
 - `学习 ABC-123 的经验并沉淀到知识库`（使用 `vb-wiki`）
 - `把这个已确认的能力做成一个工具 skill`（使用 `vb-learn`，需要明确授权）
-- `用 record-issue 记录这个小改动：...`
 
 VibeRig 会创建或使用这些项目本地文件：
 
@@ -88,6 +76,7 @@ VibeRig 会创建或使用这些项目本地文件：
     <req-id>/
       requirement.yaml   # 需求状态 + PRD 决策 + 老板审批 + 里程碑列表
       intake.md
+      work-item.json      # 问题、原因/假设、方案、影响、范围、验收、测试和目标
       prd.md              # 仅在自动判断需要新 PRD 时
       research/<domain>.md
       research/feasibility.md
@@ -114,28 +103,25 @@ Linear 是任务和状态界面。本地 requirement docs 是契约，不是 iss
 ### 核心流程 Skills
 
 - `vb-init`：初始化 `.vibeRig/project.yaml`、`.vibeRig/prd/`、`.vibeRig/requirements/`（含 archive）、`.worktrees/`、Linear 容器 Project 注册、门禁策略、PR 策略、默认路由，并搭建项目 agent 团队。
-- `intake`：新需求唯一默认人工入口；以产品经理方式补全需求并让老板一次确认基线，然后自动进入开发前评审。
-- `pre-development`：自动编排 PRD 决策、分领域调研、CTO 架构红白队、验收与测试设计、风险/发布方案、交付草案和 DoR，最后生成老板审批包。
+- `intake`：所有未确认工作（功能、Bug、小改动、技术债和风险）的统一脑暴入口；检查现状并形成完整 Work Item，让用户一次确认后写入文档。
+- `execute`：持有 Goal Contract，持续执行实现、自动测试环境、验证、风险审核和技术交付；可自主解决时不在 Skill 边界中断。
+- `accept-deliver`：Evidence 审计、人工 UAT 和明确验收；merge/release 是验收后的独立授权。
+- `pre-development`：仅为 L2/L3 Work Item 内部补充调研、架构、AC/TC、风险和交付计划；不新增人工审批阶段。
 - `prd-brainstorm`：可独立访谈生成产品级 PRD，也可在开发前流程中从已确认 Intake 自动综合，不重复询问老板。
 - `tech-research`：开发前内部领域调研协议；不同 subagent 分别研究前端、后端、数据、安全、运维、QA 等维度，主 agent 统一落盘。
 - `architecture-design`：CTO 综合领域证据，完成端到端架构及红队攻击、白队回应和最终裁决。
 - `define-acceptance`：生成结构化 AC、工程验证和老板可照做的 `acceptance-guide.md`；随完整方案一次审批。
 - `split-milestones`：审批前按可验收用户价值生成本地草案；批准后才将相同计划写入 Linear。
 - `split-issues`：审批前生成全局 Issue 草案；批准后按 Rolling Wave 只正式创建下一个里程碑的垂直切片，不指派、不选 subagent。
-- `record-issue`：小需求快速入口——影响面分析 → 单个 issue；影响面大时升级走完整流程。
-- `task-runner`：执行一个里程碑或单个 issue；按 AC/TC 做 TDD、定向验证和风险审核，读取当前 commit 的 CI，维护正确的 PR 路径并写逐 TC Proof Packet。
-- `accept-issue`：standalone、高风险或显式抽查的单点验收；一旦验收通过，就以 accepted commit 立即执行 `insights → vb-wiki`，不等待合并或 Milestone 验收。普通里程碑 issue 不强制逐个验收。
-- `accept-milestone`：同步最新 main 后汇总 Issue Evidence，执行里程碑回归、E2E 和老板 UAT；验收通过后立即执行 `insights → vb-wiki`，常驻 PR 合并仍是单独授权和交付步骤。
-- `insights`：显式验收通过后立即生成证据化复盘并写入 Linear 评论区，包括已验收但未合并的工作；作为 `vb-wiki` 输入，不创建知识页或 skill 候选。
-- `vb-wiki`：默认长期记忆编辑器，在显式验收通过后立即把证据编译成围绕概念、持续更新的全局/项目笔记；另行维护 current-state 检索目录与可选 qmd 搜索，查询时读取 canonical page 而非日志/片段，并可 lint 矛盾、过期、重复、断链和检索漂移。merge 状态只作来源元数据，工具晋升仍需知识提交后的独立判断。
-- `blocker-resume`：检查被阻塞的 Linear work，并决定恢复执行或请求缺失决策。
+- `record-issue`、`bugger`：旧入口兼容层，统一转入 `intake`；不再维护“小需求”和“Bug”两套问题建模。
+- `quick`、`task-runner`、`blocker-resume`：旧执行入口兼容层，统一恢复或创建 Goal Contract 后转入 `execute`。
+- `accept-issue`、`accept-milestone`、`merge-issue`：旧验收/交付入口兼容层，只选择 `accept-deliver` 的范围或模式。
+- `insights`：从已验收 Evidence 生成证据化复盘和 novelty 判断；没有新知识时以 `zero-atoms` 结束。
+- `vb-wiki`：显式查询项目知识；写入由 novelty、重复缺陷、Milestone 或批量阈值触发，不再是每次验收的固定重型流程。
 
 ### 实现类 Skills
 
-- `agent-sop`：按风险编排实现、定向验证和 Reviewer；标准任务不重复启动 Test QA、Final QA 与全套专项审核。
-- `bugger`：把 bug 记录到 Linear，分析根因，并提出修复方向供用户确认。在 `quick` 之前使用。
-- `quick`：直接在当前工作区执行一个已确认的小任务（确认过的 bug fix 或一个很小的改动），不开分支/worktree，提交代码，记录证据到 Linear，交由 `accept-issue` 完成收尾。
-- `merge-issue`：`accept-issue` 通过后合并 standalone issue PR；先校验当前内容仍与 accepted commit 一致，仅用 `reconcile_only` 补交付来源，不重复复盘、知识编辑或 promotion。
+- `agent-sop`：`execute` 内部按风险编排实现、定向验证和 Reviewer；L0 不强制 Subagent，L2/L3 才逐级增加独立审核。
 - `incremental-implementation`：以薄垂直切片方式交付变更，适用于涉及多个文件的任何改动。
 - `source-driven-development`：对版本敏感的框架代码，以官方文档为实现决策的唯一依据。
 - `test-driven-development`：以测试驱动实现和 bug fix（Prove-It Pattern）。
@@ -180,17 +166,14 @@ Linear 是任务和状态界面。本地 requirement docs 是契约，不是 iss
 - `code_review`：独立审核正确性、可维护性、架构符合性和证据质量。
 - `integrator`：审核跨 Issue 依赖、契约、当前 commit 证据和里程碑集成就绪度。
 
-VibeRig 通过 `subagent-routing` 动态选择最小必要阵容；未受影响的专业 Agent 不启动。项目特有的支付、计费、合规或框架角色由 `update-team` 补充。所有 subagent 都不应更新 Linear、写 Proof Packet 或作最终验收判断。默认学习链路在显式验收通过后立即执行 `insights → vb-wiki`，不再设置 `self_learner` Agent；只有用户另行明确授权时才进入 `vb-learn`。
+VibeRig 通过 `subagent-routing` 先按 capability 选择最小必要阵容，再按 provider、任务族、风险和 accepted observations 动态选择 model/reasoning；L0 默认不启动 Subagent。低风险、可逆且有确定性 Oracle 的任务最多用 10% 稳定采样探索 challenger，accept/security/merge/release 等保护路径只 exploit。所有 Subagent 都不应更新 Linear、写 Proof Packet 或作最终验收判断。验收后 `insights` 保留模型/Agent 路由观察并做可比组分析，只有 novelty 或批量阈值触发 `insights → vb-wiki`；只有用户另行明确授权时才进入 `vb-learn`。
 
 ## 运行流程
 
-1. 使用 `vb-init` 初始化项目（常驻容器 Linear Project、`.vibeRig/prd/` 与 `.vibeRig/requirements/` 及各自 archive）。
-2. 老板只需调用 `intake`。产品经理式访谈补全目标、用户、流程、业务规则、范围、约束、成功指标和验收关注点，老板一次确认需求基线。
-3. `intake` 自动进入 `pre-development`：内部判断是否需要 PRD，按影响范围路由专业 subagents 做可行性调研，由 CTO 综合架构并完成红白队对抗，再生成验收标准、老板验证指南、测试用例、风险/发布方案、追踪表及 Milestone/Issue 本地草案。此阶段不创建 Linear 规划对象。
-4. CTO 用 `pre-development-review.md` 一次向老板汇报推荐方案、成本/周期、风险、交付计划和可执行验收步骤。老板批准后才 materialize Linear Milestones，并按 Rolling Wave 正式创建下一个里程碑的 Issues；退回时只重跑受影响阶段。
-5. 使用 `task-runner <里程碑id 或 issue-id>` 执行，只允许人为调用（不允许被其他 skill 自动串联）：一个里程碑一条持久集成分支（`milestone/<req-id>-<n>`）；顺序执行复用调用级 worktree，并发 issue 才各用一次性 worktree。Task Brief 只注入相关 AC/TC/契约，按风险路由 subagent。每个 issue 都产生 commit、PR/常驻 PR 更新和逐 TC Evidence：
-   - 里程碑循环里并发拆出去执行的 issue，PR 目标是集成分支，由 `task-runner` 在质量门禁与当前 commit CI 通过后合并；
-   - 里程碑循环里顺序执行的 issue，持续更新同一个"集成分支 → main"的常驻 PR，只由 `accept-milestone` 合并；
-   - 不挂任何里程碑的单个 issue，PR 直接目标 main，`accept-issue` 通过后由 `merge-issue` 合并。全部 issue 完成后里程碑进入 `pending_acceptance`。
-6. 普通里程碑 Issue 的有效技术 Evidence 直接进入 `accept-milestone`；standalone、高风险或需要抽查时才用 `accept-issue`。里程碑验收按“同步最新 main → 当前 commit CI → 里程碑 TC/增量回归/E2E → 老板 UAT → 明确验收通过 → 立即 `insights → vb-wiki` → 另行授权合并常驻 PR → 状态/归档”执行，不重复运行每个 Issue 已有有效证据的全部单元测试。standalone 验收通过后也立即复盘和入库，`merge-issue` 后续只负责交付与 reconcile。
-7. 小改动走 `record-issue`（影响面分析 → 单个 issue）；Bug 走 `bugger` → `quick` → `accept-issue`。
+1. 使用 `vb-init` 初始化项目；Linear 等外部集成不可用时，本地 Harness 仍可工作。
+2. 用户自然描述目标。`intake` 检查代码与现有记录，逐步脑暴完整 Work Item，并在一次人工 Gate 中确认真实需求；确认后才写 `intake.md`、`work-item.json` 和 `requirement.yaml`。
+3. L0/L1 直接进入 `execute`；L2/L3 在内部调用 `pre-development` 补技术计划。技术能力切换不形成新的人工审批。
+4. `execute` 持续运行 Goal Loop：Understand → Plan → Implement → Verify → Review → Repair。缺少测试配置时自动选择 fake、stub、ephemeral dependency 或 sandbox；只有产品决策、权限、不可模拟真实环境或连续三次无进展才暂停。
+5. Completion Oracle 满足后进入 `accept-deliver`。系统先审计当前 commit 的 Evidence，再给用户最短可执行 UAT；退回项自动回到同一 Goal Loop。
+6. 用户明确验收通过后记录 acceptance。commit、PR、merge、release 按初始目标和单独 authority 执行；merge/release 不从验收通过自动推断。
+7. Evidence 默认保留；Subagent/model route observation 在人工验收后进入 retrospective。`update-team` 只在至少 5 个可比样本、质量不退化、无 Critical 失败且成本或延迟改善达到阈值时调整派生路由；知识编译与工具 Skill 晋升仍分别受 novelty 和独立授权约束。

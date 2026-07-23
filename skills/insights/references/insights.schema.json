@@ -153,6 +153,70 @@
       },
       "additionalProperties": true
     },
+    "routing_observations": {
+      "type": "array",
+      "items": {
+        "$ref": "../../subagent-routing/assets/route-observation.schema.json"
+      }
+    },
+    "routing_analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_count",
+        "comparable_count",
+        "excluded_route_ids",
+        "comparison_groups",
+        "default_changed"
+      ],
+      "properties": {
+        "observation_count": { "type": "integer", "minimum": 0 },
+        "comparable_count": { "type": "integer", "minimum": 0 },
+        "excluded_route_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "comparison_groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["comparison_key", "sample_count", "incumbent", "decision"],
+            "properties": {
+              "comparison_key": { "type": "string", "minLength": 1 },
+              "sample_count": { "type": "integer", "minimum": 1 },
+              "incumbent": { "type": "string", "minLength": 1 },
+              "eligible_challenger": { "type": ["string", "null"] },
+              "decision": {
+                "enum": [
+                  "insufficient_samples",
+                  "keep_incumbent",
+                  "challenger_eligible",
+                  "promote_challenger",
+                  "block_exploration",
+                  "not_comparable"
+                ]
+              },
+              "reason": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "default_changed": { "const": false },
+        "next_trial": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["task_family", "model", "reasoning_effort", "eligibility"],
+          "properties": {
+            "task_family": { "type": "string", "minLength": 1 },
+            "model": { "type": "string", "minLength": 1 },
+            "reasoning_effort": { "type": "string", "minLength": 1 },
+            "eligibility": { "enum": ["explore", "shadow", "not_eligible"] },
+            "why": { "type": "string" }
+          }
+        }
+      }
+    },
     "retrospective_signals": {
       "type": "array",
       "items": {

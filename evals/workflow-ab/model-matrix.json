@@ -1,0 +1,21 @@
+{
+  "catalogCommand": "codex debug models",
+  "screen": [
+    { "model": "gpt-5.6-sol", "effort": "low" },
+    { "model": "gpt-5.6-terra", "effort": "low" },
+    { "model": "gpt-5.6-luna", "effort": "low" },
+    { "model": "gpt-5.5", "effort": "low" },
+    { "model": "gpt-5.4", "effort": "low" },
+    { "model": "gpt-5.4-mini", "effort": "low" },
+    { "model": "gpt-5.2", "effort": "low" }
+  ],
+  "full": [
+    { "model": "gpt-5.6-sol", "effort": "low" },
+    { "model": "gpt-5.6-terra", "effort": "low" },
+    { "model": "gpt-5.6-luna", "effort": "low" },
+    { "model": "gpt-5.5", "effort": "low" },
+    { "model": "gpt-5.4", "effort": "low" },
+    { "model": "gpt-5.4-mini", "effort": "low" },
+    { "model": "gpt-5.4-mini", "effort": "medium" }
+  ]
+}

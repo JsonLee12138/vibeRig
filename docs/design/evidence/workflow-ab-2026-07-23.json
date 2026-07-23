@@ -1,0 +1,140 @@
+{
+  "version": 2,
+  "date": "2026-07-23",
+  "runner": "codex-cli 0.144.6",
+  "command": "pnpm run eval:workflow-ab",
+  "execution": {
+    "mode": "ephemeral",
+    "sandbox": "read-only",
+    "fixtures": 4,
+    "evaluationRounds": 2,
+    "runs": 16,
+    "outputSchema": "evals/workflow-ab/output.schema.json"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "baseline": { "earned": 23, "total": 43 },
+      "candidate": { "earned": 43, "total": 43 }
+    },
+    {
+      "round": 2,
+      "baseline": { "earned": 26, "total": 43 },
+      "candidate": { "earned": 43, "total": 43 }
+    }
+  ],
+  "finalRoundAggregate": {
+    "baseline": {
+      "earned": 26,
+      "total": 43,
+      "rate": 0.6047
+    },
+    "candidate": {
+      "earned": 43,
+      "total": 43,
+      "rate": 1
+    }
+  },
+  "fixtures": [
+    {
+      "id": "bug-fix-to-pr",
+      "baseline": {
+        "earned": 3,
+        "total": 12,
+        "failed": [
+          "no-manual-skill-selection",
+          "respects-authority",
+          "completion-oracle",
+          "complete-work-item",
+          "continuous-execution",
+          "human-acceptance"
+        ]
+      },
+      "candidate": {
+        "earned": 12,
+        "total": 12,
+        "failed": [],
+        "route": ["intake", "execute", "accept-deliver"],
+        "humanGates": ["requirement_confirmation", "human_acceptance"],
+        "testEnvironmentStrategy": "adaptive"
+      }
+    },
+    {
+      "id": "record-small-change",
+      "baseline": {
+        "earned": 7,
+        "total": 9,
+        "failed": ["complete-work-item"]
+      },
+      "candidate": {
+        "earned": 9,
+        "total": 9,
+        "failed": [],
+        "route": [
+          "intake",
+          "requirement_confirmation",
+          "write_authoritative_documents",
+          "vb-linear_deduplicate_and_create_issue"
+        ],
+        "humanGates": ["requirement_confirmation"],
+        "testEnvironmentStrategy": "adaptive"
+      }
+    },
+    {
+      "id": "missing-test-config",
+      "baseline": {
+        "earned": 11,
+        "total": 13,
+        "failed": [
+          "no-manual-skill-selection"
+        ]
+      },
+      "candidate": {
+        "earned": 13,
+        "total": 13,
+        "failed": [],
+        "route": [
+          "execute: Understand/Plan",
+          "test-driven-development: RED",
+          "test-environment-broker: local issuer + JWKS / deterministic fake or stub",
+          "execute: GREEN/REFACTOR",
+          "execute: Verify/Review/Decide",
+          "verified",
+          "accept-deliver: Evidence audit",
+          "accept-deliver: human acceptance"
+        ],
+        "humanGates": ["human_acceptance"],
+        "testEnvironmentStrategy": "adaptive"
+      }
+    },
+    {
+      "id": "review-only-no-write",
+      "baseline": {
+        "earned": 5,
+        "total": 9,
+        "failed": [
+          "respects-authority",
+          "complete-work-item",
+          "no-redundant-requirement-gate"
+        ]
+      },
+      "candidate": {
+        "earned": 9,
+        "total": 9,
+        "failed": [],
+        "route": ["intake", "diagnosed"],
+        "humanGates": [],
+        "testEnvironmentStrategy": "not_applicable"
+      }
+    }
+  ],
+  "interpretation": {
+    "scope": "Prompt-routing behavior only; this is not a production task-success benchmark.",
+    "strength": "The same read-only Codex exec evaluator and structured schema were used for both variants.",
+    "limitations": [
+      "Four fixtures do not estimate long-tail production reliability.",
+      "Baseline moved from 23/43 to 26/43 across two rounds; candidate remained 43/43 in both. More repetitions are still required for confidence intervals.",
+      "The deterministic rubric can verify declared workflow behavior, not real repository execution success."
+    ]
+  }
+}

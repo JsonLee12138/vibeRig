@@ -1,11 +1,11 @@
 ---
 name: split-milestones
-description: 将需求按可验收用户价值拆成里程碑。由 pre-development 调用时仅生成本地 draft；老板批准完整开发前方案后才 materialize 到 Linear。也可用于继续已批准需求的里程碑规划。
+description: 将已确认 Work Item 按可验收用户价值拆成里程碑。由 pre-development 内部生成本地 draft；需求基线已通过 intake 人工 Gate 且技术计划未改变产品语义时 materialize。也可用于继续已确认需求的里程碑规划。
 ---
 
 # Split Milestones（里程碑规划）
 
-先在开发前阶段形成无外部副作用的交付草案，审批后再把已批准计划写入 Linear。
+先形成无外部副作用的交付草案，再把与已确认需求基线一致的计划写入 Linear。技术分解不新增第二个人工审批；产品语义漂移必须返回 `intake`。
 
 ## 前置门禁
 
@@ -17,14 +17,14 @@ description: 将需求按可验收用户价值拆成里程碑。由 pre-developm
 
 ### Draft 模式
 
-由 `pre-development` 在老板审批前调用：
+由 `pre-development` 在技术计划阶段调用：
 
 1. 读取需求、架构、验收、测试、风险、发布与追踪信息；
 2. 按可验收用户价值和可发布增量拆分，不按模块一一对应；
 3. 架构依赖只约束顺序、并行性和技术边界；
 4. 每条 AC 恰好分配到一个里程碑并回填 `acceptance.json`；
 5. 将里程碑草案写入 `delivery-plan.md` 与 `requirement.yaml`，`linear_id: null`、`status: draft`；
-6. 不向老板逐项确认，方案随 CTO 汇总包一次审批；
+6. 不向用户逐项确认；若分解改变已确认 scope、业务规则或验收语义，返回 `intake`；
 7. 禁止写 Linear。
 
 ### Materialize 模式

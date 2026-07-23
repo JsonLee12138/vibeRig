@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.2.1",
   "packageManager": "pnpm@9.15.9",
-  "description": "Enterprise pre-development orchestration, approval-ready Docs as Code contracts, Linear-native execution, and subagent routing.",
+  "description": "Goal-driven software-development harness with confirmed requirements, continuous execution, evidence, and human acceptance.",
   "license": "MIT",
   "homepage": "https://github.com/JsonLee12138/vibeRig#readme",
   "repository": {
@@ -34,7 +34,11 @@
     "lint:fix": "eslint src scripts/*.mjs eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml --fix",
     "typecheck": "tsc --noEmit",
     "test:learning-flow": "node scripts/validate-learning-flow.mjs",
-    "test": "pnpm run typecheck && pnpm run test:learning-flow"
+    "test:model-routing": "node scripts/validate-model-routing.mjs",
+    "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
+    "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
+    "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
+    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:workflow-skills"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",

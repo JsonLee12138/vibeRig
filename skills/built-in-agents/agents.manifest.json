@@ -19,7 +19,7 @@
     {
       "name": "self_learner",
       "replacement": "insights + vb-wiki",
-      "reason": "Explicit acceptance immediately triggers an evidence retrospective and wiki knowledge write; merge only reconciles delivery provenance, and a second write-capable subagent would duplicate work and authority."
+      "reason": "Accepted evidence is compiled only when novelty, repeated defects, milestones, or batch thresholds justify it; merge only reconciles delivery provenance, and a second write-capable subagent would duplicate work and authority."
     }
   ]
 }
