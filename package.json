@@ -13,6 +13,12 @@
   "bugs": {
     "url": "https://github.com/JsonLee12138/vibeRig/issues"
   },
+  "keywords": [
+    "pi-package",
+    "software-development",
+    "subagents",
+    "plane"
+  ],
   "bin": {
     "viberig": "./dist/cli/index.js",
     "vb": "./dist/cli/index.js",
@@ -24,12 +30,6 @@
     "README.zh-CN.md",
     "dist",
     "pi"
-  ],
-  "keywords": [
-    "pi-package",
-    "software-development",
-    "subagents",
-    "plane"
   ],
   "pi": {
     "extensions": [
@@ -52,11 +52,17 @@
     "test:learning-flow": "node scripts/validate-learning-flow.mjs",
     "test:model-routing": "node scripts/validate-model-routing.mjs",
     "test:pi-company": "node scripts/validate-pi-company.mjs",
+    "test:pi-package-load": "node scripts/validate-pi-package-load.mjs",
     "test:workflow-runtime": "node scripts/validate-workflow-runtime.mjs",
     "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
+    "eval:pi-company-ab": "node scripts/run-pi-company-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
     "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:pi-company && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": ">=0.80.0",
+    "@earendil-works/pi-coding-agent": ">=0.80.0"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
@@ -76,10 +82,6 @@
     "tsdown": "^0.13.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-ai": ">=0.80.0",
-    "@earendil-works/pi-coding-agent": ">=0.80.0"
   },
   "bundledDependencies": [
     "@tintinweb/pi-subagents"

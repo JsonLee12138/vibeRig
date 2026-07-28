@@ -1,0 +1,44 @@
+[
+  {
+    "id": "cross-stack-security-design",
+    "prompt": "只做方案，不改代码，也不要写 Plane。我们要在设置页增加第三方 OAuth 客户端配置：前端提交 client_id 和 client_secret，后端加密保存，并记录管理员变更审计。当前还不知道仓库实际技术栈、密钥管理方式和现有测试环境。请先基于仓库证据分析，再给出可实施方案、测试策略、风险和下一步。",
+    "expectedRoles": [
+      "project_analyst",
+      "architect",
+      "security_auditor",
+      "test_engineer"
+    ],
+    "forbiddenRoles": [
+      "implementer",
+      "frontend_engineer",
+      "backend_engineer",
+      "knowledge_curator"
+    ],
+    "requiredConcepts": [
+      "evidence",
+      "trust_boundary",
+      "test_levels",
+      "human_gate"
+    ]
+  },
+  {
+    "id": "duplicate-import-diagnosis",
+    "prompt": "只诊断和设计验证，不修代码，也不要写 Plane。批量导入在并发请求下偶发重复写入，简单重试和现有单元测试都没有定位问题。请找出最可能的因果链、需要检查的事务与幂等边界、非单测验证方案，以及什么时候才可以交给实现者。",
+    "expectedRoles": [
+      "debugger",
+      "test_engineer",
+      "architect"
+    ],
+    "forbiddenRoles": [
+      "implementer",
+      "frontend_engineer",
+      "knowledge_curator"
+    ],
+    "requiredConcepts": [
+      "root_cause",
+      "idempotency",
+      "integration_test",
+      "handoff_contract"
+    ]
+  }
+]
