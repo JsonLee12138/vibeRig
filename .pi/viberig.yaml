@@ -35,6 +35,8 @@ budgets:
   default_max_turns: 24
 plane:
   enabled: false
+  writes_enabled: false
+  allow_headless_writes: false
   base_url: ""
   workspace_slug: ""
   project_id: ""

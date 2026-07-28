@@ -3,6 +3,8 @@ import { defineCommand } from 'citty';
 import { consola } from 'consola';
 
 import { doctorPiCompany, findPackageRoot, initPiCompany } from '../lib/pi-company.js';
+import { loadPiCompanyConfig } from '../lib/pi-company.js';
+import { PlaneGateway } from '../lib/plane-gateway.js';
 
 const initPiCommand = defineCommand({
   meta: {
@@ -86,6 +88,43 @@ const doctorCommand = defineCommand({
   },
 });
 
+const planeProbeCommand = defineCommand({
+  meta: {
+    name: 'plane-probe',
+    description: 'Probe the configured self-hosted Plane instance without mutating it.',
+  },
+  args: {
+    cwd: {
+      type: 'string',
+      description: 'Project root.',
+      default: '.',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Print machine-readable JSON.',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const config = await loadPiCompanyConfig(resolve(args.cwd));
+    if (!config.plane.enabled)
+      throw new Error('Plane is disabled in .pi/viberig.yaml');
+    const result = await new PlaneGateway(config.plane).probe();
+    if (args.json) {
+      console.log(JSON.stringify(result, null, 2));
+    }
+    else {
+      for (const capability of result.capabilities) {
+        const mark = capability.supported ? '✓' : capability.required ? '✗' : '○';
+        consola.info(`${mark} ${capability.name}: ${capability.detail}`);
+      }
+      consola.info(`Pages automation: ${result.pagesAutomation}`);
+    }
+    if (!result.ok)
+      process.exitCode = 1;
+  },
+});
+
 export const piCommand = defineCommand({
   meta: {
     name: 'pi',
@@ -94,5 +133,6 @@ export const piCommand = defineCommand({
   subCommands: {
     init: initPiCommand,
     doctor: doctorCommand,
+    'plane-probe': planeProbeCommand,
   },
 });

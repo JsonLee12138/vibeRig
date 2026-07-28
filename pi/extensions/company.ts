@@ -2,6 +2,7 @@ import { Type } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 
 import { loadPiCompanyConfig, roleDefinitions } from '../../src/cli/lib/pi-company.js';
+import { PlaneGateway } from '../../src/cli/lib/plane-gateway.js';
 
 function textResult(value: unknown) {
   return {
@@ -46,6 +47,85 @@ export default function viberigCompany(pi: ExtensionAPI) {
           error: (error as Error).message,
           action: 'Run `viberig pi init` in the project.',
         });
+      }
+    },
+  });
+
+  pi.registerTool({
+    name: 'viberig_plane_capabilities',
+    label: 'Plane capabilities',
+    description: 'Probe the exact Plane workspace/project binding and report supported public API capabilities. Read-only.',
+    parameters: Type.Object({}),
+    async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
+      try {
+        const config = await loadPiCompanyConfig(ctx.cwd);
+        if (!config.plane.enabled)
+          return textResult({ ok: false, error: 'Plane is disabled in .pi/viberig.yaml' });
+        return textResult(await new PlaneGateway(config.plane).probe());
+      }
+      catch (error) {
+        return textResult({ ok: false, error: (error as Error).message });
+      }
+    },
+  });
+
+  pi.registerTool({
+    name: 'viberig_plane_read_work_item',
+    label: 'Read Plane work item',
+    description: 'Read one Work Item from the project-bound Plane instance. Workspace and project cannot be supplied by the model.',
+    parameters: Type.Object({
+      workItemId: Type.String({ description: 'Exact Plane Work Item UUID or stable API identifier.' }),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+      try {
+        const config = await loadPiCompanyConfig(ctx.cwd);
+        if (!config.plane.enabled)
+          return textResult({ ok: false, error: 'Plane is disabled in .pi/viberig.yaml' });
+        return textResult(await new PlaneGateway(config.plane).readWorkItem(params.workItemId));
+      }
+      catch (error) {
+        return textResult({ ok: false, error: (error as Error).message });
+      }
+    },
+  });
+
+  pi.registerTool({
+    name: 'viberig_plane_append_progress',
+    label: 'Append Plane progress',
+    description: 'Append an idempotent progress comment to one project-bound Plane Work Item. No state transition or deletion.',
+    parameters: Type.Object({
+      workItemId: Type.String({ description: 'Exact Plane Work Item UUID or stable API identifier.' }),
+      operationId: Type.String({ description: 'Caller-stable idempotency identifier.' }),
+      summary: Type.String({ description: 'Plain-text progress summary; HTML is escaped.' }),
+      evidenceRefs: Type.Optional(Type.Array(Type.String(), { maxItems: 20 })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+      try {
+        const config = await loadPiCompanyConfig(ctx.cwd);
+        if (!config.plane.enabled)
+          return textResult({ ok: false, error: 'Plane is disabled in .pi/viberig.yaml' });
+        if (!config.plane.writes_enabled)
+          return textResult({ ok: false, error: 'Plane writes are disabled in .pi/viberig.yaml' });
+        if (!ctx.hasUI && !config.plane.allow_headless_writes)
+          return textResult({ ok: false, error: 'Headless Plane writes are disabled by project policy' });
+        if (ctx.hasUI) {
+          const confirmed = await ctx.ui.confirm(
+            'Append Plane progress?',
+            `Work Item ${params.workItemId}\nOperation ${params.operationId}\n\n${params.summary}`,
+          );
+          if (!confirmed)
+            return textResult({ ok: false, cancelled: true });
+        }
+        const result = await new PlaneGateway(config.plane).appendProgress({
+          workItemId: params.workItemId,
+          operationId: params.operationId,
+          summary: params.summary,
+          evidenceRefs: params.evidenceRefs,
+        });
+        return textResult({ ok: true, ...result });
+      }
+      catch (error) {
+        return textResult({ ok: false, error: (error as Error).message });
       }
     },
   });

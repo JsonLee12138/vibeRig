@@ -139,6 +139,8 @@ export const piCompanyConfigSchema = z.object({
   }),
   plane: z.object({
     enabled: z.boolean().default(false),
+    writes_enabled: z.boolean().default(false),
+    allow_headless_writes: z.boolean().default(false),
     base_url: z.string().url().or(z.literal('')).default(''),
     workspace_slug: z.string().default(''),
     project_id: z.string().default(''),
@@ -219,6 +221,8 @@ export function createPiCompanyConfig(projectName: string, defaultModel: string)
     budgets: { max_concurrent: 4, default_max_turns: 24 },
     plane: {
       enabled: false,
+      writes_enabled: false,
+      allow_headless_writes: false,
       base_url: '',
       workspace_slug: '',
       project_id: '',
@@ -312,6 +316,8 @@ export async function initPiCompany(options: InitPiCompanyOptions): Promise<PiCo
   let config: PiCompanyConfig;
   if (await pathExists(configPath)) {
     config = await loadPiCompanyConfig(root);
+    if (options.force)
+      await writeFile(configPath, stringify(config, { lineWidth: 0 }), 'utf8');
   }
   else {
     config = createPiCompanyConfig(options.projectName ?? basename(root), options.defaultModel);
