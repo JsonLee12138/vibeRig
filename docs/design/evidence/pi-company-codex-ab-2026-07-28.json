@@ -1,0 +1,151 @@
+{
+  "generatedAt": "2026-07-28T06:20:54.012Z",
+  "branch": "codex/pi-company-plane",
+  "model": "gpt-5.6-terra",
+  "thinking": "low",
+  "fixtures": 2,
+  "tokenMetric": {
+    "name": "effectiveTokens",
+    "pi": "parent input + output + cacheWrite, plus subagent input + output + cacheWrite",
+    "codex": "input_tokens - cached_input_tokens + output_tokens",
+    "note": "The metric excludes repeated cached-prefix reads on both runners."
+  },
+  "aggregate": {
+    "piSingle": {
+      "quality": {
+        "earned": 40,
+        "total": 40
+      },
+      "elapsedMs": 110578,
+      "effectiveTokens": 64353
+    },
+    "piCompany": {
+      "quality": {
+        "earned": 40,
+        "total": 40,
+        "note": "Rescored after accepting explicit no-write Plane ownership and Chinese human-owner wording."
+      },
+      "routing": {
+        "earned": 19,
+        "total": 25
+      },
+      "elapsedMs": 319621,
+      "effectiveTokens": 330767,
+      "subagentRuns": 4
+    },
+    "codex": {
+      "quality": {
+        "earned": 40,
+        "total": 40,
+        "note": "Rescored after accepting explicit no-write Plane ownership."
+      },
+      "elapsedMs": 240148,
+      "effectiveTokens": 72205
+    }
+  },
+  "ratios": {
+    "piCompanyVsCodex": {
+      "effectiveTokens": 4.5809,
+      "elapsed": 1.3309
+    },
+    "piCompanyVsPiSingle": {
+      "effectiveTokens": 5.1399,
+      "elapsed": 2.8905
+    },
+    "codexVsPiSingle": {
+      "effectiveTokens": 1.122,
+      "elapsed": 2.1718
+    }
+  },
+  "fixtureResults": [
+    {
+      "id": "cross-stack-security-design",
+      "quality": {
+        "piSingle": "20/20",
+        "piCompany": "20/20",
+        "codex": "20/20"
+      },
+      "piSingle": {
+        "elapsedMs": 53297,
+        "effectiveTokens": 28214
+      },
+      "piCompany": {
+        "elapsedMs": 132639,
+        "effectiveTokens": 182990,
+        "agentCalls": [
+          "project_analyst",
+          "security_auditor"
+        ],
+        "routing": "10/14",
+        "subagents": [
+          {
+            "type": "project_analyst",
+            "elapsedMs": 57164,
+            "effectiveTokens": 63868,
+            "toolUses": 39
+          },
+          {
+            "type": "security_auditor",
+            "elapsedMs": 96138,
+            "effectiveTokens": 89590,
+            "toolUses": 33
+          }
+        ]
+      },
+      "codex": {
+        "elapsedMs": 120646,
+        "effectiveTokens": 45417
+      }
+    },
+    {
+      "id": "duplicate-import-diagnosis",
+      "quality": {
+        "piSingle": "20/20",
+        "piCompany": "20/20",
+        "codex": "20/20"
+      },
+      "piSingle": {
+        "elapsedMs": 57281,
+        "effectiveTokens": 36139
+      },
+      "piCompany": {
+        "elapsedMs": 186982,
+        "effectiveTokens": 147777,
+        "agentCalls": [
+          "debugger",
+          "test_engineer"
+        ],
+        "routing": "9/11",
+        "subagents": [
+          {
+            "type": "test_engineer",
+            "elapsedMs": 80808,
+            "effectiveTokens": 68358,
+            "toolUses": 27
+          },
+          {
+            "type": "debugger",
+            "elapsedMs": 136990,
+            "effectiveTokens": 47686,
+            "toolUses": 28
+          }
+        ]
+      },
+      "codex": {
+        "elapsedMs": 119502,
+        "effectiveTokens": 26788
+      }
+    }
+  ],
+  "conclusion": {
+    "piOutperformedCodex": false,
+    "piSavedTokens": false,
+    "summary": "On these two read-only requirement-development fixtures, all runners reached the rubric ceiling. Pi company mode used 4.58x Codex effective tokens and 1.33x elapsed time without a measured quality gain."
+  },
+  "limitations": [
+    "Only two read-only design and diagnosis fixtures were evaluated.",
+    "The deterministic quality rubric reached its ceiling and cannot rank subtle answer quality.",
+    "Implementation, review, verification and Plane write workflows were not evaluated.",
+    "Pi subagent cached-prefix reads are deliberately excluded because pi-subagents reports lifetime effective usage without cumulative cacheRead."
+  ]
+}

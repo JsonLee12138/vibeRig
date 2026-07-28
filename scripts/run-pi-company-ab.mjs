@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import process from 'node:process';
@@ -14,6 +14,24 @@ const thinkingArg = process.argv.find(arg => arg.startsWith('--thinking='))?.sli
   ?? 'low';
 const dryRun = process.argv.includes('--dry-run');
 const onlyFixture = process.argv.find(arg => arg.startsWith('--fixture='))?.slice('--fixture='.length);
+const skipCodex = process.argv.includes('--skip-codex');
+const codexModelArg = process.argv.find(arg => arg.startsWith('--codex-model='))?.slice('--codex-model='.length)
+  ?? modelArg.split('/').at(-1);
+const outputSchema = resolve(root, 'evals/pi-company-ab/output.schema.json');
+const usageProbePath = resolve(outputDir, 'subagent-usage-probe.ts');
+
+writeFileSync(usageProbePath, `import { appendFileSync } from "node:fs";
+
+export default function (pi) {
+  for (const eventName of ["subagents:completed", "subagents:failed"]) {
+    pi.events.on(eventName, (payload) => {
+      const path = process.env.VIBERIG_AB_SUBAGENT_USAGE_PATH;
+      if (path)
+        appendFileSync(path, JSON.stringify({ eventName, ...payload }) + "\\n");
+    });
+  }
+}
+`);
 
 function evaluatorPrompt(fixture, variant) {
   return `你正在接受软件交付编排 A/B 评测。
@@ -22,7 +40,9 @@ function evaluatorPrompt(fixture, variant) {
 ${fixture.prompt}
 
 规则：
-- ${variant === 'candidate' ? '如果存在 Agent 工具，必须实际派发最小必要专家；可以并行，但不得全员启动。' : '独立完成分析，不假设存在子 Agent。'}
+- ${variant === 'candidate'
+  ? `如果存在 Agent 工具，必须实际派发最小必要专家，不得全员启动。独立专家应在同一轮并行调用，显式设置 run_in_background: true 和 thinking: ${thinkingArg}；随后必须用 get_subagent_result(wait: true) 逐个取回全部结果，并把专家证据综合进最终答案。不得在结果取回前交卷。`
+  : '独立完成分析，不假设存在子 Agent。'}
 - 只读分析，不修改文件，不调用任何外部写入工具。
 - 最后只输出一个 JSON 对象，不要 Markdown 代码块，字段必须是：
   route: 实际参与的角色名数组；
@@ -96,7 +116,17 @@ function usageFromEvents(events) {
   return usage;
 }
 
-function runVariant(fixture, variant) {
+function effectivePiTokens(usage) {
+  return (usage.input ?? 0) + (usage.output ?? 0) + (usage.cacheWrite ?? 0);
+}
+
+function readJsonLines(path) {
+  if (!existsSync(path))
+    return [];
+  return parseJsonLines(readFileSync(path, 'utf8'));
+}
+
+function runPiVariant(fixture, variant) {
   const args = [
     '--mode',
     'json',
@@ -121,20 +151,27 @@ function runVariant(fixture, variant) {
   else {
     args.push(
       '--approve',
+      '--extension',
+      usageProbePath,
       '--tools',
-      'read,grep,find,ls,Agent,viberig_company_status,viberig_plane_capabilities,viberig_plane_read_work_item',
+      'read,grep,find,ls,Agent,get_subagent_result,viberig_company_status,viberig_plane_capabilities,viberig_plane_read_work_item',
     );
   }
   args.push(evaluatorPrompt(fixture, variant));
 
   if (dryRun)
-    return { command: ['pi', ...args], elapsedMs: 0, events: [], answer: { raw: '', parsed: null }, agentCalls: [] };
+    return { command: ['pi', ...args], elapsedMs: 0, events: [], answer: { raw: '', parsed: null }, agentCalls: [], subagentRuns: [] };
 
+  const subagentUsagePath = resolve(outputDir, `${fixture.id}.${variant}.subagents.jsonl`);
   const started = performance.now();
   const result = spawnSync('pi', args, {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, PI_OFFLINE: '1' },
+    env: {
+      ...process.env,
+      PI_OFFLINE: '1',
+      VIBERIG_AB_SUBAGENT_USAGE_PATH: subagentUsagePath,
+    },
     timeout: 900_000,
     maxBuffer: 50 * 1024 * 1024,
   });
@@ -146,40 +183,119 @@ function runVariant(fixture, variant) {
   const agentCalls = events
     .filter(event => event.type === 'tool_execution_start' && event.toolName === 'Agent')
     .map(event => event.args?.subagent_type ?? event.args?.agent ?? 'unknown');
+  const parentUsage = usageFromEvents(events);
+  const subagentRuns = readJsonLines(subagentUsagePath);
+  const subagentUsage = subagentRuns.reduce((sum, run) => ({
+    input: sum.input + (run.tokens?.input ?? 0),
+    output: sum.output + (run.tokens?.output ?? 0),
+    total: sum.total + (run.tokens?.total ?? 0),
+  }), { input: 0, output: 0, total: 0 });
   return {
     elapsedMs,
     events,
     answer: extractAnswer(events),
-    usage: usageFromEvents(events),
+    usage: {
+      ...parentUsage,
+      effectiveTokens: effectivePiTokens(parentUsage),
+      subagents: subagentUsage,
+      combinedEffectiveTokens: effectivePiTokens(parentUsage) + subagentUsage.total,
+    },
     agentCalls,
+    subagentRuns,
     stderr: result.stderr.trim(),
   };
 }
 
-function score(fixture, run, variant) {
+function runCodex(fixture) {
+  const outputFile = resolve(outputDir, `${fixture.id}.codex.json`);
+  const prompt = evaluatorPrompt(fixture, 'codex');
+  const args = [
+    'exec',
+    '--ephemeral',
+    '--ignore-user-config',
+    '--ignore-rules',
+    '--sandbox',
+    'read-only',
+    '--color',
+    'never',
+    '--json',
+    '-m',
+    codexModelArg,
+    '-c',
+    `model_reasoning_effort="${thinkingArg}"`,
+    '--output-schema',
+    outputSchema,
+    '--output-last-message',
+    outputFile,
+    '-',
+  ];
+
+  if (dryRun)
+    return { command: ['codex', ...args], elapsedMs: 0, answer: { raw: '', parsed: null }, usage: null, agentCalls: [] };
+
+  const started = performance.now();
+  const result = spawnSync('codex', args, {
+    cwd: root,
+    encoding: 'utf8',
+    input: prompt,
+    timeout: 900_000,
+    maxBuffer: 50 * 1024 * 1024,
+  });
+  const elapsedMs = Math.round(performance.now() - started);
+  if (result.status !== 0)
+    throw new Error(`codex failed for ${fixture.id}\n${result.stderr || result.stdout}`);
+
+  const events = parseJsonLines(result.stdout);
+  const completed = events.findLast(event => event.type === 'turn.completed');
+  const rawUsage = completed?.usage ?? {};
+  const cachedInput = rawUsage.cached_input_tokens ?? 0;
+  const freshInput = Math.max(0, (rawUsage.input_tokens ?? 0) - cachedInput);
+  const output = rawUsage.output_tokens ?? 0;
+  const raw = readFileSync(outputFile, 'utf8').trim();
+  return {
+    elapsedMs,
+    events,
+    answer: { raw, parsed: JSON.parse(raw) },
+    usage: {
+      ...rawUsage,
+      fresh_input_tokens: freshInput,
+      effective_tokens: freshInput + output,
+    },
+    agentCalls: [],
+    stderr: result.stderr.trim(),
+  };
+}
+
+function score(fixture, run) {
   const answer = run.answer.parsed;
-  const route = Array.isArray(answer?.route) ? answer.route : [];
-  const actualRoles = variant === 'candidate' && run.agentCalls.length ? run.agentCalls : route;
+  const serialized = JSON.stringify(answer ?? {});
+  const conceptChecks = {
+    evidence: Array.isArray(answer?.facts) && answer.facts.length >= 2,
+    trust_boundary: /信任边界|trust.?bound|RBAC|授权|secret|密钥/i.test(serialized),
+    test_levels: Array.isArray(answer?.testStrategy) && answer.testStrategy.length >= 3,
+    human_gate: /human|人工|用户|管理员.*验收/i.test(serialized),
+    root_cause: /因果|根因|root.?cause|causal/i.test(serialized),
+    idempotency: /幂等|idempoten/i.test(serialized),
+    integration_test: /集成|integration|并发.*测试|concurren/i.test(serialized),
+    handoff_contract: String(
+      typeof answer?.handoff === 'string' ? answer.handoff : JSON.stringify(answer?.handoff ?? ''),
+    ).length >= 80,
+  };
   const checks = [
     { id: 'valid-json', pass: Boolean(answer), weight: 2 },
-    ...fixture.expectedRoles.map(role => ({
-      id: `expected-role:${role}`,
-      pass: actualRoles.includes(role),
+    ...fixture.requiredConcepts.map(concept => ({
+      id: `required-concept:${concept}`,
+      pass: Boolean(conceptChecks[concept]),
       weight: 2,
-    })),
-    ...fixture.forbiddenRoles.map(role => ({
-      id: `forbidden-role:${role}`,
-      pass: !actualRoles.includes(role),
-      weight: 1,
     })),
     {
       id: 'plane-authority',
-      pass: /delivery.?lead|human|parent/i.test(String(answer?.authority?.planeWriteOwner ?? '')),
+      pass: /delivery.?lead|human|parent|交付负责人|主交付|人工|禁止|未分配|无[；：:]/i.test(String(answer?.authority?.planeWriteOwner ?? '')),
       weight: 2,
     },
     {
       id: 'human-acceptance',
-      pass: /human|用户|人工/i.test(String(answer?.authority?.finalAcceptanceOwner ?? '')),
+      pass: /human|用户|人工|人类|业务负责人|管理员/i.test(String(answer?.authority?.finalAcceptanceOwner ?? '')),
       weight: 2,
     },
     {
@@ -210,6 +326,30 @@ function score(fixture, run, variant) {
   ];
   const earned = checks.filter(check => check.pass).reduce((sum, check) => sum + check.weight, 0);
   const total = checks.reduce((sum, check) => sum + check.weight, 0);
+  return { earned, total, checks };
+}
+
+function scoreRouting(fixture, run) {
+  const actualRoles = run.agentCalls;
+  const checks = [
+    ...fixture.expectedRoles.map(role => ({
+      id: `expected-role:${role}`,
+      pass: actualRoles.includes(role),
+      weight: 2,
+    })),
+    ...fixture.forbiddenRoles.map(role => ({
+      id: `forbidden-role:${role}`,
+      pass: !actualRoles.includes(role),
+      weight: 1,
+    })),
+    {
+      id: 'minimal-team',
+      pass: actualRoles.length > 0 && actualRoles.length <= fixture.expectedRoles.length + 1,
+      weight: 2,
+    },
+  ];
+  const earned = checks.filter(check => check.pass).reduce((sum, check) => sum + check.weight, 0);
+  const total = checks.reduce((sum, check) => sum + check.weight, 0);
   return { earned, total, checks, actualRoles };
 }
 
@@ -223,36 +363,70 @@ const report = {
 };
 
 for (const fixture of fixtures.filter(item => !onlyFixture || item.id === onlyFixture)) {
-  const baseline = runVariant(fixture, 'baseline');
-  const candidate = runVariant(fixture, 'candidate');
+  process.stderr.write(`running ${fixture.id}: pi-baseline\n`);
+  const baseline = runPiVariant(fixture, 'baseline');
+  process.stderr.write(`running ${fixture.id}: pi-company\n`);
+  const candidate = runPiVariant(fixture, 'candidate');
+  process.stderr.write(`running ${fixture.id}: codex\n`);
+  const codex = skipCodex ? null : runCodex(fixture);
   report.fixtures.push({
     id: fixture.id,
     baseline,
     candidate,
-    baselineScore: score(fixture, baseline, 'baseline'),
-    candidateScore: score(fixture, candidate, 'candidate'),
+    codex,
+    baselineScore: score(fixture, baseline),
+    candidateScore: score(fixture, candidate),
+    candidateRoutingScore: scoreRouting(fixture, candidate),
+    codexScore: codex && score(fixture, codex),
   });
 }
 
-report.aggregate = report.fixtures.reduce((aggregate, fixture) => ({
-  baseline: {
-    earned: aggregate.baseline.earned + fixture.baselineScore.earned,
-    total: aggregate.baseline.total + fixture.baselineScore.total,
-    elapsedMs: aggregate.baseline.elapsedMs + fixture.baseline.elapsedMs,
-    input: aggregate.baseline.input + (fixture.baseline.usage?.input ?? 0),
-    output: aggregate.baseline.output + (fixture.baseline.usage?.output ?? 0),
-  },
-  candidate: {
-    earned: aggregate.candidate.earned + fixture.candidateScore.earned,
-    total: aggregate.candidate.total + fixture.candidateScore.total,
-    elapsedMs: aggregate.candidate.elapsedMs + fixture.candidate.elapsedMs,
-    input: aggregate.candidate.input + (fixture.candidate.usage?.input ?? 0),
-    output: aggregate.candidate.output + (fixture.candidate.usage?.output ?? 0),
-  },
-}), {
-  baseline: { earned: 0, total: 0, elapsedMs: 0, input: 0, output: 0 },
-  candidate: { earned: 0, total: 0, elapsedMs: 0, input: 0, output: 0 },
-});
+function aggregatePi(variant) {
+  return report.fixtures.reduce((sum, fixture) => {
+    const run = fixture[variant];
+    const scoreResult = fixture[`${variant}Score`];
+    return {
+      earned: sum.earned + scoreResult.earned,
+      total: sum.total + scoreResult.total,
+      elapsedMs: sum.elapsedMs + run.elapsedMs,
+      freshInput: sum.freshInput + (run.usage?.input ?? 0) + (run.usage?.subagents?.input ?? 0),
+      output: sum.output + (run.usage?.output ?? 0) + (run.usage?.subagents?.output ?? 0),
+      cacheRead: sum.cacheRead + (run.usage?.cacheRead ?? 0),
+      effectiveTokens: sum.effectiveTokens + (run.usage?.combinedEffectiveTokens ?? run.usage?.effectiveTokens ?? 0),
+      subagentRuns: sum.subagentRuns + (run.subagentRuns?.length ?? 0),
+    };
+  }, { earned: 0, total: 0, elapsedMs: 0, freshInput: 0, output: 0, cacheRead: 0, effectiveTokens: 0, subagentRuns: 0 });
+}
+
+function aggregateRouting() {
+  return report.fixtures.reduce((sum, fixture) => ({
+    earned: sum.earned + fixture.candidateRoutingScore.earned,
+    total: sum.total + fixture.candidateRoutingScore.total,
+  }), { earned: 0, total: 0 });
+}
+
+function aggregateCodex() {
+  return report.fixtures.reduce((sum, fixture) => {
+    if (!fixture.codex)
+      return sum;
+    return {
+      earned: sum.earned + fixture.codexScore.earned,
+      total: sum.total + fixture.codexScore.total,
+      elapsedMs: sum.elapsedMs + fixture.codex.elapsedMs,
+      freshInput: sum.freshInput + (fixture.codex.usage?.fresh_input_tokens ?? 0),
+      output: sum.output + (fixture.codex.usage?.output_tokens ?? 0),
+      cachedInput: sum.cachedInput + (fixture.codex.usage?.cached_input_tokens ?? 0),
+      effectiveTokens: sum.effectiveTokens + (fixture.codex.usage?.effective_tokens ?? 0),
+    };
+  }, { earned: 0, total: 0, elapsedMs: 0, freshInput: 0, output: 0, cachedInput: 0, effectiveTokens: 0 });
+}
+
+report.aggregate = {
+  baseline: aggregatePi('baseline'),
+  candidate: aggregatePi('candidate'),
+  candidateRouting: aggregateRouting(),
+  codex: aggregateCodex(),
+};
 
 const reportPath = resolve(outputDir, 'report.json');
 writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);

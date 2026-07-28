@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "route",
+    "facts",
+    "hypotheses",
+    "authority",
+    "testStrategy",
+    "risks",
+    "handoff",
+    "boundaries"
+  ],
+  "properties": {
+    "route": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "facts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planeWriteOwner", "finalAcceptanceOwner"],
+      "properties": {
+        "planeWriteOwner": { "type": "string" },
+        "finalAcceptanceOwner": { "type": "string" }
+      }
+    },
+    "testStrategy": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "handoff": { "type": "string" },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["testerVsVerifier", "debuggerVsImplementer", "knowledgeVsSkill"],
+      "properties": {
+        "testerVsVerifier": { "type": "string" },
+        "debuggerVsImplementer": { "type": "string" },
+        "knowledgeVsSkill": { "type": "string" }
+      }
+    }
+  }
+}

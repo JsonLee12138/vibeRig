@@ -1,9 +1,9 @@
 import { resolve } from 'node:path';
+import process from 'node:process';
 import { defineCommand } from 'citty';
 import { consola } from 'consola';
 
-import { doctorPiCompany, findPackageRoot, initPiCompany } from '../lib/pi-company.js';
-import { loadPiCompanyConfig } from '../lib/pi-company.js';
+import { doctorPiCompany, findPackageRoot, initPiCompany, loadPiCompanyConfig } from '../lib/pi-company.js';
 import { PlaneGateway } from '../lib/plane-gateway.js';
 
 const initPiCommand = defineCommand({
@@ -12,21 +12,21 @@ const initPiCommand = defineCommand({
     description: 'Generate the project-local Pi company, isolated agents, skills, and model settings.',
   },
   args: {
-    cwd: {
+    'cwd': {
       type: 'string',
       description: 'Target project directory.',
       default: '.',
     },
-    model: {
+    'model': {
       type: 'string',
       description: 'Default project model in provider/model form.',
       default: 'openai-codex/gpt-5.6-terra',
     },
-    name: {
+    'name': {
       type: 'string',
       description: 'Project name.',
     },
-    force: {
+    'force': {
       type: 'boolean',
       description: 'Regenerate managed Agent and subagent settings files.',
       default: false,
@@ -131,8 +131,8 @@ export const piCommand = defineCommand({
     description: 'Manage the Pi-only virtual software company.',
   },
   subCommands: {
-    init: initPiCommand,
-    doctor: doctorCommand,
+    'init': initPiCommand,
+    'doctor': doctorCommand,
     'plane-probe': planeProbeCommand,
   },
 });

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { copy, ensureDir, pathExists } from 'fs-extra/esm';
 import { parse, stringify } from 'yaml';
@@ -283,7 +284,7 @@ async function mergePiSettings(
   const packages = Array.isArray(current.packages)
     ? current.packages.filter(item => item !== replacedPackagePath)
     : [];
-  if (!packages.some(item => item === packageSource))
+  if (!packages.includes(packageSource))
     packages.push(packageSource);
 
   const enabledModels = Array.isArray(current.enabledModels)

@@ -1,6 +1,7 @@
-import { setTimeout as delay } from 'node:timers/promises';
-
 import type { PiCompanyConfig } from './pi-company.js';
+
+import process from 'node:process';
+import { setTimeout as delay } from 'node:timers/promises';
 
 export interface PlaneCapability {
   name: 'project' | 'work_items' | 'modules' | 'cycles' | 'pages';
@@ -43,8 +44,8 @@ export interface AppendProgressResult {
 
 type FetchLike = typeof fetch;
 
-const operationIdPattern = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/;
-const entityIdPattern = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+const operationIdPattern = /^[A-Z0-9][\w.:-]{0,127}$/i;
+const entityIdPattern = /^[A-Z0-9][\w-]{0,127}$/i;
 
 function stripTrailingSlashes(value: string): string {
   return value.replace(/\/+$/, '');
