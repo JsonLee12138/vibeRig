@@ -138,16 +138,29 @@ Report as **partial** when Linear tools are unavailable (including login decline
 
 调用 `update-team`，基于 `.vibeRig/requirements/` 或 `.vibeRig/prd/` 和 Linear 未执行 issues 或 milestones 推理出项目所需的额外 agent 角色，并完成创建与 `project.yaml` 的 `subagents` 更新。
 
-### 8. Report
+**7c. 强制健康检查**
 
-Project YAML, AGENTS.md, docs root, output language, Linear Project/Document status,
-gate policy, agent team (created / existed / skipped), approved tool-skill store status, and the fact that `vb-wiki` bootstraps its knowledge store lazily.
+调用 `agent-doctor` 验证当前平台实际可加载的 baseline 与项目 Agent。只有 required capabilities 全部 `PASS` 才可报告完整初始化：
+
+- 缺少 `implementation`、`code_review`、`researcher`、`architecture_red_team` 或项目 required capability 时报告 `partial/blocked`；
+- 文件存在但格式/指令无效不得算安装成功；
+- 用户定制 Agent 不覆盖；修复后重新检查；
+- 将 capability、平台文件、健康状态和检查时间写入 `.vibeRig/agent-capabilities.json`，供 `pre-development` / `execute` 判定 required Gate。
+
+### 8. Workflow runtime
+
+初始化 `.vibeRig/runs/`。每个 Work Item 的 workflow state、append-only journal 和 Linear outbox 存放在独立目录；初始化不伪造任何工作状态或 Linear ack。
+
+### 9. Report
+
+Project YAML, AGENTS.md, docs/runtime roots, output language, Linear Project/Document status,
+gate policy, agent team (created / existed / skipped), agent-doctor 结果、capability registry、approved tool-skill store status, and the fact that `vb-wiki` bootstraps its knowledge store lazily.
 
 ## Validation
 
 ```bash
 # Local project
-ls .vibeRig/project.yaml .vibeRig/requirements/ .worktrees/ AGENTS.md
+ls .vibeRig/project.yaml .vibeRig/requirements/ .vibeRig/runs/ .worktrees/ AGENTS.md
 grep "language:" .vibeRig/project.yaml
 grep -qxF '.worktrees/' .gitignore && echo "gitignore ok"
 test -L CLAUDE.md && readlink CLAUDE.md | grep -q AGENTS.md && echo "symlink ok"
@@ -172,6 +185,9 @@ test -L ~/.claude/skills/vb \
 - [ ] `.claude/skills` symlinks to `../.agents/skills`.
 - [ ] `insights`, `skill-builder`, `skillos-lite` present in `.agents/skills/`.
 - [ ] Baseline agents present across `.codex/agents/`, `.claude/agents/`, `.cursor/agents/` (or gaps reported).
+- [ ] `agent-doctor` 已运行，required capabilities 可加载；否则初始化明确为 partial/blocked。
+- [ ] `.vibeRig/agent-capabilities.json` 与当前平台文件一致。
+- [ ] `.vibeRig/runs/` 已建立。
 - [ ] `.worktrees/` exists and is listed in `.gitignore`.
 - [ ] `~/.vb-skills` is a git repo with `vb-skill-lock.json`.
 - [ ] `~/.agents/skills/vb` and `~/.claude/skills/vb` both symlink to `~/.vb-skills`.
@@ -184,6 +200,7 @@ test -L ~/.claude/skills/vb \
 - Do not start or register a local VibeRig dashboard.
 - Do not place the Codex symlink at `~/.agents/vb` — it must be `~/.agents/skills/vb`.
 - Do not report full initialization when Linear tools were available but registration was skipped.
+- Do not report full initialization when required Agent capabilities are missing, invalid, or were not checked.
 - Do not make CI mandatory for all projects — record the project's own gate policy.
 - Do not add a `workspace` section or a `worktrees_root` setting to `project.yaml` — the worktree path is always the fixed `.worktrees/`.
 - Do not overwrite an existing real `CLAUDE.md` file with a symlink.

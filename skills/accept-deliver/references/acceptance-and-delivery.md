@@ -21,6 +21,8 @@ Acceptance Event 至少绑定：
 
 同一来源和结论重试时认领已有 event，不创建第二条验收记录。source commit 漂移时旧验收失效。
 
+Acceptance Event 只把 `acceptanceState` 置为 `accepted`。如果 required delivery 尚未达到，Linear 使用 `accepted_delivery_pending` 非终态投影，不得进入 Done。
+
 ## Delivery Intent
 
 任何 merge/release API 前先持久化 Intent：
@@ -47,6 +49,8 @@ Delivery Event 记录：
 
 不得用目标分支当前 HEAD 冒充 provider merge commit。
 
+当且仅当 Acceptance Event 仍覆盖当前 artifact/commit，且 Delivery Event 证明已达到项目 required delivery target，`donePredicate=true`。`accept-deliver` 才能请求 Linear completed/Done 投影；`execute`、`task-runner` 和任何 Subagent 都没有该权限。
+
 ## 幂等与恢复
 
 - zero match：写 pending event；
@@ -54,4 +58,5 @@ Delivery Event 记录：
 - multiple、malformed 或 identity conflict：fail closed；
 - provider 已完成：观察并证明，不重复调用 API；
 - knowledge/reconciliation 失败：单独恢复，不回滚验收；
+- Linear 投影失败：保留 durable outbox，不回滚本地 acceptance/delivery 事实，也不声称已同步；
 - implementation 漂移：返回 `execute`，只重验受影响 Evidence。

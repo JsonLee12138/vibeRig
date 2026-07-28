@@ -14,7 +14,8 @@ description: 兼容旧的 Linear Issue 或 Milestone 执行调用。用户显式
 3. 根据依赖拓扑确定单项、顺序或可安全并行范围；
 4. 恢复或创建 Goal Contract；
 5. 将已有 Evidence、commit、CI、PR 和失败历史注入 Task Context；
-6. 进入 `execute`。
+6. 检查计划确认：标有 `VibeRig-Plan-Draft`、`pending_plan_confirmation` 或 fingerprint 未获批准的 Issue 不得执行；
+7. 进入 `execute` 前写 `execution_started` transition，请 `vb-linear` 投影 In Progress；Linear 不可用则保留 outbox。
 
 ## 分支与交付
 
@@ -29,13 +30,17 @@ description: 兼容旧的 Linear Issue 或 Milestone 执行调用。用户显式
 `execute` 达到 Completion Oracle 后：
 
 - 更新 Proof/Evidence；
-- 将技术状态置为 pending acceptance；
+- 将 Goal Loop 置为 `target_reached`，执行轴置为 `technically_ready`；
+- 请 `vb-linear` 写入最接近 In Review / Ready for Milestone / Pending Acceptance 的实际非终态，或保留 outbox；
 - 进入 `accept-deliver`；
-- 不在本入口内认领人工验收、merge 或 release。
+- 不在本入口内认领人工验收、merge 或 release；
+- **永远不写 Accepted / Done**。
 
 ## 完成检查
 
 - [ ] Issue/Milestone 已映射为统一 Work Item 与 Goal Contract。
 - [ ] 执行未因旧 Skill 边界暂停。
 - [ ] Evidence、CI 与当前 commit 对齐。
+- [ ] 执行开始与技术就绪已同步 Linear 或存在 durable outbox。
+- [ ] 草案计划未获批准时没有启动执行。
 - [ ] 人工验收交给 `accept-deliver`。

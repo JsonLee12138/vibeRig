@@ -9,9 +9,10 @@
 | 领域调研 | 各专业负责人 | 统一上下文包 | 领域报告、可行性结论、必要 spike | 关键未知已验证或变成显式风险 |
 | 架构综合 | CTO / 架构师 | PRD、调研报告、代码现状 | 架构、契约、ADR、红白队记录 | 关键争议已裁决，方案可实现和可测试 |
 | 质量设计 | QA + 各专业负责人 | 需求与架构 | 验收、测试、追踪、老板验证指南 | 所有目标可观测、可验证；TC 有权威执行阶段与环境 |
-| 交付规划 | 研发负责人 / PM | 架构、验收、风险、测试 | Milestone / Issue 本地草案 | 依赖、顺序、责任、验证方式明确 |
+| 交付规划 | 研发负责人 / PM | 架构、验收、风险、测试 | Milestone / Issue 本地草案与 plan fingerprint | 依赖、顺序、责任、验证方式明确 |
 | DoR 审核 | CTO | 全部开发前产物 | `pre-development-review.md` | DoR 全部通过或例外获授权 |
-| 老板审批 | 老板 | CTO 汇总包 | 批准、条件批准或退回 | 批准范围和条件留痕 |
+| Linear Proposal | 主 Agent | DoR、delivery plan | 全部 Milestone / Issue 不可执行草案、稳定 identity、read-back | 用户能在 Linear 查看完整计划 |
+| 计划确认 | 老板 | Linear Proposal、CTO 汇总包 | 批准、条件批准或退回 | 结论绑定 plan fingerprint 与 Linear identities |
 
 ## 领域研究维度
 
@@ -49,6 +50,7 @@
 - 发布、配置、可观测性、告警、回滚与运维责任已定义；
 - 风险有负责人、触发信号、缓解和兜底；
 - Milestone / Issue 草案覆盖范围、依赖、验收项与测试；
+- 全部 Milestone / Issue Proposal 已在 Linear read-back 成功，人工确认前没有执行态；
 - 追踪表不存在孤立的需求、验收项、关键测试或交付 Issue；跨 Issue/UAT TC 明确归属 Milestone；
 - CTO 汇总包包含推荐结论和老板需要决策的最小事项。
 

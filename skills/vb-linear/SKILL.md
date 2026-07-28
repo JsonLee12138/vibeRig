@@ -45,13 +45,15 @@ VibeRig event records must use one real, searchable host for their entire lifecy
 
 Put `<!-- VibeRig-Event: <event-id> -->` in every event record, plus a typed marker `<!-- VibeRig-Record: <kind>:<event-id> -->`. Use `kind: acceptance` for the single acceptance record, `retrospective` for the single insights record, `delivery-intent` for the pre-merge write-ahead record, `delivery` for the canonical pending delivery record, and `phase` for append-only state overlays. For acceptance, retrospective, delivery-intent, or delivery, zero exact typed-marker matches permits one write, one structurally valid match is adopted, and multiple/malformed/conflicting matches fail closed; never append a second canonical record. Retrospective adoption ignores other legitimate kinds; phase recovery selects the newest structurally valid typed phase record while preserving earlier references. Search/write only within the mapped host and registered project. Never write acceptance or delivery intent to one host and later search another. Callers refer to the result generically as a `linear_record`; an Issue result may additionally expose `comment_id`, while a Project Update exposes `status_update_id`.
 
-## Status Mapping Rule
+## Lifecycle Projection
 
 Resolve the team's actual workflow states before any status change.
 
 - Never invent a status name that doesn't exist in the team's workflow.
 - If no matching status exists for the intended lifecycle state, leave the current status unchanged and record the intended state in a comment instead.
-- Callers own their own specific lifecycle → status table (for example, `accept-milestone`'s Full/Partial/Blocked acceptance mapping). This skill only provides the resolution method, not the specific mapping — that mapping is skill-specific.
+- Callers request a semantic transition; all callers use the canonical table in [lifecycle-projection.md](./references/lifecycle-projection.md). Do not redefine lifecycle mapping independently in `execute`、`task-runner`、`accept-deliver` or split skills.
+
+Before an external write, the caller persists an intent/outbox item with stable event id, host identity and payload fingerprint. After the tool call, read back the target and ack only when the observed state or typed marker matches. Tool timeout or lost response is recovered by search/adopt, not blind retry.
 
 ## Language Policy
 
@@ -69,6 +71,8 @@ Only the main agent reads and writes Linear. Subagents must not update Linear st
 
 - A caller names a specific Linear tool instead of describing the capability it needs → route it through this skill's Capability Map instead.
 - A skill requests a status change without resolving workflow states first → resolve states first, every time.
+- A caller maps `technically_ready` to a completed/Done state → reject; technical completion is always non-terminal.
+- A caller requests `done` without a current human acceptance event and required delivery proof → reject.
 - A skill creates an issue without checking for an existing match first → duplicate issues corrupt the plan; check before creating.
 - A subagent's output implies a Linear write happened → subagents return evidence only; the calling skill's main agent performs the write.
 - A skill claims a Linear update succeeded when tools were unavailable → summarize in chat and say so explicitly instead.

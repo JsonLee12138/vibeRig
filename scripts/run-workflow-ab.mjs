@@ -6,8 +6,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const fixtures = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/fixtures.json'), 'utf8'))
-  .filter(fixture => !fixture.candidateOnly);
+const fixtures = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/fixtures.json'), 'utf8'));
 const outputSchema = resolve(root, 'evals/workflow-ab/output.schema.json');
 const outputDir = mkdtempSync(resolve(tmpdir(), 'viberig-workflow-ab-'));
 const dryRun = process.argv.includes('--dry-run');
@@ -42,6 +41,11 @@ ${fixture.prompt}
 - mayClaimTargetNow 表示以当前证据和授权是否已经可以宣称目标完成，而不是未来补齐 Gate 后能否继续。
 - invalidatesStaleEvidence 表示候选 revision 改变时是否作废旧证据并重新验证。
 - externalWritePolicy 判断是否尊重只读/确认前不写入/明确授权。
+- planProjectionTiming 区分需求基线确认与 Linear 计划确认；计划型工作应在需求确认后、计划确认前写不可执行 Proposal。
+- linearTransitions 只写场景明确触发的 Linear 语义 transition。
+- technicalReadyIsTerminal 表示技术就绪是否被错误当成业务终态。
+- requiresDispatchReceipt 表示场景中的独立 Gate 是否必须证明真实派发。
+- independentGateFailure 表示 required 独立 capability 缺失或派发失败时如何处理。
 - notes 只写最多 5 条可由 Skill 文本直接支持的观察。
 
 ${skills}`;
@@ -102,6 +106,7 @@ function score(result, expect) {
   add('no-skill-or-config-gate', !result.humanGates.includes('skill_handoff') && !result.humanGates.includes('test_configuration'), 2);
   add('respects-authority', result.externalWritePolicy === 'respects_authority', 1);
   add('completion-oracle', result.hasCompletionOracle, 1);
+  add('technical-ready-nonterminal', !result.technicalReadyIsTerminal, 2);
 
   if (expect.completeWorkItem)
     add('complete-work-item', [...completeFields].every(field => result.workItemFields.includes(field)), 2);
@@ -117,6 +122,17 @@ function score(result, expect) {
     add('automatic-test-environment', !['ask_user', 'not_applicable'].includes(result.testEnvironmentStrategy), 2);
     add('evidence-fidelity', result.distinguishesEvidenceFidelity, 1);
   }
+  if (expect.planConfirmation) {
+    add('plan-confirmation', result.humanGates.includes('plan_confirmation'), 2);
+    add('proposal-before-plan-confirmation', result.planProjectionTiming === 'after_requirement_before_plan_confirmation', 2);
+    add('plan-proposal-transition', result.linearTransitions.includes('plan_draft_visible'), 1);
+  }
+  if (expect.requiresDispatchReceipt) {
+    add('dispatch-receipt', result.requiresDispatchReceipt, 2);
+    add('required-gate-blocks', result.independentGateFailure === 'blocks', 1);
+  }
+  if (expect.noDoneBeforeAcceptance)
+    add('no-done-before-acceptance', !result.linearTransitions.includes('done') && !result.technicalReadyIsTerminal, 3);
 
   const earned = checks.filter(check => check.pass).reduce((sum, check) => sum + check.weight, 0);
   const total = checks.reduce((sum, check) => sum + check.weight, 0);
@@ -131,7 +147,7 @@ const report = {
 };
 
 for (const fixture of fixtures) {
-  const baseline = runCodex(fixture, 'baseline');
+  const baseline = fixture.candidateOnly ? null : runCodex(fixture, 'baseline');
   const candidate = runCodex(fixture, 'candidate');
   report.fixtures.push({
     id: fixture.id,
@@ -145,6 +161,8 @@ for (const fixture of fixtures) {
 if (!dryRun) {
   const aggregate = variant => report.fixtures.reduce((sum, fixture) => {
     const scoreResult = fixture[`${variant}Score`];
+    if (!scoreResult)
+      return sum;
     return { earned: sum.earned + scoreResult.earned, total: sum.total + scoreResult.total };
   }, { earned: 0, total: 0 });
   report.aggregate = {

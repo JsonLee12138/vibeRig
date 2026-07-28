@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viberig.dev/schemas/workflow-state.schema.json",
+  "title": "VibeRig Workflow State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "workItemId",
+    "revision",
+    "planningState",
+    "executionState",
+    "acceptanceState",
+    "deliveryState",
+    "requiredDeliveryTarget",
+    "linearSync",
+    "updatedAt"
+  ],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "workItemId": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "planningState": {
+      "enum": [
+        "requirement_baselined",
+        "drafting",
+        "linear_draft_visible",
+        "pending_confirmation",
+        "approved",
+        "rejected",
+        "not_required"
+      ]
+    },
+    "executionState": {
+      "enum": ["not_started", "ready", "executing", "technically_ready", "blocked"]
+    },
+    "acceptanceState": {
+      "enum": ["not_requested", "pending", "accepted", "rejected"]
+    },
+    "deliveryState": {
+      "enum": ["none", "committed", "pr_ready", "delivery_pending", "merged", "released"]
+    },
+    "requiredDeliveryTarget": {
+      "enum": ["none", "committed", "pr_ready", "merged", "released"]
+    },
+    "linearSync": {
+      "enum": ["synced", "pending", "unavailable", "conflict"]
+    },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

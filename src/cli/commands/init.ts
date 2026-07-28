@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { confirm, intro, isCancel, outro, text } from '@clack/prompts';
 import { defineCommand } from 'citty';
@@ -28,6 +28,11 @@ export const initCommand = defineCommand({
       alias: 'y',
       description: 'Skip interactive confirmation.',
       default: false,
+    },
+    language: {
+      type: 'string',
+      description: 'BCP 47 output language written to .vibeRig/project.yaml.',
+      default: 'zh-CN',
     },
   },
   async run({ args }) {
@@ -69,22 +74,39 @@ export const initCommand = defineCommand({
     }
 
     const docsRoot = resolve(root, '.vibeRig/requirements');
+    const requirementsArchiveRoot = resolve(docsRoot, 'archive');
+    const prdRoot = resolve(root, '.vibeRig/prd');
+    const prdArchiveRoot = resolve(prdRoot, 'archive');
+    const runsRoot = resolve(root, '.vibeRig/runs');
     const worktreesRoot = resolve(root, '.worktrees');
     const projectYamlPath = resolve(root, '.vibeRig/project.yaml');
+    const gitignorePath = resolve(root, '.gitignore');
 
-    await ensureDir(docsRoot);
+    await ensureDir(requirementsArchiveRoot);
+    await ensureDir(prdArchiveRoot);
+    await ensureDir(runsRoot);
     await ensureDir(worktreesRoot);
+    await ensureDir(resolve(root, '.agents/skills'));
+    await ensureDir(resolve(root, '.codex/agents'));
+    await ensureDir(resolve(root, '.claude/agents'));
+    await ensureDir(resolve(root, '.cursor/agents'));
 
     if (await pathExists(projectYamlPath)) {
       consola.warn(`${projectYamlPath} already exists; leaving it unchanged.`);
     }
     else {
       await ensureDir(resolve(root, '.vibeRig'));
-      await writeFile(projectYamlPath, projectYaml({ projectName }), 'utf8');
+      await writeFile(projectYamlPath, projectYaml({ projectName, outputLanguage: args.language }), 'utf8');
       consola.success(`Created ${projectYamlPath}`);
     }
 
+    const gitignore = await pathExists(gitignorePath) ? await readFile(gitignorePath, 'utf8') : '';
+    if (!gitignore.split(/\r?\n/).includes('.worktrees/'))
+      await appendFile(gitignorePath, `${gitignore && !gitignore.endsWith('\n') ? '\n' : ''}.worktrees/\n`, 'utf8');
+
     consola.info(`Ensured ${docsRoot}`);
+    consola.info(`Ensured ${prdRoot}`);
+    consola.info(`Ensured ${runsRoot}`);
     consola.info(`Ensured ${worktreesRoot}`);
     outro('VibeRig project scaffold is ready.');
   },

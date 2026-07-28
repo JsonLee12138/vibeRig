@@ -7,7 +7,7 @@ description: 在 execute 或 pre-development 已判定需要独立专业能力�
 
 Use this skill after a VibeRig workflow has evidence that specialized judgment, independent review, isolation, or safe parallelism will increase expected information gain.
 
-Subagents are optional capabilities inside `execute` and `pre-development`. They can be used during tech research, architecture review, QA adversarial review, code review, integration planning, and implementation when their independent value justifies the cost.
+Subagents are risk-routed capabilities inside `execute` and `pre-development`. A route is `required`, `recommended`, or `optional`; required independent Gates are not replaceable by main-agent self-review.
 
 ## Contract
 
@@ -26,6 +26,7 @@ Required:
 - Relevant Linear issue, local docs, code scope, or validation expectations.
 - Current platform, available model catalog, and supported runtime model/reasoning overrides.
 - Completion Oracle fingerprint and risk level.
+- Gate requiredness: `required`、`recommended` 或 `optional`；需要独立性时列出必须不同的 invocation/capability。
 
 Optional:
 
@@ -34,7 +35,7 @@ Optional:
 
 **执行时路由**：Linear Issue 建单时不写固定 subagent、不指派。`execute` 每轮根据 Goal Contract、当前风险和最小 Task Context 现场选择；即使旧 Issue 残留推荐字段，也以当前路由结果为准。
 
-If no suitable subagent exists, the main agent may proceed directly when risk and authority allow, and must record the routing decision. Missing a named capability is not by itself a blocker.
+If no suitable subagent exists, the main agent may proceed directly only for `recommended` / `optional` routes when risk and authority allow, and must record the downgrade. Missing or failed capability is a blocker when the independent capability is a `required` Gate.
 
 ## Output Contract
 
@@ -45,6 +46,7 @@ Return:
 - Selected platform/model/reasoning and `exploit`、`explore`、`shadow`、`fallback` 或 `inherit` decision.
 - A compact Subagent Brief when delegating.
 - A schema-valid `route_observation` with prediction and a pending outcome.
+- 真实派发完成后的 schema-valid `dispatch_receipt`；没有调用就不得生成 receipt。
 - Main-agent validation responsibility and residual routing risk.
 
 Do not treat a subagent result as final until the main agent reviews it.
@@ -59,8 +61,9 @@ Do not treat a subagent result as final until the main agent reviews it.
 6. Create the canonical `routeId` and pending observation using [route-observation.schema.json](./assets/route-observation.schema.json).
 7. Build a compact Subagent Brief containing the runtime route, escalation signals, and one bounded capability objective.
 8. Dispatch with the platform's runtime model/reasoning override when supported. If the requested model is unavailable, record `fallback`; never silently substitute.
-9. Review returned evidence, diff, commands, and oracle coverage before use. Update the observation with actual outcome, rework, latency, token/cost facts, failure classes, and confounders.
-10. Attach observations to the Evidence Packet so accepted work can be analyzed by `insights`.
+9. Only after the platform returns a real invocation identity, create [dispatch-receipt.schema.json](./assets/dispatch-receipt.schema.json) with artifact/output fingerprints and independence relationship.
+10. Review returned evidence, diff, commands, and oracle coverage before use. Update the observation with actual outcome, rework, latency, token/cost facts, failure classes, and confounders.
+11. Attach observations and receipts to the Evidence Packet. Receipt artifact drift invalidates the corresponding Gate.
 
 ## Main-Agent Responsibility
 
@@ -98,6 +101,7 @@ Subagents must:
 - must not do broad refactors unless explicitly in scope
 - must not modify `.vibeRig/project.yaml` or requirement docs unless the brief explicitly asks for docs work
 - return evidence instead of claiming completion without validation
+- never fabricate invocation ids, timestamps, output digests, or receipts
 
 ## Subagent Brief
 
@@ -160,7 +164,7 @@ Use these only when the exact model is available on Codex and no fresher compara
 
 Codex, Claude Code, and Cursor each already provide a native subagent/dispatch mechanism (see [Claude Code subagents](https://code.claude.com/docs/en/agent-view), [Codex subagents](https://developers.openai.com/codex/subagents), [Cursor subagents](https://cursor.com/cn/docs/subagents)) — this skill decides *whether* and *which*, not how the underlying platform dispatches. Use that platform's own mechanism to actually invoke the chosen capability.
 
-If no suitable subagent exists, continue with the main agent when risk, authority, and available validation make that safe. Stop only when independent capability is itself a required Gate.
+If no suitable subagent exists, continue with the main agent only for recommended/optional work when risk, authority, and available validation make that safe. Stop when independent capability is a required Gate.
 
 ## Parallel Fan-Out Pattern
 
@@ -198,6 +202,8 @@ The main agent classifies each finding: valid-incorporate, valid-tradeoff-accept
 - A subagent was given broad "figure it out" context instead of a single bounded objective → the brief must have one objective, explicit boundaries, and a defined output format.
 - The subagent result was used directly without main-agent review → the main agent must inspect evidence before acting on it.
 - A subagent updated Linear or changed issue status → only the main agent may write to Linear.
+- A route observation is presented as proof that dispatch happened → require a separate receipt containing the real invocation identity and artifact/output fingerprints.
+- A required Gate falls back to main-agent self-review → block the Gate; fallback is allowed only for recommended/optional routes.
 - A low-risk task launched multiple agents without explaining their independent value → reduce to the minimum sufficient route.
 - A model was selected before the required capability → redo capability matching first.
 - One successful task changed the default model → keep it as an observation; it is not enough evidence.
@@ -222,6 +228,7 @@ The main agent classifies each finding: valid-incorporate, valid-tradeoff-accept
 - [ ] The brief had one bounded objective and explicit boundaries.
 - [ ] The subagent did not update Linear or make final acceptance decisions.
 - [ ] The returned evidence covers the requested output fields (summary, files, validation, risks, blockers).
+- [ ] A real dispatch produced a receipt; route observation was not used as a substitute.
 - [ ] The main agent inspected changed files or recommendations before acting on them.
 - [ ] Any missing capability or validation gap is reported explicitly.
 - [ ] Model/provider/reasoning and policy action were explicit; unavailable-model fallback was not silent.

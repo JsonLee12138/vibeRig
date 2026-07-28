@@ -35,10 +35,11 @@
     "typecheck": "tsc --noEmit",
     "test:learning-flow": "node scripts/validate-learning-flow.mjs",
     "test:model-routing": "node scripts/validate-model-routing.mjs",
+    "test:workflow-runtime": "node scripts/validate-workflow-runtime.mjs",
     "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
-    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:workflow-skills"
+    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",

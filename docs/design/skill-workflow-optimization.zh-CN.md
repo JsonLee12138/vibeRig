@@ -732,6 +732,9 @@ March of Nines 的重点是尾部行为。评测必须注入：
 | D-08 | Prompt 不变量集中到 Shared References，顶层 Skill 使用渐进披露 |
 | D-09 | 验收、交付和知识状态仍保持幂等恢复，但确定性逻辑逐步下沉到工具 |
 | D-10 | 迁移采用兼容入口，先消除冲突，再合并工作流，最后收敛公开 Skill |
+| D-11 | Milestone / Issue 先作为不可执行 Proposal 写入 Linear，再由人工确认 plan fingerprint |
+| D-12 | Goal Loop 只产生 `target_reached`；Linear Done 必须同时满足人工验收与 required delivery |
+| D-13 | required 独立阶段必须有真实 dispatch receipt；route observation 不能证明派发发生 |
 
 ## 21. 推荐的第一批修改
 
@@ -899,15 +902,17 @@ stateDiagram-v2
     Repair --> Implement
     Review --> Deliver: no blocking finding
     Review --> Repair: blocking finding
-    Deliver --> Done: target mode reached
+    Deliver --> TargetReached: target mode reached
     Understand --> AuthorityGate: missing product decision
     Implement --> AuthorityGate: destructive or unauthorized action
     Verify --> TestEnvResolve: required environment is missing
     TestEnvResolve --> Verify: fake, stub, ephemeral, or sandbox ready
     TestEnvResolve --> AuthorityGate: authoritative real environment is indispensable
     AuthorityGate --> Plan: authority or decision supplied
-    Done --> [*]
+    TargetReached --> [*]
 ```
+
+`TargetReached` 是工程循环终点，不是人工 acceptance 或 Linear Done。开发目标完成后进入 `technically_ready / pending_acceptance`；Done 由验收与交付四轴状态机单独计算。
 
 ### 25.2 Goal Contract
 
@@ -1056,12 +1061,17 @@ sequenceDiagram
 
     U->>R: 自然语言描述问题与期望终点
     R->>H: WorkItem + GoalContract
+    opt L2/L3 交付拆分
+        H->>X: 写入不可执行 Milestone / Issue Proposal
+        X-->>H: read-back identities + fingerprint
+        H-->>U: 基于 Linear 链接请求一次计划确认
+    end
     loop 直到完成判据满足
         H->>C: 按风险调用分析、实现、测试或审核能力
         C-->>H: 结果与证据
         H->>E: 更新状态、尝试历史和 Evidence
     end
-    H->>X: 在授权范围内记录、提交或创建 PR
+    H->>X: 执行开始与技术就绪写入非终态投影
     H-->>U: 结果、证据、剩余风险或唯一 Gate
 ```
 

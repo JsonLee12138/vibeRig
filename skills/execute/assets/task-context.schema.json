@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viberig.dev/schemas/task-context.schema.json",
+  "title": "VibeRig Task Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "workItemId",
+    "goalContractRef",
+    "relevantFiles",
+    "acceptanceIds",
+    "testCaseIds",
+    "architectureConstraints",
+    "risk",
+    "current",
+    "previousAttempt",
+    "protectedPaths"
+  ],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "workItemId": { "type": "string", "minLength": 1 },
+    "goalContractRef": { "type": "string", "minLength": 1 },
+    "relevantFiles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "acceptanceIds": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^AC-[0-9]+$" }
+    },
+    "testCaseIds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "architectureConstraints": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "risk": { "enum": ["L0", "L1", "L2", "L3"] },
+    "current": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["diffRef", "commit", "ciRef", "pullRequestRef", "evidenceRef"],
+      "properties": {
+        "diffRef": { "type": ["string", "null"] },
+        "commit": { "type": ["string", "null"] },
+        "ciRef": { "type": ["string", "null"] },
+        "pullRequestRef": { "type": ["string", "null"] },
+        "evidenceRef": { "type": ["string", "null"] }
+      }
+    },
+    "previousAttempt": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["failure", "strategyChange"],
+      "properties": {
+        "failure": { "type": "string", "minLength": 1 },
+        "strategyChange": { "type": "string", "minLength": 1 }
+      }
+    },
+    "protectedPaths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

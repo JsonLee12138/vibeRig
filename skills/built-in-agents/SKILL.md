@@ -80,9 +80,12 @@ for name in $(jq -r '.agents[]' skills/built-in-agents/agents.manifest.json); do
 done
 ```
 
+渲染后必须调用 `agent-doctor` 检查当前平台实际文件。manifest/spec/hash 通过只能证明生成输入一致，不能证明 Agent 能被 host 加载。required baseline capability 有任何 `FAIL` 时整体结果为 `partial/failed`，不得报告安装完成。
+
 - [ ] manifest 与 spec 一一对应，无孤立基线 spec。
 - [ ] 每个目标平台文件均由对应 JSON spec 渲染。
 - [ ] 未定制旧基线可升级；用户定制文件不被静默覆盖。
 - [ ] lock hash 对应实际 spec 和平台文件。
+- [ ] 当前平台渲染文件已通过 `agent-doctor`；required capability 无 FAIL。
 - [ ] 废弃 Agent 未经明确 `--prune` 不删除。
 - [ ] 未修改共享 MCP 配置、项目特有 Agent 或 `project.yaml`。

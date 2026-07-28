@@ -61,6 +61,8 @@ Mock、fake 或 local pass 不能满足要求 sandbox、real、owner UAT 或 pos
 
 不要根据“看起来没问题”、CI 通过或用户沉默推断验收。
 
+验收通过后请 `vb-linear` 投影 `accepted_delivery_pending`。这仍是非终态；如果团队没有对应状态，保持当前非终态并写 acceptance record。人工通过本身不等于 Linear Done。
+
 ## 阶段 3：交付授权
 
 验收通过后单独解析 authority：
@@ -78,6 +80,8 @@ merge 或 release 未明确授权时停止在已验收状态。这是合法终�
 
 Provider 已显示 `MERGED` 时不得再次调用 merge。使用 immutable PR identity、accepted head 和 provider merge commit 证明交付；无法唯一证明时 fail closed。
 
+只有人工 acceptance event 仍覆盖当前 artifact/commit，且 `deliveryState` 达到项目 `requiredDeliveryTarget` 后，才请 `vb-linear` 投影 `done`。项目要求 PR 时，验收通过但未完成要求的 merge 是合法 `accepted_delivery_pending`。
+
 ## 返工
 
 发现问题时创建结构化返工输入：
@@ -94,6 +98,7 @@ Provider 已显示 `MERGED` 时不得再次调用 merge。使用 immutable PR id
 ## 外部记录与知识
 
 - 主 Agent 写 acceptance/delivery event，Subagent 不写；
+- acceptance/delivery transition 先写 journal/outbox，再调用 Linear 并 read-back/ack；
 - 外部记录暂不可用不改变人工验收事实，保留幂等 outbox；
 - 验收后生成 Evidence-backed retrospective；
 - retrospective 保留 schema-valid Subagent/model route observations；单次观测不自动改变默认模型；
@@ -110,5 +115,6 @@ Provider 已显示 `MERGED` 时不得再次调用 merge。使用 immutable PR id
 - [ ] 用户看到了可执行 UAT、失败信号和残余风险。
 - [ ] 仅在用户明确表示通过后记录 acceptance。
 - [ ] 验收与 merge/release 授权被分别记录。
+- [ ] Linear Done 同时具有当前 acceptance event 与 required delivery proof；否则保持非终态。
 - [ ] 退回项进入同一 `execute` Goal Loop，未创建人工 Skill 接力。
 - [ ] 外部事件幂等，未重复验收、合并、发布或知识编译。

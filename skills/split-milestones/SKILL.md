@@ -1,21 +1,22 @@
 ---
 name: split-milestones
-description: 将已确认 Work Item 按可验收用户价值拆成里程碑。由 pre-development 内部生成本地 draft；需求基线已通过 intake 人工 Gate 且技术计划未改变产品语义时 materialize。也可用于继续已确认需求的里程碑规划。
+description: 将已确认 Work Item 按可验收用户价值拆成里程碑，先作为不可执行草案写入 Linear 供人工可视化确认，再在批准后激活。由 pre-development 内部调用；也可用于继续已确认需求的里程碑规划。
 ---
 
 # Split Milestones（里程碑规划）
 
-先形成无外部副作用的交付草案，再把与已确认需求基线一致的计划写入 Linear。技术分解不新增第二个人工审批；产品语义漂移必须返回 `intake`。
+先形成本地交付草案，再幂等写入 Linear 作为**不可执行计划草案**。人工确认针对 Linear 中真实可见的 Milestone / Issue，而不是聊天摘要。需求基线确认和计划确认是两个不同 Gate；产品语义漂移仍必须返回 `intake`。
 
 ## 前置门禁
 
 - `acceptance.json` 存在并通过 schema 校验；
 - `architecture.md`、测试计划、风险登记和 CTO 汇总所需输入已完成，或明确说明不适用；
 - 每条 AC 可分配到一个可交付阶段。
+- `requirement.planning.owner_approval` 已确认需求基线；此字段不代表交付计划已批准。
 
-## 两种模式
+## 三个阶段
 
-### Draft 模式
+### 1. Local Draft
 
 由 `pre-development` 在技术计划阶段调用：
 
@@ -23,20 +24,33 @@ description: 将已确认 Work Item 按可验收用户价值拆成里程碑。�
 2. 按可验收用户价值和可发布增量拆分，不按模块一一对应；
 3. 架构依赖只约束顺序、并行性和技术边界；
 4. 每条 AC 恰好分配到一个里程碑并回填 `acceptance.json`；
-5. 将里程碑草案写入 `delivery-plan.md` 与 `requirement.yaml`，`linear_id: null`、`status: draft`；
-6. 不向用户逐项确认；若分解改变已确认 scope、业务规则或验收语义，返回 `intake`；
-7. 禁止写 Linear。
+5. 将里程碑草案写入 `delivery-plan.md` 与 `requirement.yaml`，初始 `linear_id: null`、`status: draft`；
+6. 计算包含 Milestone、Issue、AC/TC、依赖和范围的 `plan_fingerprint`；
+7. 若分解改变已确认 scope、业务规则或验收语义，返回 `intake`。
 
-### Materialize 模式
+### 2. Publish Draft
 
-只在 `requirement.planning.owner_approval` 为 `approved`，且状态为 `ready_for_development` 或 `conditionally_approved` 的已满足条件状态时执行：
+需求基线已确认、DoR 技术内容已形成后，在人工计划确认**之前**执行：
 
-1. 校验待写计划与审批范围一致；
+1. 校验待写计划与需求基线一致；
 2. 请 `vb-linear` 按需求和标题查重，优先复用/更新；
 3. 创建或更新挂在容器 Project 下的 Milestone；
-4. 描述仅放 Document 链接、本地契约路径、用户价值、AC IDs，不粘贴全文；
-5. 回填 `linear_id`，状态改为 `not_started`，更新 `linear.yaml`；
-6. 需求状态置为 `planned`，写一条计划同步摘要。
+4. 描述仅放 Document 链接、本地契约路径、用户价值、AC IDs、`plan_fingerprint` 和稳定标记 `VibeRig-Plan-Draft`，不粘贴全文；
+5. 回填 `linear_id`，本地状态改为 `pending_plan_confirmation`，更新 `linear.yaml`；
+6. `requirement.status = plan_draft_sync`，`planning.plan_approval = pending`；
+7. 再调用 `split-issues` Publish Draft；Milestone 和 Issue 都可见后才进入人工确认。
+
+Linear 暂不可用时，将稳定 id、目标 host、payload fingerprint 和预期动作写入 outbox。不得跳过可视化直接请求计划批准；同步恢复后再展示 Linear 链接。
+
+### 3. Activate
+
+仅在用户明确批准与当前 `plan_fingerprint` 一致的 Linear 草案后执行：
+
+1. 持久化 plan approval event，记录用户结论、时间、条件、fingerprint 和 Linear 对象；
+2. `planning.plan_approval = approved|conditional`，写 `plan_approved_at`；
+3. Milestone 本地状态进入 `ready_for_development`；条件批准项保持 Gate；
+4. 请 `vb-linear` 更新草案标记和计划同步摘要，但不把 Milestone/Issue 置为 In Progress；
+5. 与 `split-issues` 一起只激活近期可执行范围；后续计划继续留在可见 Backlog。
 
 ## 里程碑标准
 
@@ -58,20 +72,23 @@ description: 将已确认 Work Item 按可验收用户价值拆成里程碑。�
 
 ## 红线
 
-- 老板审批前创建或更新 Linear Milestone。
+- 把 Linear 草案的存在当成计划已批准。
+- 草案使用 In Progress、Done 或其他表示已经授权执行的状态。
 - 以模块边界代替用户价值边界。
 - AC 遗漏、重复归属或里程碑无可执行验收。
-- Materialize 时没有检查批准状态和计划差异。
+- 修改计划后沿用旧 `plan_fingerprint` 或旧人工批准。
+- Linear 写入失败后仍宣称用户看到了可视化计划。
 - 把 Issue 拆分或 subagent 路由混入本 skill。
 
 ## 完成检查
 
 - [ ] 每个里程碑满足五项标准，AC 分配不重不漏。
-- [ ] Draft 只写本地，`linear_id` 为 null，状态为 `draft`。
-- [ ] Materialize 前批准状态、审批条件、查重均通过。
-- [ ] 正式 Milestone 与审批版本一致，本地 ID/Linear ID 已回填。
+- [ ] Local Draft 已计算稳定 `plan_fingerprint`。
+- [ ] 人工确认前 Milestone 已幂等写入 Linear 且明确标为不可执行草案。
+- [ ] Linear 不可用时已排队，未提前请求可视化确认。
+- [ ] Activate 使用与批准记录相同的 fingerprint，未进入 In Progress。
 - [ ] 人读内容使用 `output.language`。
 
 ## 下一步
 
-Draft 模式交给 `split-issues` 生成 Issue 草案并返回 `pre-development`；Materialize 后由 `split-issues` 只创建下一个里程碑的正式 Issues。
+Local Draft 交给 `split-issues` 完成全部 Issue 草案；Publish Draft 将 Milestone 与 Issue 一起展示给用户；批准后由 `split-issues` 激活近期 Issues。

@@ -86,7 +86,22 @@
     },
     "currentState": {
       "type": "string",
-      "enum": ["capture", "understand", "frame", "plan", "implement", "verify", "review", "repair", "test_env_resolve", "authority_gate", "deliver", "done", "blocked"]
+      "enum": [
+        "capture",
+        "understand",
+        "frame",
+        "plan",
+        "implement",
+        "verify",
+        "review",
+        "repair",
+        "test_env_resolve",
+        "authority_gate",
+        "deliver",
+        "technically_ready",
+        "target_reached",
+        "blocked"
+      ]
     },
     "attemptHistory": {
       "type": "array",

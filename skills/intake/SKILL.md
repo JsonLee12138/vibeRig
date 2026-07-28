@@ -5,7 +5,7 @@ description: 对任何尚未确认真实范围的软件工作进行脑暴、现�
 
 # Intake
 
-这是第一个人工阶段：先理解真正要解决的问题，再让用户一次确认。确认前不写需求基线、不创建 Linear Issue、不开始实现；确认后不要求用户手工选择下一个 Skill。
+这是第一个人工阶段：先理解真正要解决的问题，再让用户一次确认**需求基线**。确认前不写需求基线、不创建 Linear Issue、不开始实现；确认后不要求用户手工选择下一个 Skill。L2/L3 的交付拆分稍后由 `pre-development` 先写成 Linear 草案，再进入独立的计划确认 Gate。
 
 ## 输入与边界
 
@@ -87,7 +87,9 @@ description: 对任何尚未确认真实范围的软件工作进行脑暴、现�
 
 - `work-item.json.status = baselined`；
 - `requirement.yaml.status = requirement_baselined`；
-- `requirement.yaml.planning.owner_approval = approved`，`approved_at` 记录本次 Gate；这是需求基线确认，不是 merge/release 授权；
+- 新产物使用 `requirement.yaml.version = 2`；
+- `requirement.yaml.planning.owner_approval = approved`，`approved_at` 记录本次**需求基线 Gate**；该兼容字段不表示 Milestone / Issue 计划已批准；
+- `requirement.yaml.planning.plan_approval = not_required`（L0/L1 无拆分）或 `pending`（L2/L3 将生成 Linear 计划草案），其 fingerprint/时间由 `pre-development` 更新；
 - `intake.md` 是人读摘要，不包含内部推理；
 - 扫描 requirements 与 archive 防止 id 冲突；
 - Linear 不可用不阻塞本地权威文档。
@@ -102,16 +104,17 @@ description: 对任何尚未确认真实范围的软件工作进行脑暴、现�
 |---|---|
 | `diagnosed` / `recorded` / `planned` | 达到目标后停止 |
 | L0/L1 开发 | 直接进入 `execute` |
-| L2/L3 开发 | 内部调用 `pre-development` 补技术计划，再进入 `execute` |
+| L2/L3 开发 | 内部调用 `pre-development` 补技术计划、写入 Linear 草案并请求计划确认；批准后进入 `execute` |
 | UI/UX 专项 | 按需调用 `uiux-design`，产物回到同一 Goal Contract |
 
-`pre-development`、调研、架构和验收设计都不是新的人工阶段。只有其结论改变已确认的产品语义时，才返回本 Gate。
+调研、架构和验收设计不逐项新增人工阶段。只有其结论改变已确认的产品语义时才返回本 Gate；Linear 中 Milestone / Issue 的整体计划确认属于独立 Gate，不复用需求确认。
 
 ## 红线
 
 - 要求用户先判断该用 `bugger`、`record-issue`、`quick` 或 `task-runner`。
 - 未检查代码和现有文档就开始问事实型问题。
-- 未确认就写需求基线、创建 Issue 或修改代码。
+- 需求基线未确认就写需求文档、创建 Linear Proposal 或修改代码。
+- 把需求基线的 `owner_approval` 当成拆分计划批准。
 - 为 feature 编造 root cause，或把未证实假设写成事实。
 - 只记录问题标题，没有方案、影响、范围、验收和测试策略。
 - 确认后在内部 Skill 边界再次要求用户操作。
@@ -122,5 +125,6 @@ description: 对任何尚未确认真实范围的软件工作进行脑暴、现�
 - [ ] 所有关键判断有证据或明确标记为假设。
 - [ ] 用户已一次性确认真实需求基线。
 - [ ] `intake.md`、`work-item.json`、`requirement.yaml` 已写入并通过 schema。
+- [ ] L2/L3 的 `plan_approval` 为 pending，未提前视为可执行。
 - [ ] 外部记录失败未阻塞本地流程。
 - [ ] 需要开发时已自动进入 `execute` 或内部技术规划。

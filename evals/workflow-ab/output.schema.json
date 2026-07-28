@@ -15,6 +15,11 @@
     "mayClaimTargetNow",
     "invalidatesStaleEvidence",
     "externalWritePolicy",
+    "planProjectionTiming",
+    "linearTransitions",
+    "technicalReadyIsTerminal",
+    "requiresDispatchReceipt",
+    "independentGateFailure",
     "notes"
   ],
   "properties": {
@@ -32,6 +37,7 @@
         "type": "string",
         "enum": [
           "requirement_confirmation",
+          "plan_confirmation",
           "blocker_decision",
           "human_acceptance",
           "delivery_authorization",
@@ -74,6 +80,35 @@
     "externalWritePolicy": {
       "type": "string",
       "enum": ["respects_authority", "writes_before_confirmation", "unclear"]
+    },
+    "planProjectionTiming": {
+      "type": "string",
+      "enum": [
+        "after_requirement_before_plan_confirmation",
+        "after_plan_confirmation",
+        "before_requirement_confirmation",
+        "not_applicable",
+        "unclear"
+      ]
+    },
+    "linearTransitions": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "plan_draft_visible",
+          "ready_for_development",
+          "execution_started",
+          "review_started",
+          "technically_ready",
+          "accepted_delivery_pending",
+          "done"
+        ]
+      }
+    },
+    "technicalReadyIsTerminal": { "type": "boolean" },
+    "requiresDispatchReceipt": { "type": "boolean" },
+    "independentGateFailure": {
+      "enum": ["blocks", "downgrades", "ignored", "not_applicable"]
     },
     "notes": {
       "type": "array",

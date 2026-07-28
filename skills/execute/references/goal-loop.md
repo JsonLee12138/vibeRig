@@ -11,7 +11,7 @@
 ## 状态机
 
 ```text
-CAPTURE → UNDERSTAND → FRAME → PLAN → IMPLEMENT → VERIFY → REVIEW → DELIVER → DONE
+CAPTURE → UNDERSTAND → FRAME → PLAN → IMPLEMENT → VERIFY → REVIEW → DELIVER → TARGET_REACHED
                                       ↑          │        │
                                       └─ REPAIR ─┴────────┘
 VERIFY → TEST_ENV_RESOLVE → VERIFY
@@ -19,6 +19,8 @@ VERIFY → TEST_ENV_RESOLVE → VERIFY
 ```
 
 `CAPTURE`、`FRAME` 通常由 `intake` 完成。`execute` 必须验证基线是否仍与代码和用户目标一致，但不得无故重新访谈。
+
+`TARGET_REACHED` 只表示本轮 `targetMode` 的工程目标已达到。它不是业务验收，也不是 Linear `Done`。开发目标达到后，外部生命周期进入 `technically_ready` / `pending_acceptance`。
 
 ## 下一步选择
 
@@ -64,9 +66,11 @@ VERIFY → TEST_ENV_RESOLVE → VERIFY
 | `merged` | 人工验收通过、明确授权、provider merge 证据有效 |
 | `released` | `merged`、明确发布授权、发布与回滚/Smoke 证据有效 |
 
+Completion Oracle 不产生业务 `done`。Linear `Done` 只能由 `accept-deliver` 在人工 acceptance event、当前 artifact/commit 和项目要求的 delivery target 同时成立后投影。
+
 ## 恢复
 
-恢复时先读取 Work Item、Goal Contract、attempt history、git 状态、Evidence、PR/CI 和外部记录。重新计算当前状态，不相信旧的自然语言“已完成”声明。
+恢复时先读取 Work Item、Goal Contract、workflow state、event journal、outbox、attempt history、git 状态、Evidence、PR/CI 和外部记录。重新计算当前状态，不相信旧的自然语言“已完成”声明。
 
 幂等规则：
 
@@ -74,4 +78,5 @@ VERIFY → TEST_ENV_RESOLVE → VERIFY
 - 已成功的外部写入通过稳定 id 认领，不重复创建；
 - PR 已合并时只验证 provider 状态，不再次调用 merge；
 - 记录系统暂不可用时保留 outbox，不回滚本地有效进展；
+- 只有 Linear read-back 与本地 intent 一致后才 ack outbox；
 - 范围或 commit 漂移时只失效受影响证据。

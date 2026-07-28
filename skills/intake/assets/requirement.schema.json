@@ -5,8 +5,42 @@
   "type": "object",
   "required": ["version", "requirement", "milestones"],
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "version": { "const": 2 }
+        }
+      },
+      "then": {
+        "properties": {
+          "requirement": {
+            "required": ["planning"],
+            "properties": {
+              "planning": {
+                "required": [
+                  "prd_decision",
+                  "prd_reason",
+                  "owner_approval",
+                  "approved_at",
+                  "plan_approval",
+                  "plan_approved_at",
+                  "plan_fingerprint",
+                  "linear_draft_synced_at"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
-    "version": { "type": "integer", "const": 1 },
+    "version": {
+      "type": "integer",
+      "enum": [1, 2],
+      "description": "v1 只有需求基线 owner_approval；v2 将计划确认拆为独立 plan_approval"
+    },
     "requirement": {
       "type": "object",
       "required": ["id", "title", "status", "prd", "created"],
@@ -25,6 +59,8 @@
             "requirement_baselined",
             "pre_development",
             "pre_development_blocked",
+            "plan_draft_sync",
+            "awaiting_plan_confirmation",
             "awaiting_owner_approval",
             "conditionally_approved",
             "ready_for_development",
@@ -48,14 +84,25 @@
             "prd_decision": { "type": "string", "enum": ["pending", "existing", "create", "not_required"] },
             "prd_reason": { "type": ["string", "null"] },
             "owner_approval": { "type": "string", "enum": ["pending", "approved", "conditional", "rejected"] },
-            "approved_at": { "type": ["string", "null"], "format": "date-time" }
+            "approved_at": { "type": ["string", "null"], "format": "date-time" },
+            "plan_approval": {
+              "type": "string",
+              "description": "Milestone / Issue Linear 草案的独立人工确认状态；不替代需求基线确认",
+              "enum": ["not_required", "pending", "approved", "conditional", "rejected"]
+            },
+            "plan_approved_at": { "type": ["string", "null"], "format": "date-time" },
+            "plan_fingerprint": {
+              "type": ["string", "null"],
+              "description": "写入 Linear 并提交人工确认的计划内容摘要"
+            },
+            "linear_draft_synced_at": { "type": ["string", "null"], "format": "date-time" }
           }
         }
       }
     },
     "milestones": {
       "type": "array",
-      "description": "开发前为本地草案；老板批准后由 split-milestones 写入 Linear id",
+      "description": "开发前先作为不可执行草案写入 Linear；人工确认计划后才进入 ready_for_development",
       "items": {
         "type": "object",
         "required": ["id", "linear_id", "title", "module", "ac_ids", "status"],
@@ -72,7 +119,17 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "not_started", "in_progress", "pending_acceptance", "accepted"]
+            "enum": [
+              "draft",
+              "sync_pending",
+              "pending_plan_confirmation",
+              "ready_for_development",
+              "not_started",
+              "in_progress",
+              "pending_acceptance",
+              "accepted",
+              "superseded"
+            ]
           }
         }
       }

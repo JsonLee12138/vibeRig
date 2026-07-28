@@ -19,7 +19,7 @@ VibeRig 当前已经具备需求记录、技术调研、架构设计、验收标
 本设计将新需求流程重构为两个用户参与阶段：
 
 1. 产品经理通过 Intake 与老板完成需求发现和需求基线确认。
-2. AI 研发部门完成全部开发前工作后，由 CTO 提交开发前方案包，请老板统一批准。
+2. AI 研发部门完成全部开发前工作后，先把 Milestone / Issue 作为不可执行 Proposal 写入 Linear，再由 CTO 基于真实链接提交方案包，请老板统一批准。
 
 两个阶段之间的 PRD 判断、技术调研、可行性分析、架构设计、红白队评审、验收设计、测试设计、发布设计、风险分析和交付拆分全部由 AI 内部自动完成。
 
@@ -63,8 +63,8 @@ VibeRig 当前已经具备需求记录、技术调研、架构设计、验收标
 | D-07 | 专业 Subagent 不直接形成最终架构，不更新 Linear，不向老板单独汇报 |
 | D-08 | 开发前方案必须经过红队攻击、白队答辩和 CTO 裁决 |
 | D-09 | 验收标准必须同时包含业务结果、老板验收流程和工程验证方法 |
-| D-10 | 老板批准前只生成本地 Milestone/Issue 草案，不创建正式 Linear 结构 |
-| D-11 | 老板批准开发前方案后，才固化文档并将交付计划写入 Linear |
+| D-10 | 需求基线确认后，开发前拆分先以不可执行 Proposal 写入 Linear，供老板可视化确认 |
+| D-11 | 老板批准绑定 plan fingerprint 与 Linear identities；批准后只激活近期计划，后续 indicative 项继续可见 |
 | D-12 | 开发阶段直接消费批准后的开发前资料包，不重复进行产品和架构决策 |
 
 ## 5. 参与角色与职责
@@ -121,8 +121,9 @@ VibeRig 当前已经具备需求记录、技术调研、架构设计、验收标
 | 8. 发布与风险设计 | SRE、数据、安全 | 最终架构、NFR、测试计划 | 发布、迁移、回滚、可观测性和风险登记 | 否 |
 | 9. 交付拆分 | CTO、QA、技术负责人 | 全部批准候选文档 | Milestone/Issue 草案、追踪矩阵 | 否 |
 | 10. DoR 审核 | CTO | 完整开发前资料包 | Ready、Conditional 或 Not Ready | 否 |
-| 11. CTO 汇报 | CTO | 审核后的资料包 | 老板可决策的开发前报告 | 是 |
-| 12. 方案固化 | CTO | 老板决策 | 正式文档、Linear 计划、开发交接 | 仅反馈决策 |
+| 11. Linear Proposal | CTO / 主 Agent | 审核后的资料包 | 全部 Milestone / Issue 不可执行草案、read-back 结果 | 否 |
+| 12. CTO 汇报与计划确认 | CTO | Linear 链接、fingerprint、审核包 | 批准、条件批准或修订 | 是 |
+| 13. 激活与交接 | CTO | 与 fingerprint 绑定的老板决策 | 正式文档、近期 Ready Issues、开发交接 | 仅反馈决策 |
 
 ## 8. Intake 设计
 
@@ -477,7 +478,7 @@ QA 在两个时机参与：
 
 ## 17. 交付拆分与追踪
 
-开发前流程在老板批准前只生成本地交付草案。
+开发前流程先生成本地交付草案和稳定 `plan_fingerprint`，随后在老板批准前把全部 Milestone / Issue 作为不可执行 Proposal 写入 Linear。
 
 ### 17.1 拆分原则
 
@@ -486,7 +487,8 @@ QA 在两个时机参与：
 - Issue 是可独立实现、测试和提交的垂直切片；
 - 每个 Issue 必须映射至少一个 AC 或风险控制项；
 - QA、集成和发布工作优先嵌入功能切片，确需独立治理时才单独建项；
-- 未经老板批准，不创建正式 Linear Milestone 或 Issue。
+- 未经老板批准，不把 Proposal 激活为 Ready/In Progress；Proposal 必须明确标记并禁止执行。
+- Linear 同步和 read-back 未完成时，不请求“Linear 可视化计划”的人工确认。
 
 ### 17.2 全链路追踪
 
@@ -603,10 +605,10 @@ QA 在两个时机参与：
 
 | 决策 | 后续动作 |
 |---|---|
-| 批准开发 | 固化文档，创建 Linear Milestone/Issue，交给开发流程 |
+| 批准开发 | 绑定当前 plan fingerprint，激活近期 Linear Issues，交给开发流程 |
 | 有条件批准 | 记录条件；条件满足并验证后自动进入开发 |
-| 要求修改 | 只重跑受影响领域、CTO 综合和对应评审 |
-| 延期或拒绝 | 保存资料，不创建正式开发任务 |
+| 要求修改 | 只重跑受影响领域并复用稳定 id 更新原 Linear Proposal |
+| 延期或拒绝 | 保存 Proposal 和审计记录，不激活；移除项标 superseded |
 
 ## 21. 状态模型
 
@@ -616,7 +618,9 @@ QA 在两个时机参与：
 | `requirement_baselined` | 老板已确认需求理解 |
 | `pre_development` | AI 研发部门正在执行开发前流程 |
 | `pre_development_blocked` | 存在必须由老板或外部条件解决的阻塞 |
-| `awaiting_owner_approval` | CTO 已提交开发前方案包 |
+| `plan_draft_sync` | 正在把 Milestone / Issue Proposal 幂等写入 Linear |
+| `awaiting_plan_confirmation` | Proposal 已 read-back，等待老板基于 Linear 可视化计划确认 |
+| `awaiting_owner_approval` | 兼容旧状态；新流程使用 `awaiting_plan_confirmation` |
 | `conditionally_approved` | 老板有条件批准，条件尚未全部满足 |
 | `ready_for_development` | 方案已批准且 Linear 计划已固化 |
 | `planned` | 已交接现有开发流程使用 |
@@ -648,9 +652,9 @@ QA 在两个时机参与：
 | `tech-research` | 内部领域调研协议 | 移除“用户主动触发”的主流程要求 |
 | `architecture-design` | CTO 综合、架构定稿和红白队裁决 | 从用户脑暴改为消费领域报告 |
 | `define-acceptance` | 内部验收设计能力 | 取消逐 AC 人工门禁；增加老板验收与工程验证结构 |
-| `split-milestones` | 开发前交付草案与批准后固化能力 | 老板批准前不写 Linear |
-| `split-issues` | Issue 草案与追踪映射能力 | 增加 Test Case、风险和架构契约映射 |
-| `subagent-routing` | 通用底层路由 | 职责不变，由开发前编排复用 |
+| `split-milestones` | 开发前 Proposal 与批准后激活能力 | 老板批准前先写不可执行 Linear Proposal |
+| `split-issues` | 全量可视化 Proposal、追踪映射与 Rolling Wave 激活 | 增加 Test Case、风险、fingerprint 和架构契约映射 |
+| `subagent-routing` | 通用底层路由 | required Gate 必须有真实 dispatch receipt |
 | `task-runner` | 开发执行 | 开发前职责边界不变；测试消费、证据和门禁由[开发质量门禁设计](./development-quality-gates.zh-CN.md)细化 |
 | `agent-sop` | 开发、QA 和返工协议 | 开发前职责边界不变；风险路由与去重由开发质量门禁设计细化 |
 | `accept-issue` | 可选的单 Issue 验收 | 开发前职责边界不变；普通里程碑 Issue 不再强制逐个验收 |
@@ -678,8 +682,8 @@ QA 在两个时机参与：
 5. 调整 `architecture-design` 为 CTO 综合与红白队流程；
 6. 升级验收 Schema 和老板验收手册模板；
 7. 增加 Test Plan、Test Case、Risk Register、Release Plan 和 Traceability Schema；
-8. 为 Milestone/Issue 拆分增加草案模式和批准后固化模式；
-9. 建立场景评测，验证流程选择、Subagent 覆盖、人工中断和产物完整性；
+8. 为 Milestone/Issue 拆分增加 Local Draft、Linear Proposal、人工计划确认和批准后激活模式；
+9. 建立行为评测，验证幂等 Proposal 写入、真实 Subagent dispatch、人工中断和产物完整性；
 10. 在不改变职责的前提下验证现有开发 Skills 能消费新的资料包。
 
 ## 26. 设计验收标准
@@ -695,7 +699,8 @@ QA 在两个时机参与：
 - 每个业务目标都有 AC，每个 AC 都有老板验收流程和工程验证方法；
 - 老板验收流程包含配置、运行、查看、数据标准、可视化标准、失败标准和证据；
 - 每个 AC 映射到 Test Case 和交付草案，不存在孤立目标、测试或任务；
-- 老板批准前不创建正式 Linear Milestone/Issue；
+- 老板批准前全部 Linear Milestone/Issue 以不可执行 Proposal 可见，批准前不会进入执行态；
+- 老板计划确认绑定 plan fingerprint；修订复用原 Linear identity；
 - CTO 汇报能让老板基于范围、方案、风险、成本、测试、验收和发布信息做一次决策；
 - 方案批准后可以无产品歧义地交给现有开发流程；
 - `task-runner`、`agent-sop`、`accept-issue` 和 `accept-milestone` 不承担开发前需求与架构决策；其开发质量门禁按[开发质量门禁与验收流程设计](./development-quality-gates.zh-CN.md)执行。

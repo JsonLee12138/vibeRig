@@ -52,7 +52,7 @@ Goal Loop 使用 [goal-contract.schema.json](../assets/goal-contract.schema.json
 
 ## Task Context
 
-Task Context 只携带当前迭代需要的信息：
+Task Context 使用 [task-context.schema.json](../assets/task-context.schema.json)，只携带当前迭代需要的信息：
 
 - Work Item 和 Goal Contract 引用；
 - 相关代码、AC、TC、架构约束和风险；
@@ -80,6 +80,28 @@ commit、相关代码、测试、fixture、配置或要求环境变化时，只�
 
 ## 状态与兼容
 
+运行态使用 [workflow-state.schema.json](../assets/workflow-state.schema.json)，将四个互不替代的轴分开：
+
+| 状态轴 | 语义 |
+|---|---|
+| `planningState` | 需求基线、Linear 草案可见、人工计划确认 |
+| `executionState` | ready、executing、technically_ready、blocked |
+| `acceptanceState` | not_requested、pending、accepted、rejected |
+| `deliveryState` | none、committed、pr_ready、delivery_pending、merged、released |
+
+每个 transition 先写 append-only event journal，并为 Linear 投影写 durable outbox；主 Agent 完成 `vb-linear` 调用并 read-back 后 ack。创建成功但响应丢失时根据稳定 marker 和 fingerprint adopt，不能重复创建。
+
+`Done` 不是 Goal Loop 状态。唯一谓词：
+
+```text
+acceptanceState = accepted
+AND acceptance event 覆盖当前 artifact / commit
+AND deliveryState 达到 requiredDeliveryTarget
+AND 没有 lifecycle projection conflict
+```
+
+项目要求 PR 时，人工已验收但尚未完成要求的 merge/release 是合法非终态。
+
 `WorkItem.status` 推荐状态：
 
 ```text
@@ -90,6 +112,8 @@ draft
 → pending_acceptance
 → accepted | rejected
 ```
+
+其中 `accepted` 只表示人工验收事实；是否可以投影成 Linear `Done` 仍由上述 delivery 谓词决定。
 
 旧入口只做参数归一化：
 

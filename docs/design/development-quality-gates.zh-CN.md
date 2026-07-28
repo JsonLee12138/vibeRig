@@ -278,7 +278,7 @@ VibeRig 对应这一模型时，AI Subagent 承担内部研发角色，用户主
 | `ownerAcceptanceRequired` | boolean | 是否必须进入老板 UAT |
 | `releaseGateIds` | string[] | 关联发布、迁移、监控或回滚门禁 |
 
-Issue 草案阶段可以使用本地 ID；批准并写入 Linear 后再补充 Linear key，不改变 AC-ID 和 TC-ID。
+Issue 草案先使用稳定本地 ID；写入 Linear Proposal 后补充 Linear key，人工计划确认绑定 plan fingerprint，不改变 AC-ID 和 TC-ID。
 
 ### 12.3 Proof Packet
 
@@ -309,7 +309,7 @@ Proof Packet 的验证部分从“命令列表”升级为：
 | TC 分配 | 每条 TC 至少有一个实现或执行责任位置 |
 | 跨 Issue TC | 绑定 Milestone，而不是强行分配给单一 Issue |
 | 人工 TC | 标记为 Milestone/UAT，不要求开发 Agent 完成 |
-| 追踪矩阵 | Materialize 后补充 Linear Issue key |
+| 追踪矩阵 | Linear Proposal read-back 后补充 Issue key；批准前保持不可执行 |
 
 ### 13.3 `task-runner`
 
@@ -490,14 +490,16 @@ Task Brief 只包含当前 Issue 所需的最小充分上下文。
 
 | 语义状态 | 含义 | 进入条件 |
 |---|---|---|
-| Ready for Development | 开发前 DoR 和老板方案批准完成 | 正式 Issue 已 materialize |
+| Plan Proposal | Milestone / Issue 已在 Linear 可见但不可执行 | 需求基线已确认，DoR 草案已完成，等待计划确认 |
+| Ready for Development | 开发前 DoR 和老板方案批准完成 | 当前 plan fingerprint 已获批准 |
 | In Progress | 正在开发 | `task-runner` 开始执行 |
 | In Review | 代码、测试或 PR 正在审核 | 实现完成，尚未通过全部 Gate |
 | Ready for Milestone | Issue 技术 Gate 通过 | Proof Packet 与 CI 有效 |
 | Pending Acceptance | 里程碑全部 Issue 技术就绪 | 集成分支准备验收 |
-| Accepted/Done | 老板验收和里程碑 Gate 通过 | PR 合并及记录完成 |
+| Accepted / Ready to Deliver | 老板明确验收通过，仍可能等待交付 | acceptance event 覆盖当前 commit |
+| Done | 业务验收与项目要求的交付均完成 | acceptance event 有效，且 required merge/release 与记录完成 |
 
-普通里程碑内 Issue 可以停留在团队最接近 `Ready for Milestone` 的非终态，最终由 `accept-milestone` 统一核对并进入 Done。Standalone Issue 继续在 `accept-issue` 后由 `merge-issue` 合并。
+普通里程碑内 Issue 可以停留在团队最接近 `Ready for Milestone` 的非终态。Milestone acceptance event 必须明确覆盖 child IDs/commits；只有交付谓词同时满足后才进入 Done。`execute`、`task-runner` 和 Subagent 永远不能写 Done。
 
 ## 20. Token 与执行效率控制
 

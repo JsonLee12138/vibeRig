@@ -1,10 +1,11 @@
 export interface ProjectYamlOptions {
   projectName: string;
+  outputLanguage?: string;
 }
 
 const quoteYaml = (value: string) => `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
 
-export function projectYaml({ projectName }: ProjectYamlOptions) {
+export function projectYaml({ projectName, outputLanguage = 'zh-CN' }: ProjectYamlOptions) {
   return `version: 1
 project:
   name: ${quoteYaml(projectName)}
@@ -12,8 +13,8 @@ project:
   repo_url: ""
 docs:
   root: ".vibeRig/requirements"
-workspace:
-  worktrees_root: ".worktrees"
+output:
+  language: ${quoteYaml(outputLanguage)}
 pull_request:
   required: "true"
   provider: "auto"

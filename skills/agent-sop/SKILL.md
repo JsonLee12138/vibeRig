@@ -9,7 +9,7 @@ description: execute Goal Loop 内部使用的实现、Bug 修复、重构、风
 
 主 Agent 持有 Goal Contract，负责范围与风险判断、能力路由、真实验证、证据综合、返工和 Completion Oracle。Subagent 只完成有边界的阶段并返回证据，不更新 Linear/VibeRig 状态、不操作 PR、不作最终验收决定。
 
-不要把整个任务外包后等待。没有可用 Subagent 时主 Agent 可以直接完成对应阶段，但必须记录原因。保护无关用户改动，只修改任务范围。
+不要把整个任务外包后等待。只有 `recommended` / `optional` 能力缺失时主 Agent 才可直接完成并记录原因；`required` 独立 Gate 缺少可用 Subagent 或 dispatch 失败时必须 `BLOCKED`。保护无关用户改动，只修改任务范围。
 
 ## 输入与输出
 
@@ -27,6 +27,7 @@ description: execute Goal Loop 内部使用的实现、Bug 修复、重构、风
 6. Skill 切换、一次验证失败和可模拟配置缺失不是人工 Gate；返回 `execute` 继续循环。
 7. Subagent 先按 capability 匹配，再由 `subagent-routing` 选择 model/reasoning；便宜模型只能在质量与安全约束之后优化。
 8. 每次委派保留 route observation；没有真实 token、耗时或 provider 价格时写 `null/unknown`，不得回忆性补数。
+9. 每次真实委派另存 dispatch receipt；route observation 记录“为什么这样路由”，receipt 证明“调用确实发生”。
 
 ## 测试范围
 
@@ -50,6 +51,8 @@ VibeRig Issue 优先从 `test-cases.json` 与 `traceability.json` 读取相关 T
 | 高 | Code、Security、Test 独立审核；性能敏感时增加 Performance Review |
 
 权限、鉴权、外部输入、敏感数据、不可逆迁移、支付、核心链路和外部契约不得判为低风险。通过 `subagent-routing` 按能力选择 Reviewer，不硬编码名称；需要多个审核时并行发出 Brief。
+
+“必须”表示 required Gate：Reviewer invocation 必须不同于实现 invocation，receipt 必须绑定当前 artifact fingerprint。审核后代码变化使对应 receipt 失效并要求重审。
 
 ## 执行流程
 
@@ -96,6 +99,7 @@ VibeRig Issue 优先从 `test-cases.json` 与 `traceability.json` 读取相关 T
 - 固定为每个任务启动测试编写、Test QA、Final QA、Code/Security/Test Review 全套角色。
 - 没读取 VibeRig 已批准 TC 就从零发明另一套测试范围。
 - Reviewer 或实现 Subagent 更新 Linear、Proof Packet、PR 或终态。
+- required Gate 缺失时由主 Agent 自审替代，或伪造 dispatch receipt。
 - 主 Agent未读取真实输出就接受 Subagent 的 PASS。
 - 人工/里程碑/发布 TC 在 Issue 阶段被标为 PASS。
 - Critical Finding 未解决仍交付。
@@ -107,6 +111,7 @@ VibeRig Issue 优先从 `test-cases.json` 与 `traceability.json` 读取相关 T
 - [ ] Required TC 已通过，或在正确的后续阶段待办；没有静默跳过。
 - [ ] 主 Agent检查 diff 并执行了真实验证。
 - [ ] Reviewer 与 CI 按风险和项目策略执行，证据对应当前 commit。
+- [ ] required 独立 Gate 的 receipt 有效且与实现 invocation 不同。
 - [ ] 综合结论、跳过项和残余风险完整。
 
 最终报告只保留改动、TC/Gate/Review 结果、失败摘要、跳过原因和残余风险，不输出冗长内部讨论。

@@ -18,10 +18,12 @@ description: 由 pre-development 在领域调研后调用的 CTO 架构综合与
 
 1. **白队方案**：各领域负责人基于调研提出推荐方案、契约、风险和备选。
 2. **CTO 初步综合**：消解重复责任和跨领域冲突，形成一套端到端推荐设计。
-3. **独立红队攻击**：通过 `subagent-routing` 调用 `architecture_red_team`；标准需求至少分别执行 `architecture` 与 `delivery` focus，高风险再独立执行 `failure_modes` 与 `security`。每个实例只攻击一个 focus、只找问题，不验证或修复方案。
+3. **独立红队攻击**：通过 `subagent-routing` 实际调用 `architecture_red_team`。L2 仅在公共契约、不可逆、安全、数据或交付升级信号存在时选择一个最高信息增益 focus；L3 必须分别执行 `architecture` 与 `delivery`，再按风险追加 `failure_modes` 与 `security`。每个实例只攻击一个 focus、只找问题，不验证或修复方案。
 4. **白队回应**：把 Finding 定向返回原 `frontend_architect`、`backend_architect`、`data_architect`、`security_auditor`、`reliability_engineer`、`qa` 或 `uiux_design` 领域负责人；逐条接受、部分接受或反驳，并给出证据和修改建议。白队不创建独立 Agent。
 5. **CTO 裁决**：标记 `resolved`、`accepted_risk`、`owner_decision` 或 `rework`；必须记录理由。
 6. **定稿**：更新架构与 ADR，向下游提供稳定的设计输入。
+
+每个红队 focus 和白队回应都必须有 `dispatch_receipt`。红队与对应白队、实现者的 invocation identity 必须不同；artifact fingerprint 漂移后旧 receipt 失效。required 派发失败时 Gate 为 `BLOCKED`，主 Agent 不得自行补写一段“红队意见”后继续。
 
 ## architecture.md 必含内容
 
@@ -52,6 +54,7 @@ description: 由 pre-development 在领域调研后调用的 CTO 架构综合与
 - 没有领域证据就直接选型。
 - 红队与白队使用相同立场或结论，形成伪对抗。
 - 一个 `architecture_red_team` 实例同时承担多个 focus，或让红队自己修复、裁决 Finding。
+- 没有真实 dispatch receipt 却在文档中声称完成独立红队/白队。
 - 发现被静默丢弃，或把普通技术偏好上交老板。
 - 缺少迁移、回滚、可观测性、失败模式或测试性且不说明不适用理由。
 - 用模块边界直接决定 Milestone 边界。
@@ -60,7 +63,7 @@ description: 由 pre-development 在领域调研后调用的 CTO 架构综合与
 
 - [ ] 端到端边界、契约、数据、权限和失败恢复闭合。
 - [ ] 调研分歧和偏离理由已裁决。
-- [ ] 红队发现均有白队回应与 CTO 状态。
+- [ ] 风险要求的每个红队 focus 均有独立 receipt、白队回应与 CTO 状态。
 - [ ] 迁移、发布、回滚、监控和测试性可执行。
 - [ ] 残余风险进入风险登记，权限问题进入 CTO 汇报。
 - [ ] 未创建 Linear Milestone / Issue。

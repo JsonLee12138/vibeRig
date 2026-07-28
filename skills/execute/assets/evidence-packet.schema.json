@@ -38,6 +38,43 @@
         "$ref": "../../subagent-routing/assets/route-observation.schema.json"
       }
     },
+    "dispatchReceipts": {
+      "type": "array",
+      "items": {
+        "$ref": "../../subagent-routing/assets/dispatch-receipt.schema.json"
+      }
+    },
+    "gateReceiptRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["gate", "requiredness", "receiptIds"],
+        "properties": {
+          "gate": { "type": "string", "minLength": 1 },
+          "requiredness": { "enum": ["required", "recommended", "optional"] },
+          "receiptIds": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "lifecycleTransitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["eventId", "event", "revision", "time", "linearSync"],
+        "properties": {
+          "eventId": { "type": "string", "minLength": 1 },
+          "event": { "type": "string", "minLength": 1 },
+          "revision": { "type": "integer", "minimum": 1 },
+          "time": { "type": "string", "format": "date-time" },
+          "linearSync": { "enum": ["synced", "pending", "unavailable", "conflict"] }
+        }
+      }
+    },
     "blockingFindings": { "type": "array", "items": { "type": "string" } },
     "residualRisks": { "type": "array", "items": { "type": "string" } },
     "oracleSatisfied": { "type": "boolean" }

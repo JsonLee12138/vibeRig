@@ -165,5 +165,103 @@
       "requirementConfirmation": false,
       "automaticTestEnvironment": false
     }
+  },
+  {
+    "id": "linear-plan-proposal-before-confirmation",
+    "stage": "pre-development",
+    "suites": ["screen", "full"],
+    "prompt": "需求基线已经由用户确认。一个 L3 功能的架构、AC/TC、风险和 Milestone/Issue 拆分已经完成，但用户还没有批准交付计划。Linear 可用。系统下一步应该怎样让用户可视化确认，并且何时允许执行？",
+    "baselineFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/split-milestones/SKILL.md",
+      "skills/split-issues/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/split-milestones/SKILL.md",
+      "skills/split-issues/SKILL.md",
+      "skills/vb-linear/references/lifecycle-projection.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "planConfirmation": true,
+      "requiresDispatchReceipt": true,
+      "noDoneBeforeAcceptance": true,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "technical-ready-never-done",
+    "stage": "execute",
+    "suites": ["screen", "full"],
+    "prompt": "实现、测试、Code Review 和 CI 都已通过，当前 commit 与 Evidence 对齐，但用户尚未执行 UAT，也没有明确验收。Linear Issue 当前为 In Progress。系统应写什么状态，能否 Done？",
+    "baselineFiles": [
+      "skills/execute/SKILL.md",
+      "skills/task-runner/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/execute/SKILL.md",
+      "skills/task-runner/SKILL.md",
+      "skills/vb-linear/references/lifecycle-projection.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": true,
+      "requirementConfirmation": false,
+      "noDoneBeforeAcceptance": true,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "accepted-pr-required-unmerged",
+    "stage": "accept",
+    "suites": ["screen", "full"],
+    "prompt": "用户已经明确验收当前 PR head，acceptance event 已持久化。项目要求 PR，PR 尚未 merge，用户也没有授权 merge。Linear 是否可以 Done？",
+    "baselineFiles": [
+      "skills/accept-deliver/SKILL.md",
+      "skills/accept-deliver/references/acceptance-and-delivery.md"
+    ],
+    "candidateFiles": [
+      "skills/accept-deliver/SKILL.md",
+      "skills/accept-deliver/references/acceptance-and-delivery.md",
+      "skills/vb-linear/references/lifecycle-projection.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "noDoneBeforeAcceptance": true,
+      "automaticTestEnvironment": false
+    }
+  },
+  {
+    "id": "required-review-dispatch-missing",
+    "stage": "execute",
+    "suites": ["full"],
+    "prompt": "这是一个非简单代码改动，策略要求独立 Code Review，但当前没有可用 reviewer capability，主 Agent 可以自己读 diff。系统能否把自审当成独立 Gate 并进入 technically_ready？",
+    "baselineFiles": [
+      "skills/agent-sop/SKILL.md",
+      "skills/subagent-routing/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/agent-sop/SKILL.md",
+      "skills/subagent-routing/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "requiresDispatchReceipt": true,
+      "noDoneBeforeAcceptance": true,
+      "automaticTestEnvironment": false
+    }
   }
 ]
