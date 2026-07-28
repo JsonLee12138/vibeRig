@@ -1,0 +1,8 @@
+{
+  "maxConcurrent": 4,
+  "defaultMaxTurns": 24,
+  "disableDefaultAgents": true,
+  "outputTranscript": false,
+  "scopeModels": true,
+  "toolDescriptionMode": "compact"
+}

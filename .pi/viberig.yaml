@@ -1,0 +1,41 @@
+version: 1
+platform: pi
+project:
+  name: vibe-rig
+  root: .
+models:
+  default: openai-codex/gpt-5.6-terra
+roles:
+  project_analyst:
+    enabled: true
+  architect:
+    enabled: true
+  frontend_engineer:
+    enabled: true
+  backend_engineer:
+    enabled: true
+  implementer:
+    enabled: true
+  test_engineer:
+    enabled: true
+  reviewer:
+    enabled: true
+  security_auditor:
+    enabled: true
+  verifier:
+    enabled: true
+  debugger:
+    enabled: true
+  reliability_engineer:
+    enabled: true
+  knowledge_curator:
+    enabled: true
+budgets:
+  max_concurrent: 4
+  default_max_turns: 24
+plane:
+  enabled: false
+  base_url: ""
+  workspace_slug: ""
+  project_id: ""
+  api_key_env: PLANE_API_KEY

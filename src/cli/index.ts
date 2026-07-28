@@ -2,6 +2,7 @@
 import { defineCommand, runMain } from 'citty';
 
 import { initCommand } from './commands/init.js';
+import { piCommand } from './commands/pi.js';
 import { skillLockCommand } from './commands/skill-lock.js';
 import { workflowCommand } from './commands/workflow.js';
 
@@ -13,6 +14,7 @@ const main = defineCommand({
   },
   subCommands: {
     'init': initCommand,
+    'pi': piCommand,
     'skill-lock': skillLockCommand,
     'workflow': workflowCommand,
   },

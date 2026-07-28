@@ -22,8 +22,24 @@
     "LICENSE",
     "README.md",
     "README.zh-CN.md",
-    "dist"
+    "dist",
+    "pi"
   ],
+  "keywords": [
+    "pi-package",
+    "software-development",
+    "subagents",
+    "plane"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/pi/company.js",
+      "./node_modules/@tintinweb/pi-subagents/src/index.ts"
+    ],
+    "skills": [
+      "./pi/skills"
+    ]
+  },
   "engines": {
     "node": ">=20.19.0"
   },
@@ -35,17 +51,20 @@
     "typecheck": "tsc --noEmit",
     "test:learning-flow": "node scripts/validate-learning-flow.mjs",
     "test:model-routing": "node scripts/validate-model-routing.mjs",
+    "test:pi-company": "node scripts/validate-pi-company.mjs",
     "test:workflow-runtime": "node scripts/validate-workflow-runtime.mjs",
     "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
-    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
+    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:pi-company && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
+    "@tintinweb/pi-subagents": "0.14.3",
     "citty": "^0.1.6",
     "consola": "^3.4.2",
     "fs-extra": "^11.3.0",
+    "yaml": "2.8.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -57,5 +76,12 @@
     "tsdown": "^0.13.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
-  }
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": ">=0.80.0",
+    "@earendil-works/pi-coding-agent": ">=0.80.0"
+  },
+  "bundledDependencies": [
+    "@tintinweb/pi-subagents"
+  ]
 }
