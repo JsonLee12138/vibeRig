@@ -1,0 +1,288 @@
+{
+  "generatedAt": "2026-07-28T07:40:00.000Z",
+  "branch": "codex/pi-company-plane",
+  "priority": [
+    "accuracy",
+    "elapsedMs",
+    "effectiveTokens"
+  ],
+  "models": [
+    {
+      "id": "terra",
+      "model": "openai-codex/gpt-5.6-terra",
+      "thinking": "low"
+    },
+    {
+      "id": "mimo-v2.5",
+      "model": "xiaomi-token-plan-cn/mimo-v2.5",
+      "thinking": "low"
+    }
+  ],
+  "methodology": {
+    "fixtures": [
+      "event-ledger",
+      "oauth-config"
+    ],
+    "hiddenTestsPerFixture": 7,
+    "starterScores": {
+      "event-ledger": "2/7",
+      "oauth-config": "1/7"
+    },
+    "checkpoints": [
+      "dev_only",
+      "dev_test",
+      "dev_test_review",
+      "dev_test_review_security",
+      "full_verify"
+    ],
+    "isolation": "Pi ran with context files, extensions and skills disabled. Hidden tests were copied into the temporary workspace only for grading and removed immediately afterward.",
+    "elapsedMetric": "Cumulative sequential agent wall-clock time plus the explicit public test run between test-author and remediation. Hidden grading time is excluded.",
+    "tokenMetric": "input + output + cacheWrite; repeated cacheRead prefixes are excluded.",
+    "technicalPass": "Hidden contract and visible tests pass; at full_verify, an explicit verifier passed:false also fails the checkpoint."
+  },
+  "aggregate": {
+    "terra": {
+      "dev_only": {
+        "accuracy": "14/14",
+        "elapsedMs": 110707,
+        "effectiveTokens": 24870
+      },
+      "dev_test": {
+        "accuracy": "14/14",
+        "elapsedMs": 277301,
+        "effectiveTokens": 62139
+      },
+      "dev_test_review": {
+        "accuracy": "14/14",
+        "elapsedMs": 449145,
+        "effectiveTokens": 101298
+      },
+      "dev_test_review_security": {
+        "accuracy": "14/14",
+        "elapsedMs": 672898,
+        "effectiveTokens": 143309
+      },
+      "full_verify": {
+        "accuracy": "14/14",
+        "elapsedMs": 743110,
+        "effectiveTokens": 159761,
+        "technicalPasses": "1/2",
+        "note": "The verifier rejected the event-ledger security hardening because it refused a valid Map with overridden methods, beyond the stated contract."
+      }
+    },
+    "mimo-v2.5": {
+      "dev_only": {
+        "accuracy": "14/14",
+        "elapsedMs": 92266,
+        "effectiveTokens": 20742
+      },
+      "dev_test": {
+        "accuracy": "14/14",
+        "elapsedMs": 213767,
+        "effectiveTokens": 56088
+      },
+      "dev_test_review": {
+        "accuracy": "14/14",
+        "elapsedMs": 496789,
+        "effectiveTokens": 115782
+      },
+      "dev_test_review_security": {
+        "accuracy": "7/14",
+        "elapsedMs": 867572,
+        "effectiveTokens": 205729
+      },
+      "full_verify": {
+        "accuracy": "7/14",
+        "elapsedMs": 913712,
+        "effectiveTokens": 221967,
+        "technicalPasses": "0/2"
+      }
+    }
+  },
+  "stageDeltas": {
+    "terra": {
+      "test": {
+        "accuracyDelta": 0,
+        "elapsedMs": 166594,
+        "effectiveTokens": 37269
+      },
+      "review": {
+        "accuracyDelta": 0,
+        "elapsedMs": 171844,
+        "effectiveTokens": 39159
+      },
+      "security": {
+        "accuracyDelta": 0,
+        "elapsedMs": 223753,
+        "effectiveTokens": 42011
+      },
+      "verify": {
+        "accuracyDelta": 0,
+        "elapsedMs": 70212,
+        "effectiveTokens": 16452,
+        "technicalPassDelta": -1
+      }
+    },
+    "mimo-v2.5": {
+      "test": {
+        "accuracyDelta": 0,
+        "elapsedMs": 121501,
+        "effectiveTokens": 35346
+      },
+      "review": {
+        "accuracyDelta": 0,
+        "elapsedMs": 283022,
+        "effectiveTokens": 59694
+      },
+      "security": {
+        "accuracyDelta": -7,
+        "elapsedMs": 370783,
+        "effectiveTokens": 89947
+      },
+      "verify": {
+        "accuracyDelta": 0,
+        "elapsedMs": 46140,
+        "effectiveTokens": 16238
+      }
+    }
+  },
+  "fixtureResults": [
+    {
+      "model": "terra",
+      "fixture": "event-ledger",
+      "accuracyByCheckpoint": [
+        "7/7",
+        "7/7",
+        "7/7",
+        "7/7",
+        "7/7"
+      ],
+      "elapsedMsByCheckpoint": [
+        73357,
+        173754,
+        293431,
+        475207,
+        523126
+      ],
+      "effectiveTokensByCheckpoint": [
+        12333,
+        35060,
+        62237,
+        90667,
+        101063
+      ],
+      "verifierPassed": false
+    },
+    {
+      "model": "terra",
+      "fixture": "oauth-config",
+      "accuracyByCheckpoint": [
+        "7/7",
+        "7/7",
+        "7/7",
+        "7/7",
+        "7/7"
+      ],
+      "elapsedMsByCheckpoint": [
+        37350,
+        103547,
+        155714,
+        197691,
+        219984
+      ],
+      "effectiveTokensByCheckpoint": [
+        12537,
+        27079,
+        39061,
+        52642,
+        58698
+      ],
+      "verifierPassed": true
+    },
+    {
+      "model": "mimo-v2.5",
+      "fixture": "event-ledger",
+      "accuracyByCheckpoint": [
+        "7/7",
+        "7/7",
+        "7/7",
+        "5/7",
+        "5/7"
+      ],
+      "elapsedMsByCheckpoint": [
+        72713,
+        128162,
+        273670,
+        432661,
+        463871
+      ],
+      "effectiveTokensByCheckpoint": [
+        15871,
+        29944,
+        54090,
+        95043,
+        103398
+      ],
+      "verifierPassed": true,
+      "regression": "Security remediation returned deep-cloned records instead of the original record required by the replay contract."
+    },
+    {
+      "model": "mimo-v2.5",
+      "fixture": "oauth-config",
+      "accuracyByCheckpoint": [
+        "7/7",
+        "7/7",
+        "7/7",
+        "2/7",
+        "2/7"
+      ],
+      "elapsedMsByCheckpoint": [
+        19553,
+        85605,
+        223119,
+        434911,
+        449841
+      ],
+      "effectiveTokensByCheckpoint": [
+        4871,
+        26144,
+        61692,
+        110686,
+        118569
+      ],
+      "verifierPassed": true,
+      "regression": "Security remediation required numeric keyVersion although the dependency contract returned the valid string kms-v7."
+    }
+  ],
+  "ratios": {
+    "mimoPureDevVsTerraPureDev": {
+      "accuracy": "equal",
+      "elapsed": 0.8334,
+      "effectiveTokens": 0.834
+    },
+    "terraFullVsPureDev": {
+      "elapsed": 6.7124,
+      "effectiveTokens": 6.4238,
+      "hiddenAccuracyGain": 0
+    },
+    "mimoFullVsPureDev": {
+      "elapsed": 9.903,
+      "effectiveTokens": 10.7013,
+      "hiddenAccuracyDelta": -7
+    }
+  },
+  "conclusion": {
+    "recommendedDefault": "dev_only",
+    "test": "Trigger when requirements, risk, or missing coverage justify it; it added no hidden accuracy in this two-fixture sample.",
+    "review": "Use as read-only advice and apply candidate patches only behind contract gates.",
+    "security": "Never auto-merge remediation. Run in an isolated candidate workspace and reject any contract or verifier regression.",
+    "verify": "Keep as a read-only release gate. It can discover a regression but cannot repair one.",
+    "modelRouting": "MiMo-V2.5 is promising as the default implementer on these fixtures, but not as an ungated security remediator."
+  },
+  "limitations": [
+    "Two synthetic implementation fixtures and one run per model are directional evidence, not a statistically stable benchmark.",
+    "Both models reached the pure-development hidden-test ceiling, so harder real project tasks are required to separate implementation accuracy.",
+    "The visible test suites missed both MiMo security regressions; project-owned acceptance contracts are required for a production gate.",
+    "Provider latency and sampling variation were not normalized."
+  ]
+}

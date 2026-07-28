@@ -52,13 +52,15 @@
     "test:learning-flow": "node scripts/validate-learning-flow.mjs",
     "test:model-routing": "node scripts/validate-model-routing.mjs",
     "test:pi-company": "node scripts/validate-pi-company.mjs",
+    "test:pi-development-ab": "node scripts/validate-pi-development-ab.mjs",
     "test:pi-package-load": "node scripts/validate-pi-package-load.mjs",
     "test:workflow-runtime": "node scripts/validate-workflow-runtime.mjs",
     "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
     "eval:pi-company-ab": "node scripts/run-pi-company-ab.mjs",
+    "eval:pi-development-ab": "node scripts/run-pi-development-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
-    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:pi-company && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
+    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:pi-company && pnpm run test:pi-development-ab && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": ">=0.80.0",
