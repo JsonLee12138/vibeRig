@@ -58,6 +58,7 @@
     "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
     "eval:pi-company-ab": "node scripts/run-pi-company-ab.mjs",
+    "eval:pi-council-ab": "node scripts/run-pi-council-ab.mjs",
     "eval:pi-development-ab": "node scripts/run-pi-development-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
     "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:pi-company && pnpm run test:pi-development-ab && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"

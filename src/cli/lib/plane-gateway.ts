@@ -4,7 +4,7 @@ import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
 
 export interface PlaneCapability {
-  name: 'project' | 'work_items' | 'modules' | 'cycles' | 'pages';
+  name: 'project' | 'work_items' | 'states' | 'modules' | 'cycles';
   required: boolean;
   supported: boolean;
   status: number | null;
@@ -17,7 +17,8 @@ export interface PlaneProbeResult {
   workspaceSlug: string;
   projectId: string;
   capabilities: PlaneCapability[];
-  pagesAutomation: 'available' | 'disabled';
+  knowledgeBackend: 'vb-wiki';
+  pagesAutomation: 'disabled-by-policy';
 }
 
 export interface PlaneWorkItem {
@@ -27,6 +28,31 @@ export interface PlaneWorkItem {
   updated_at?: string;
   state?: unknown;
   [key: string]: unknown;
+}
+
+export interface PlaneState {
+  id: string;
+  name: string;
+  group?: 'backlog' | 'unstarted' | 'started' | 'completed' | 'cancelled' | string;
+  sequence?: number;
+  [key: string]: unknown;
+}
+
+export type PlaneLifecycleTransition
+  = | 'plan_draft_visible'
+    | 'ready_for_development'
+    | 'execution_started'
+    | 'repair_started'
+    | 'review_started'
+    | 'technically_ready'
+    | 'acceptance_rejected'
+    | 'accepted_delivery_pending';
+
+export interface PlaneWorkItemQuery {
+  stateId?: string;
+  assigneeId?: string;
+  cursor?: string;
+  perPage?: number;
 }
 
 export interface AppendProgressOptions {
@@ -40,6 +66,25 @@ export interface AppendProgressResult {
   adopted: boolean;
   operationId: string;
   comment: Record<string, unknown>;
+}
+
+export interface TransitionWorkItemOptions {
+  workItemId: string;
+  transition: PlaneLifecycleTransition;
+  operationId: string;
+  summary: string;
+  evidenceRefs?: string[];
+}
+
+export interface TransitionWorkItemResult {
+  changed: boolean;
+  adopted: boolean;
+  operationId: string;
+  transition: PlaneLifecycleTransition;
+  previousStateId: string | null;
+  targetState: PlaneState | null;
+  workItem: PlaneWorkItem;
+  projection: 'applied' | 'already-applied' | 'comment-only';
 }
 
 type FetchLike = typeof fetch;
@@ -73,6 +118,66 @@ function collection(value: unknown): Array<Record<string, unknown>> {
   return [];
 }
 
+function stateId(value: unknown): string | null {
+  if (typeof value === 'string')
+    return value;
+  if (value && typeof value === 'object' && typeof (value as Record<string, unknown>).id === 'string')
+    return (value as Record<string, unknown>).id as string;
+  return null;
+}
+
+const lifecycleStatePreferences: Record<PlaneLifecycleTransition, {
+  names: string[];
+  groups: string[];
+}> = {
+  plan_draft_visible: {
+    names: ['Draft', 'Backlog'],
+    groups: ['backlog', 'unstarted'],
+  },
+  ready_for_development: {
+    names: ['Ready', 'Todo', 'To Do'],
+    groups: ['unstarted', 'backlog'],
+  },
+  execution_started: {
+    names: ['In Progress', 'Started'],
+    groups: ['started'],
+  },
+  repair_started: {
+    names: ['In Progress', 'Started'],
+    groups: ['started'],
+  },
+  review_started: {
+    names: ['In Review', 'Review'],
+    groups: ['started'],
+  },
+  technically_ready: {
+    names: ['Ready for Milestone', 'Pending Acceptance', 'In Review'],
+    groups: ['started'],
+  },
+  acceptance_rejected: {
+    names: ['In Progress', 'Started'],
+    groups: ['started'],
+  },
+  accepted_delivery_pending: {
+    names: ['Accepted', 'Ready to Deliver', 'Pending Delivery'],
+    groups: ['started', 'unstarted'],
+  },
+};
+
+export function resolvePlaneLifecycleState(
+  states: PlaneState[],
+  transition: PlaneLifecycleTransition,
+): PlaneState | null {
+  const preference = lifecycleStatePreferences[transition];
+  const sorted = [...states].sort((left, right) => (left.sequence ?? 0) - (right.sequence ?? 0));
+  for (const name of preference.names) {
+    const match = sorted.find(state => state.name.trim().toLowerCase() === name.toLowerCase());
+    if (match && preference.groups.includes(String(match.group ?? '').toLowerCase()))
+      return match;
+  }
+  return sorted.find(state => preference.groups.includes(String(state.group ?? '').toLowerCase())) ?? null;
+}
+
 export class PlaneGateway {
   readonly baseUrl: string;
   readonly workspaceSlug: string;
@@ -102,6 +207,10 @@ export class PlaneGateway {
 
   private projectPath(suffix = ''): string {
     return `/api/v1/workspaces/${encodeURIComponent(this.workspaceSlug)}/projects/${encodeURIComponent(this.projectId)}${suffix}`;
+  }
+
+  private workspacePath(suffix = ''): string {
+    return `/api/v1/workspaces/${encodeURIComponent(this.workspaceSlug)}${suffix}`;
   }
 
   private apiKey(): string {
@@ -159,9 +268,9 @@ export class PlaneGateway {
     const checks: Array<{ name: PlaneCapability['name']; required: boolean; path: string }> = [
       { name: 'project', required: true, path: this.projectPath('/') },
       { name: 'work_items', required: true, path: this.projectPath('/work-items/?per_page=1') },
+      { name: 'states', required: true, path: this.projectPath('/states/?per_page=1') },
       { name: 'modules', required: true, path: this.projectPath('/modules/?per_page=1') },
       { name: 'cycles', required: false, path: this.projectPath('/cycles/?per_page=1') },
-      { name: 'pages', required: false, path: this.projectPath('/pages/?per_page=1') },
     ];
 
     const capabilities: PlaneCapability[] = [];
@@ -197,19 +306,95 @@ export class PlaneGateway {
       workspaceSlug: this.workspaceSlug,
       projectId: this.projectId,
       capabilities,
-      pagesAutomation: capabilities.find(item => item.name === 'pages')?.supported ? 'available' : 'disabled',
+      knowledgeBackend: 'vb-wiki',
+      pagesAutomation: 'disabled-by-policy',
     };
   }
 
   async readWorkItem(workItemId: string): Promise<PlaneWorkItem> {
     if (!entityIdPattern.test(workItemId))
       throw new Error('workItemId contains unsupported characters');
-    const { response, body } = await this.request(this.projectPath(`/work-items/${encodeURIComponent(workItemId)}/`));
+    const { response, body } = await this.request(
+      this.projectPath(`/work-items/${encodeURIComponent(workItemId)}/?expand=state,module,labels,assignees`),
+    );
     if (!response.ok)
       throw new Error(`Plane work item read failed with HTTP ${response.status}`);
     if (!body || typeof body !== 'object')
       throw new Error('Plane returned a non-object work item');
     return body as PlaneWorkItem;
+  }
+
+  async readWorkItemByIdentifier(identifier: string): Promise<PlaneWorkItem> {
+    if (!entityIdPattern.test(identifier))
+      throw new Error('identifier contains unsupported characters');
+    const { response, body } = await this.request(
+      this.workspacePath(`/work-items/${encodeURIComponent(identifier)}/?expand=state,module,labels,assignees`),
+    );
+    if (!response.ok)
+      throw new Error(`Plane work item identifier read failed with HTTP ${response.status}`);
+    if (!body || typeof body !== 'object')
+      throw new Error('Plane returned a non-object work item');
+    return body as PlaneWorkItem;
+  }
+
+  async listWorkItems(query: PlaneWorkItemQuery = {}): Promise<PlaneWorkItem[]> {
+    const perPage = Math.min(100, Math.max(1, query.perPage ?? 50));
+    const params = new URLSearchParams({
+      per_page: String(perPage),
+      expand: 'state,module,labels,assignees',
+    });
+    if (query.stateId) {
+      if (!entityIdPattern.test(query.stateId))
+        throw new Error('stateId contains unsupported characters');
+      params.set('state', query.stateId);
+    }
+    if (query.assigneeId) {
+      if (!entityIdPattern.test(query.assigneeId))
+        throw new Error('assigneeId contains unsupported characters');
+      params.set('assignee', query.assigneeId);
+    }
+    if (query.cursor)
+      params.set('cursor', query.cursor);
+    const { response, body } = await this.request(this.projectPath(`/work-items/?${params}`));
+    if (!response.ok)
+      throw new Error(`Plane work item list failed with HTTP ${response.status}`);
+    return collection(body) as PlaneWorkItem[];
+  }
+
+  async searchWorkItems(search: string): Promise<PlaneWorkItem[]> {
+    const query = search.trim();
+    if (!query || query.length > 200)
+      throw new Error('search must contain 1-200 characters');
+    const params = new URLSearchParams({
+      search: query,
+      project: this.projectId,
+      expand: 'state,module,labels,assignees',
+    });
+    const { response, body } = await this.request(this.workspacePath(`/work-items/search/?${params}`));
+    if (!response.ok)
+      throw new Error(`Plane work item search failed with HTTP ${response.status}`);
+    return collection(body) as PlaneWorkItem[];
+  }
+
+  async listStates(): Promise<PlaneState[]> {
+    const { response, body } = await this.request(this.projectPath('/states/'));
+    if (!response.ok)
+      throw new Error(`Plane state list failed with HTTP ${response.status}`);
+    return collection(body) as PlaneState[];
+  }
+
+  async listModules(): Promise<Array<Record<string, unknown>>> {
+    const { response, body } = await this.request(this.projectPath('/modules/?per_page=100'));
+    if (!response.ok)
+      throw new Error(`Plane module list failed with HTTP ${response.status}`);
+    return collection(body);
+  }
+
+  async listCycles(): Promise<Array<Record<string, unknown>>> {
+    const { response, body } = await this.request(this.projectPath('/cycles/?per_page=100'));
+    if (!response.ok)
+      throw new Error(`Plane cycle list failed with HTTP ${response.status}`);
+    return collection(body);
   }
 
   async appendProgress(options: AppendProgressOptions): Promise<AppendProgressResult> {
@@ -255,5 +440,86 @@ export class PlaneGateway {
     if (!confirmed)
       throw new Error('Plane comment write could not be confirmed by read-back');
     return { adopted: false, operationId: options.operationId, comment: confirmed };
+  }
+
+  async transitionWorkItem(options: TransitionWorkItemOptions): Promise<TransitionWorkItemResult> {
+    if (!entityIdPattern.test(options.workItemId))
+      throw new Error('workItemId contains unsupported characters');
+    if (!operationIdPattern.test(options.operationId))
+      throw new Error('operationId contains unsupported characters');
+
+    const workItem = await this.readWorkItem(options.workItemId);
+    const previousStateId = stateId(workItem.state);
+    const states = await this.listStates();
+    const targetState = resolvePlaneLifecycleState(states, options.transition);
+    if (!targetState) {
+      await this.appendProgress({
+        workItemId: options.workItemId,
+        operationId: options.operationId,
+        summary: `${options.summary}\nPlane projection unavailable: no non-terminal state matches ${options.transition}.`,
+        evidenceRefs: options.evidenceRefs,
+      });
+      return {
+        changed: false,
+        adopted: false,
+        operationId: options.operationId,
+        transition: options.transition,
+        previousStateId,
+        targetState: null,
+        workItem,
+        projection: 'comment-only',
+      };
+    }
+
+    if (previousStateId === targetState.id) {
+      const progress = await this.appendProgress({
+        workItemId: options.workItemId,
+        operationId: options.operationId,
+        summary: options.summary,
+        evidenceRefs: options.evidenceRefs,
+      });
+      return {
+        changed: false,
+        adopted: progress.adopted,
+        operationId: options.operationId,
+        transition: options.transition,
+        previousStateId,
+        targetState,
+        workItem,
+        projection: 'already-applied',
+      };
+    }
+
+    const updated = await this.request(
+      this.projectPath(`/work-items/${encodeURIComponent(options.workItemId)}/`),
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ state: targetState.id }),
+      },
+      1,
+    );
+    if (!updated.response.ok)
+      throw new Error(`Plane work item transition failed with HTTP ${updated.response.status}`);
+
+    const confirmed = await this.readWorkItem(options.workItemId);
+    if (stateId(confirmed.state) !== targetState.id)
+      throw new Error('Plane work item transition could not be confirmed by read-back');
+
+    const progress = await this.appendProgress({
+      workItemId: options.workItemId,
+      operationId: options.operationId,
+      summary: options.summary,
+      evidenceRefs: options.evidenceRefs,
+    });
+    return {
+      changed: true,
+      adopted: progress.adopted,
+      operationId: options.operationId,
+      transition: options.transition,
+      previousStateId,
+      targetState,
+      workItem: confirmed,
+      projection: 'applied',
+    };
   }
 }

@@ -5,6 +5,14 @@ description: Publish accepted project knowledge with provenance, lifecycle, stal
 
 # Knowledge Curation
 
-Update knowledge only after the change is accepted. Keep executable and version-coupled facts in Git. Use Plane Pages as a human-readable index or projection only when the target self-hosted instance passes Pages capability checks.
+Analyze knowledge only after the change is accepted. Plane is the project-management surface and is never the knowledge store. The canonical knowledge backend is the git-backed `vb-wiki`.
 
-Every entry needs source revision, updated time, owner, confidence, and supersedes relationship where applicable. Never rewrite original evidence or use Agent memory as the source of truth.
+This employee produces a candidate ledger for the parent delivery lead:
+
+- `novel`, `conflict`, or `zero-atoms`;
+- immutable acceptance event and accepted revision;
+- evidence references and confidence;
+- applicability, exclusions, invalidation signals, and supersession candidates;
+- likely canonical pages that the `vb-wiki` retrieval protocol should inspect.
+
+Do not write `~/.vb-wiki`, Plane Pages, Plane comments, project source, or agent memory. The parent invokes the full `vb-wiki` workflow so admission, deduplication, journal recovery, one-commit ownership, and optional skill promotion remain authoritative.

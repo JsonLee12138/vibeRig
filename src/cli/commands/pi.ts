@@ -19,8 +19,23 @@ const initPiCommand = defineCommand({
     },
     'model': {
       type: 'string',
-      description: 'Default project model in provider/model form.',
-      default: 'openai-codex/gpt-5.6-terra',
+      description: 'Parent delivery-lead model in provider/model form.',
+      default: 'openai-codex/gpt-5.6-sol',
+    },
+    'implementation-model': {
+      type: 'string',
+      description: 'Fast project model for implementer and test-writing roles.',
+      default: 'xiaomi-token-plan-cn/mimo-v2.5',
+    },
+    'validation-model': {
+      type: 'string',
+      description: 'Strong project model for review, security, architecture, aggregation, and verification.',
+      default: 'openai-codex/gpt-5.6-sol',
+    },
+    'knowledge-model': {
+      type: 'string',
+      description: 'Strong model for accepted-evidence knowledge candidate curation.',
+      default: 'openai-codex/gpt-5.6-sol',
     },
     'name': {
       type: 'string',
@@ -45,10 +60,16 @@ const initPiCommand = defineCommand({
       packageSource: args['package-source'],
       projectName: args.name,
       defaultModel: args.model,
+      implementationModel: args['implementation-model'],
+      validationModel: args['validation-model'],
+      knowledgeModel: args['knowledge-model'],
       force: args.force,
     });
     consola.success(`Generated ${Object.keys(config.roles).length} Pi company roles in ${root}/.pi/agents`);
     consola.info(`Project model: ${config.models.default}`);
+    consola.info(`Implementation tier: ${config.models.implementation}`);
+    consola.info(`Validation tier: ${config.models.validation}`);
+    consola.info(`Knowledge tier: ${config.models.knowledge} (${config.knowledge.backend})`);
     consola.info('Run `viberig pi doctor --cwd <project>` before starting Pi.');
   },
 });
@@ -118,6 +139,7 @@ const planeProbeCommand = defineCommand({
         const mark = capability.supported ? '✓' : capability.required ? '✗' : '○';
         consola.info(`${mark} ${capability.name}: ${capability.detail}`);
       }
+      consola.info(`Knowledge backend: ${result.knowledgeBackend}`);
       consola.info(`Pages automation: ${result.pagesAutomation}`);
     }
     if (!result.ok)

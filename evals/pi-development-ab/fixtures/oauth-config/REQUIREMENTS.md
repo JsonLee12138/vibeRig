@@ -4,12 +4,15 @@ Implement `saveOAuthConfig(deps, input)` in `src/oauth-config.js`.
 
 Contract:
 
-- `input` contains non-empty string `tenantId`, `clientId`, `clientSecret`, and `actorId`.
+- `input` contains non-blank string `tenantId`, `clientId`, and `actorId`, plus a non-empty string `clientSecret`.
 - Reject invalid input with `OAuthConfigValidationError` and code `OAUTH_CONFIG_VALIDATION_ERROR` before encryption or database work.
 - Preserve `clientSecret` exactly when calling `deps.encrypt`; do not trim or normalize it.
 - `deps.encrypt(secret)` returns `{ ciphertext, keyVersion }`.
 - Persist only `tenantId`, trimmed `clientId`, `ciphertext`, `keyVersion`, and `updatedAt`.
-- Configuration persistence and audit append must execute inside one `deps.db.transaction(...)`.
+- Configuration persistence and audit append must execute inside one
+  `deps.db.transaction(async (tx) => ...)` callback. Use only
+  `tx.config.upsert(...)` and `tx.audit.append(...)` inside that callback;
+  `deps.db.config` and `deps.db.audit` are non-transactional and must not be used.
 - Append an audit event containing only `action`, `tenantId`, `clientId`, `actorId`, and `timestamp`.
 - The audit action is `oauth_client.updated`. Audit data must not contain the secret or ciphertext.
 - Return only `{ tenantId, clientId, configured: true, secretMasked: "••••", updatedAt }`.

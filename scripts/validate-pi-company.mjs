@@ -21,13 +21,26 @@ try {
 
   assert.equal(config.platform, 'pi');
   assert.equal(config.models.default, model);
-  assert.ok(Object.keys(config.roles).length >= 12, 'the built-in company is missing core employees');
+  assert.equal(config.models.implementation, 'xiaomi-token-plan-cn/mimo-v2.5');
+  assert.equal(config.models.validation, 'openai-codex/gpt-5.6-sol');
+  assert.equal(config.models.knowledge, 'openai-codex/gpt-5.6-sol');
+  assert.equal(
+    company.resolvePiRoleModel(config, 'implementer'),
+    'xiaomi-token-plan-cn/mimo-v2.5',
+  );
+  assert.equal(
+    company.resolvePiRoleModel(config, 'reviewer'),
+    'openai-codex/gpt-5.6-sol',
+  );
+  assert.equal(config.knowledge.backend, 'vb-wiki');
+  assert.equal(config.knowledge.plane_pages_enabled, false);
+  assert.ok(Object.keys(config.roles).length >= 13, 'the built-in company is missing core employees');
 
   const analyst = await readFile(resolve(temporaryRoot, '.pi/agents/project_analyst.md'), 'utf8');
   assert.match(analyst, /tools: "read, grep, find, ls"/);
   assert.match(analyst, /extensions: false/);
   assert.match(analyst, /skills: "viberig-company-context, viberig-project-analysis"/);
-  assert.match(analyst, new RegExp(`model: "${model.replaceAll('.', '\\.')}"`));
+  assert.match(analyst, /model: "openai-codex\/gpt-5\.6-sol"/);
   assert.match(analyst, /disallowed_tools: "edit, write"/);
   assert.doesNotMatch(analyst, /isolation: worktree/);
   const projectAnalysisSkill = await readFile(
@@ -38,8 +51,19 @@ try {
 
   const implementer = await readFile(resolve(temporaryRoot, '.pi/agents/implementer.md'), 'utf8');
   assert.match(implementer, /isolation: worktree/);
+  assert.match(implementer, /model: "xiaomi-token-plan-cn\/mimo-v2\.5"/);
   assert.match(implementer, /output_transcript: false/);
   assert.match(implementer, /inherit_context: false/);
+
+  const aggregator = await readFile(resolve(temporaryRoot, '.pi/agents/council_aggregator.md'), 'utf8');
+  assert.match(aggregator, /viberig-council-synthesis/);
+  assert.match(aggregator, /model: "openai-codex\/gpt-5\.6-sol"/);
+  assert.match(aggregator, /disallowed_tools: "edit, write"/);
+
+  const curator = await readFile(resolve(temporaryRoot, '.pi/agents/knowledge_curator.md'), 'utf8');
+  assert.match(curator, /vb-wiki/);
+  assert.match(curator, /disallowed_tools: "edit, write"/);
+  assert.doesNotMatch(curator, /isolation: worktree/);
 
   const subagents = JSON.parse(await readFile(resolve(temporaryRoot, '.pi/subagents.json'), 'utf8'));
   assert.equal(subagents.disableDefaultAgents, true);
@@ -49,6 +73,8 @@ try {
   const settings = JSON.parse(await readFile(resolve(temporaryRoot, '.pi/settings.json'), 'utf8'));
   assert.ok(settings.packages.includes(root));
   assert.ok(settings.enabledModels.includes(model));
+  assert.ok(settings.enabledModels.includes('xiaomi-token-plan-cn/mimo-v2.5'));
+  assert.ok(settings.enabledModels.includes('openai-codex/gpt-5.6-sol'));
   assert.equal(config.plane.writes_enabled, false);
   assert.equal(config.plane.allow_headless_writes, false);
 
@@ -56,10 +82,8 @@ try {
   const responses = [];
   const fakeFetch = async (url, init = {}) => {
     responses.push({ url: String(url), init });
-    const parsed = new URL(String(url));
-    const isPages = parsed.pathname.endsWith('/pages/');
-    return new Response(JSON.stringify(isPages ? { detail: 'not found' } : { results: [] }), {
-      status: isPages ? 404 : 200,
+    return new Response(JSON.stringify({ results: [] }), {
+      status: 200,
       headers: { 'content-type': 'application/json' },
     });
   };
@@ -75,10 +99,30 @@ try {
   }, fakeFetch);
   const probe = await gateway.probe();
   assert.equal(probe.ok, true);
-  assert.equal(probe.pagesAutomation, 'disabled');
+  assert.equal(probe.knowledgeBackend, 'vb-wiki');
+  assert.equal(probe.pagesAutomation, 'disabled-by-policy');
   assert.ok(responses.every(item => item.init.headers['X-API-Key'] === 'test-only'));
   assert.ok(responses.some(item => item.url.includes('/work-items/')));
+  assert.ok(responses.some(item => item.url.includes('/states/')));
   assert.ok(responses.every(item => !item.url.includes('/issues/')));
+  assert.ok(responses.every(item => !item.url.includes('/pages/')));
+  await gateway.readWorkItemByIdentifier('ACME-123');
+  assert.ok(responses.some(item => item.url.includes('/workspaces/acme/work-items/ACME-123/')));
+
+  const states = [
+    { id: 'backlog', name: 'Backlog', group: 'backlog', sequence: 1 },
+    { id: 'started', name: 'In Progress', group: 'started', sequence: 2 },
+    { id: 'review', name: 'In Review', group: 'started', sequence: 3 },
+    { id: 'done', name: 'Done', group: 'completed', sequence: 4 },
+  ];
+  assert.equal(
+    gatewayModule.resolvePlaneLifecycleState(states, 'technically_ready').id,
+    'review',
+  );
+  assert.notEqual(
+    gatewayModule.resolvePlaneLifecycleState(states, 'technically_ready').group,
+    'completed',
+  );
 
   const comments = [];
   const progressFetch = async (url, init = {}) => {
@@ -120,6 +164,76 @@ try {
   });
   assert.equal(retried.adopted, true);
   assert.equal(comments.length, 1, 'idempotent retry created a duplicate Plane comment');
+
+  let currentState = 'backlog';
+  let patches = 0;
+  const transitionComments = [];
+  const transitionFetch = async (url, init = {}) => {
+    const parsed = new URL(String(url));
+    const method = init.method ?? 'GET';
+    if (parsed.pathname.endsWith('/states/')) {
+      return new Response(JSON.stringify({ results: states }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (parsed.pathname.endsWith('/comments/')) {
+      if (method === 'POST') {
+        const payload = JSON.parse(init.body);
+        transitionComments.push({ id: 'transition-comment', ...payload });
+        return new Response(JSON.stringify(transitionComments[0]), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ results: transitionComments }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (parsed.pathname.endsWith('/work-items/work-item-1/')) {
+      if (method === 'PATCH') {
+        patches++;
+        currentState = JSON.parse(init.body).state;
+      }
+      return new Response(JSON.stringify({
+        id: 'work-item-1',
+        name: 'Lifecycle test',
+        state: currentState,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected transition URL: ${url}`);
+  };
+  const transitionGateway = new gatewayModule.PlaneGateway({
+    enabled: true,
+    writes_enabled: true,
+    allow_headless_writes: false,
+    base_url: 'https://plane.internal',
+    workspace_slug: 'acme',
+    project_id: 'project-1',
+    api_key_env: 'PLANE_TEST_API_KEY',
+  }, transitionFetch);
+  const transitioned = await transitionGateway.transitionWorkItem({
+    workItemId: 'work-item-1',
+    transition: 'technically_ready',
+    operationId: 'run-1.technically-ready',
+    summary: 'Technical gates passed; human acceptance remains pending.',
+  });
+  assert.equal(transitioned.projection, 'applied');
+  assert.equal(currentState, 'review');
+  const transitionRetry = await transitionGateway.transitionWorkItem({
+    workItemId: 'work-item-1',
+    transition: 'technically_ready',
+    operationId: 'run-1.technically-ready',
+    summary: 'retry',
+  });
+  assert.equal(transitionRetry.projection, 'already-applied');
+  assert.equal(transitionRetry.adopted, true);
+  assert.equal(patches, 1, 'idempotent transition retry issued another PATCH');
+  assert.equal(transitionComments.length, 1, 'idempotent transition retry duplicated progress');
 
   let doctor = await company.doctorPiCompany(temporaryRoot);
   assert.equal(doctor.ok, true);

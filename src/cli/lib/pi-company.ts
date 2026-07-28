@@ -62,13 +62,21 @@ export const roleDefinitions = {
     prompt: '先形成测试契约，再实现需要的测试资产、fixture 和环境说明。明确测试保真度与缺失环境。',
     worktree: true,
   },
+  qa_reviewer: {
+    description: '独立核对需求合同与测试覆盖，识别缺失的边界、错误路径和可观察行为；只读且不编写测试。',
+    tools: 'read, grep, find, ls',
+    skills: ['viberig-company-context', 'viberig-test-review'],
+    thinking: 'high',
+    maxTurns: 14,
+    prompt: '逐条把规范性需求映射到测试。优先检查空白值、null、类型边界、异步失败、事务回滚、引用可变性和合法输入等价类。输出不超过 600 tokens 的结构化 test gaps，不修改代码或测试。',
+  },
   reviewer: {
     description: '独立审查正确性、可维护性和架构偏差；只读且不替实现者修复。',
     tools: 'read, grep, find, ls',
     skills: ['viberig-company-context', 'viberig-review'],
     thinking: 'high',
     maxTurns: 18,
-    prompt: '按严重级别报告可复现问题，给出文件和证据。没有问题时也要说明检查范围与残余风险。',
+    prompt: '按严重级别报告可复现问题，给出文件和证据。没有问题时也要说明检查范围与残余风险。作为 Council advisor 时输出不超过 600 tokens 的结构化 findings。',
   },
   security_auditor: {
     description: '独立进行威胁建模和安全审查；只读，不通过修改代码掩盖发现。',
@@ -76,7 +84,7 @@ export const roleDefinitions = {
     skills: ['viberig-company-context', 'viberig-security'],
     thinking: 'high',
     maxTurns: 20,
-    prompt: '检查信任边界、身份鉴权、注入、秘密、供应链和数据暴露。Blocking 风险必须显式标记。',
+    prompt: '检查信任边界、身份鉴权、注入、秘密、供应链和数据暴露。Blocking 风险必须显式标记。作为 Council advisor 时输出不超过 600 tokens 的结构化 findings。',
   },
   verifier: {
     description: '独立运行批准的验证矩阵并核对证据；不能修改产品代码。',
@@ -102,14 +110,21 @@ export const roleDefinitions = {
     maxTurns: 18,
     prompt: '关注运行拓扑、故障域、迁移顺序、回滚、SLI/SLO、备份恢复和容量边界。',
   },
+  council_aggregator: {
+    description: '聚合独立 reviewer、security、QA 和 architect 的只读意见，去重、反驳并裁决阻断项；不修改代码。',
+    tools: 'read, grep, find, ls',
+    skills: ['viberig-company-context', 'viberig-council-synthesis'],
+    thinking: 'high',
+    maxTurns: 12,
+    prompt: '只消费任务事实包和独立 advisor findings。验证证据、识别相互冲突或规格外建议，输出 accepted、rejected、blocking 和 residualRisks；不得修改代码或批准自己的实现。',
+  },
   knowledge_curator: {
-    description: '在变更被接受后维护项目知识、ADR 和 Plane 知识索引；不能改写原始证据。',
-    tools: 'read, grep, find, ls, edit, write',
+    description: '在变更被接受后生成 vb-wiki 知识候选与证据账本；不直接写共享知识库或 Plane。',
+    tools: 'read, grep, find, ls',
     skills: ['viberig-company-context', 'viberig-knowledge-curation'],
     thinking: 'medium',
     maxTurns: 16,
-    prompt: '只依据已接受的变更更新知识。保留来源、revision、有效期和 supersedes 关系，不把 Agent memory 当权威。',
-    worktree: true,
+    prompt: '只依据已接受的变更判断 novel、conflict 或 zero-atoms，输出带来源、revision、适用边界和失效信号的候选账本。主 delivery lead 才能调用 vb-wiki 写入；Plane 不承载知识库。',
   },
 } as const;
 
@@ -132,11 +147,42 @@ export const piCompanyConfigSchema = z.object({
   }),
   models: z.object({
     default: z.string().min(3),
+    implementation: z.string().min(3).default('xiaomi-token-plan-cn/mimo-v2.5'),
+    validation: z.string().min(3).default('openai-codex/gpt-5.6-sol'),
+    knowledge: z.string().min(3).default('openai-codex/gpt-5.6-sol'),
   }),
   roles: z.record(roleNameSchema, roleConfigSchema),
   budgets: z.object({
     max_concurrent: z.number().int().min(1).max(16).default(4),
     default_max_turns: z.number().int().min(1).max(200).default(24),
+  }),
+  council: z.object({
+    enabled: z.boolean().default(true),
+    risk_profiles: z.object({
+      low: z.array(roleNameSchema).default(['reviewer']),
+      medium: z.array(roleNameSchema).default(['reviewer', 'qa_reviewer', 'architect']),
+      high: z.array(roleNameSchema).default(['reviewer', 'security_auditor', 'qa_reviewer', 'architect']),
+    }),
+    require_independent_verify: z.boolean().default(true),
+    advisor_output_tokens: z.number().int().min(100).max(2_000).default(600),
+  }).default({
+    enabled: true,
+    risk_profiles: {
+      low: ['reviewer'],
+      medium: ['reviewer', 'qa_reviewer', 'architect'],
+      high: ['reviewer', 'security_auditor', 'qa_reviewer', 'architect'],
+    },
+    require_independent_verify: true,
+    advisor_output_tokens: 600,
+  }),
+  knowledge: z.object({
+    backend: z.literal('vb-wiki').default('vb-wiki'),
+    plane_pages_enabled: z.literal(false).default(false),
+    writes_by_parent_only: z.literal(true).default(true),
+  }).default({
+    backend: 'vb-wiki',
+    plane_pages_enabled: false,
+    writes_by_parent_only: true,
   }),
   plane: z.object({
     enabled: z.boolean().default(false),
@@ -157,6 +203,9 @@ export interface InitPiCompanyOptions {
   packageSource?: string;
   projectName?: string;
   defaultModel: string;
+  implementationModel?: string;
+  validationModel?: string;
+  knowledgeModel?: string;
   force?: boolean;
 }
 
@@ -197,18 +246,41 @@ function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
+export function resolvePiRoleModel(config: PiCompanyConfig, roleName: RoleName): string {
+  const implementationRoles: RoleName[] = [
+    'frontend_engineer',
+    'backend_engineer',
+    'implementer',
+    'test_engineer',
+  ];
+  const tierModel = implementationRoles.includes(roleName)
+    ? config.models.implementation
+    : roleName === 'knowledge_curator'
+      ? config.models.knowledge
+      : config.models.validation;
+  return config.roles[roleName]?.model ?? tierModel ?? config.models.default;
+}
+
 function roleConfig(config: PiCompanyConfig, roleName: RoleName) {
   const role = config.roles[roleName];
   const definition = roleDefinitions[roleName];
   return {
     enabled: role?.enabled ?? true,
-    model: role?.model ?? config.models.default,
+    model: resolvePiRoleModel(config, roleName),
     thinking: role?.thinking ?? definition.thinking,
     maxTurns: role?.max_turns ?? definition.maxTurns ?? config.budgets.default_max_turns,
   };
 }
 
-export function createPiCompanyConfig(projectName: string, defaultModel: string): PiCompanyConfig {
+export function createPiCompanyConfig(
+  projectName: string,
+  defaultModel: string,
+  modelTiers: {
+    implementation?: string;
+    validation?: string;
+    knowledge?: string;
+  } = {},
+): PiCompanyConfig {
   const roles = Object.fromEntries(
     (Object.keys(roleDefinitions) as RoleName[]).map(name => [name, { enabled: true }]),
   ) as PiCompanyConfig['roles'];
@@ -217,9 +289,29 @@ export function createPiCompanyConfig(projectName: string, defaultModel: string)
     version: 1,
     platform: 'pi',
     project: { name: projectName, root: '.' },
-    models: { default: defaultModel },
+    models: {
+      default: defaultModel,
+      implementation: modelTiers.implementation ?? 'xiaomi-token-plan-cn/mimo-v2.5',
+      validation: modelTiers.validation ?? 'openai-codex/gpt-5.6-sol',
+      knowledge: modelTiers.knowledge ?? 'openai-codex/gpt-5.6-sol',
+    },
     roles,
     budgets: { max_concurrent: 4, default_max_turns: 24 },
+    council: {
+      enabled: true,
+      risk_profiles: {
+        low: ['reviewer'],
+        medium: ['reviewer', 'qa_reviewer', 'architect'],
+        high: ['reviewer', 'security_auditor', 'qa_reviewer', 'architect'],
+      },
+      require_independent_verify: true,
+      advisor_output_tokens: 600,
+    },
+    knowledge: {
+      backend: 'vb-wiki',
+      plane_pages_enabled: false,
+      writes_by_parent_only: true,
+    },
     plane: {
       enabled: false,
       writes_enabled: false,
@@ -292,6 +384,9 @@ async function mergePiSettings(
     : [];
   const configuredModels = new Set([
     config.models.default,
+    config.models.implementation,
+    config.models.validation,
+    config.models.knowledge,
     ...Object.values(config.roles).map(role => role.model).filter((model): model is string => Boolean(model)),
   ]);
   for (const model of configuredModels) {
@@ -321,7 +416,11 @@ export async function initPiCompany(options: InitPiCompanyOptions): Promise<PiCo
       await writeFile(configPath, stringify(config, { lineWidth: 0 }), 'utf8');
   }
   else {
-    config = createPiCompanyConfig(options.projectName ?? basename(root), options.defaultModel);
+    config = createPiCompanyConfig(options.projectName ?? basename(root), options.defaultModel, {
+      implementation: options.implementationModel,
+      validation: options.validationModel,
+      knowledge: options.knowledgeModel,
+    });
     await writeFile(configPath, stringify(config, { lineWidth: 0 }), 'utf8');
   }
 

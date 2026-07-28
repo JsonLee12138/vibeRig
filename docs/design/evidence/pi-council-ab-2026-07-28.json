@@ -1,0 +1,1236 @@
+{
+  "generatedAt": "2026-07-28T08:22:39.447Z",
+  "branch": "codex/pi-company-plane",
+  "dryRun": false,
+  "priority": [
+    "accuracy",
+    "wallMs",
+    "effectiveTokens"
+  ],
+  "implementationModel": {
+    "id": "mimo-v2.5",
+    "model": "xiaomi-token-plan-cn/mimo-v2.5",
+    "thinking": "low"
+  },
+  "validationModel": {
+    "id": "gpt-5.6-sol",
+    "model": "openai-codex/gpt-5.6-sol",
+    "thinking": "high"
+  },
+  "fixtureIds": [
+    "event-ledger",
+    "oauth-config"
+  ],
+  "variants": [
+    "mimo_dev_only",
+    "sequential_strong_gates",
+    "role_isolated_council"
+  ],
+  "results": [
+    {
+      "variant": "mimo_dev_only",
+      "fixtureId": "event-ledger",
+      "workspace": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/event-ledger/base",
+      "wallMs": 31863,
+      "agentElapsedMs": 31863,
+      "parallelismSavingsMs": 0,
+      "usage": {
+        "input": 4323,
+        "output": 2202,
+        "cacheRead": 31168,
+        "cacheWrite": 0,
+        "effectiveTokens": 6525
+      },
+      "accuracy": {
+        "tests": 7,
+        "passed": 7,
+        "failed": 0,
+        "rate": 1,
+        "status": 0,
+        "output": ""
+      },
+      "visibleTests": {
+        "passed": true,
+        "status": 0,
+        "output": ""
+      },
+      "verifierPassed": null,
+      "verifierRisks": [],
+      "technicalPass": true,
+      "sourceHash": "ade4af9abef69db2e7b658a2d183c03dde4583a6d4683b71123281818b5111a9",
+      "runs": [
+        {
+          "stage": "implement",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 31863,
+          "usage": {
+            "input": 4323,
+            "output": 2202,
+            "cacheRead": 31168,
+            "cacheWrite": 0,
+            "effectiveTokens": 6525
+          },
+          "answer": {
+            "raw": "The implementation is complete. Here's a summary of what was fixed from the original code:\n\n| Requirement | Fix |\n|---|---|\n| **Tenant-scoped identity** | Composite key `${tenantId}\\0${eventId}` instead of just `eventId` |\n| **Validation** | Validates state is `Map`, tenantId/eventId are non-blank strings, payload is JSON-compatible, receivedAt is a valid date — all throw `EventValidationError` with `EVENT_VALIDATION_ERROR` |\n| **Immutability** | `deepClone()` on payload before storing; mutations to input won't affect stored record |\n| **Idempotent replay** | `stableStringify()` sorts keys recursively, so `{b:1,a:2}` equals `{a:2,b:1}` — returns original record with `duplicate: true` |\n| **Conflict detection** | Same identity + different payload → throws `EventConflictError` with `EVENT_ID_CONFLICT`; state unchanged |\n| **ISO normalization** | `record.receivedAt` stored as `new Date(receivedAt).toISOString()` |",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.common.implement.json",
+          "error": ""
+        }
+      ]
+    },
+    {
+      "variant": "sequential_strong_gates",
+      "fixtureId": "event-ledger",
+      "workspace": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/event-ledger/sequential",
+      "wallMs": 768079,
+      "agentElapsedMs": 768070,
+      "parallelismSavingsMs": 0,
+      "usage": {
+        "input": 84153,
+        "output": 39591,
+        "cacheRead": 300608,
+        "cacheWrite": 0,
+        "effectiveTokens": 123744
+      },
+      "accuracy": {
+        "tests": 7,
+        "passed": 7,
+        "failed": 0,
+        "rate": 1,
+        "status": 0,
+        "output": ""
+      },
+      "visibleTests": {
+        "passed": true,
+        "status": 0,
+        "output": ""
+      },
+      "verifierPassed": false,
+      "verifierRisks": [
+        "JSON-compatible cross-realm objects and class instances are rejected, improperly narrowing the specification.",
+        "Accessor payloads are read repeatedly and can pass validation but store non-JSON-compatible values, violating snapshot guarantees.",
+        "Boolean and arbitrary coercible objects are accepted as receivedAt date values."
+      ],
+      "technicalPass": false,
+      "sourceHash": "590ade14cdd4250a5a0aa044d46fc8c69c3aadfee821613a115f58459167491a",
+      "runs": [
+        {
+          "stage": "implement",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 31863,
+          "usage": {
+            "input": 4323,
+            "output": 2202,
+            "cacheRead": 31168,
+            "cacheWrite": 0,
+            "effectiveTokens": 6525
+          },
+          "answer": {
+            "raw": "The implementation is complete. Here's a summary of what was fixed from the original code:\n\n| Requirement | Fix |\n|---|---|\n| **Tenant-scoped identity** | Composite key `${tenantId}\\0${eventId}` instead of just `eventId` |\n| **Validation** | Validates state is `Map`, tenantId/eventId are non-blank strings, payload is JSON-compatible, receivedAt is a valid date — all throw `EventValidationError` with `EVENT_VALIDATION_ERROR` |\n| **Immutability** | `deepClone()` on payload before storing; mutations to input won't affect stored record |\n| **Idempotent replay** | `stableStringify()` sorts keys recursively, so `{b:1,a:2}` equals `{a:2,b:1}` — returns original record with `duplicate: true` |\n| **Conflict detection** | Same identity + different payload → throws `EventConflictError` with `EVENT_ID_CONFLICT`; state unchanged |\n| **ISO normalization** | `record.receivedAt` stored as `new Date(receivedAt).toISOString()` |",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.common.implement.json",
+          "error": ""
+        },
+        {
+          "stage": "test-author",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 56714,
+          "usage": {
+            "input": 9850,
+            "output": 4512,
+            "cacheRead": 85760,
+            "cacheWrite": 0,
+            "effectiveTokens": 14362
+          },
+          "answer": {
+            "raw": "All done — **10 tests pass, 0 fail**.\n\n### Test file: `test/event-ledger.test.js`\n\n| # | Test | Risk covered |\n|---|------|-------------|\n| 1 | Stores new event → `duplicate: false`, correct fields & ISO `receivedAt` | Core happy path |\n| 2 | Same identity + equivalent payload → `duplicate: true`, same record ref | Idempotency |\n| 3 | Payload key order `{a:1,b:2}` vs `{b:2,a:1}` treated as equivalent | Stable comparison |\n| 4 | Different payload for same identity → `EventConflictError` / `EVENT_ID_CONFLICT` | Conflict detection |\n| 5 | State unchanged (size=1) after a failed conflict attempt | No partial writes |\n| 6 | Same `eventId` in tenants A & B → both stored | Tenant isolation |\n| 7 | Input mutation after store doesn't affect stored record | Immutability of snapshot |\n| 8 | `receivedAt: new Date(ts)` → normalized ISO string | Date normalization |\n| 9 | Non-Map state → `EventValidationError` / `EVENT_VALIDATION_ERROR` | State validation |\n| 10 | Blank `tenantId`, blank `eventId`, invalid `receivedAt` → validation error | Input validation |\n\nNo `src/` changes, no added dependencies, no internal storage assertions — only public API behavior tested.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.common.test-author.json",
+          "error": ""
+        },
+        {
+          "stage": "reviewer",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 62806,
+          "usage": {
+            "input": 5916,
+            "output": 1993,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 7909
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Composite-key collisions merge distinct identities.\",\"evidence\":\"`${tenantId}\\\\0${eventId}` gives the same key for pairs such as (`a\\\\0b`,`c`) and (`a`,`b\\\\0c`).\",\"contract\":\"Identity is exactly the pair (tenantId, eventId); all non-blank strings are allowed.\"},{\"finding\":\"Invalid payloads are accepted.\",\"evidence\":\"isJsonCompatible only checks whether JSON.stringify throws, so omitted/undefined, functions, symbols, NaN, and Infinity pass and can be stored.\",\"contract\":\"payload must be JSON-compatible; invalid input must throw EventValidationError.\"},{\"finding\":\"Invalid receivedAt values can leak native exceptions.\",\"evidence\":\"new Date(Symbol()) and similar conversions throw inside isValidDate without being caught.\",\"contract\":\"Invalid input must throw EventValidationError with code EVENT_VALIDATION_ERROR.\"},{\"finding\":\"Stored records are mutable through the returned record or state.\",\"evidence\":\"record and its recursively cloned payload are never frozen; changing res.record.payload also changes the object held in state.\",\"contract\":\"The first accepted event must be stored as an immutable snapshot.\"},{\"finding\":\"Valid JSON object keys can be corrupted during cloning.\",\"evidence\":\"deepClone assigns clone['__proto__'], which changes the clone's prototype instead of preserving an own '__proto__' property.\",\"contract\":\"The stored record must snapshot the JSON-compatible payload and support JSON-equivalent replay.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Composite-key collisions merge distinct identities.",
+                  "evidence": "`${tenantId}\\0${eventId}` gives the same key for pairs such as (`a\\0b`,`c`) and (`a`,`b\\0c`).",
+                  "contract": "Identity is exactly the pair (tenantId, eventId); all non-blank strings are allowed."
+                },
+                {
+                  "finding": "Invalid payloads are accepted.",
+                  "evidence": "isJsonCompatible only checks whether JSON.stringify throws, so omitted/undefined, functions, symbols, NaN, and Infinity pass and can be stored.",
+                  "contract": "payload must be JSON-compatible; invalid input must throw EventValidationError."
+                },
+                {
+                  "finding": "Invalid receivedAt values can leak native exceptions.",
+                  "evidence": "new Date(Symbol()) and similar conversions throw inside isValidDate without being caught.",
+                  "contract": "Invalid input must throw EventValidationError with code EVENT_VALIDATION_ERROR."
+                },
+                {
+                  "finding": "Stored records are mutable through the returned record or state.",
+                  "evidence": "record and its recursively cloned payload are never frozen; changing res.record.payload also changes the object held in state.",
+                  "contract": "The first accepted event must be stored as an immutable snapshot."
+                },
+                {
+                  "finding": "Valid JSON object keys can be corrupted during cloning.",
+                  "evidence": "deepClone assigns clone['__proto__'], which changes the clone's prototype instead of preserving an own '__proto__' property.",
+                  "contract": "The stored record must snapshot the JSON-compatible payload and support JSON-equivalent replay."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.sequential.reviewer.json",
+          "error": ""
+        },
+        {
+          "stage": "reviewer-remediation",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 116406,
+          "usage": {
+            "input": 15075,
+            "output": 9563,
+            "cacheRead": 102720,
+            "cacheWrite": 0,
+            "effectiveTokens": 24638
+          },
+          "answer": {
+            "raw": "All 5 findings fixed, all 10 tests pass, and all fixes verified. Here's a summary:\n\n| # | Finding | Fix |\n|---|---------|-----|\n| 1 | **Composite-key collisions** | Changed `\\`${tenantId}\\0${eventId}\\`` → `JSON.stringify([tenantId, event.eventId])`. Array JSON serialization is unambiguous — no pair of distinct tuples can produce the same string. |\n| 2 | **Invalid payloads accepted** | Replaced `JSON.stringify` try/catch with a recursive type check: only `null`, `boolean`, `string`, finite `number`, and recursively-compatible objects/arrays pass. Rejects `undefined`, `NaN`, `Infinity`, functions, symbols. |\n| 3 | **receivedAt leaks native exceptions** | Wrapped `new Date(value)` in `isValidDate` with a `try/catch` — values like `Symbol()` that throw during `Date` conversion now return `false` instead of propagating. |\n| 4 | **Stored records are mutable** | Added `deepFreeze(record)` before storing. The record and its entire payload tree are `Object.freeze`'d, making mutation a no-op in strict mode and throwing in strict mode. |\n| 5 | **`__proto__` key corrupted in deepClone** | Changed `clone[key] = deepClone(obj[key])` to `Object.defineProperty(clone, key, { value: ... })`, which creates a normal own property instead of triggering the `__proto__` setter. |\n\nNo findings conflicted with REQUIREMENTS.md.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.sequential.reviewer-remediation.json",
+          "error": ""
+        },
+        {
+          "stage": "security",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 120051,
+          "usage": {
+            "input": 6291,
+            "output": 2979,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 9270
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Cyclic payloads fail open to an unexpected exception.\",\"evidence\":\"src/event-ledger.js: isJsonCompatible recursively traverses objects without cycle detection, so a self-referential payload throws RangeError rather than EventValidationError.\",\"contract\":\"Invalid input must throw EventValidationError with EVENT_VALIDATION_ERROR.\"},{\"finding\":\"Repeated property reads permit validation/snapshot TOCTOU and tenant-key mismatch.\",\"evidence\":\"src/event-ledger.js reads tenantId, eventId, payload, and receivedAt during validation and again during keying/cloning. Getters can return tenant A for the composite key and tenant B for the stored record, or validate one payload and store another.\",\"contract\":\"Identity must be (tenantId,eventId), and the first accepted event must be an immutable snapshot of the accepted input.\"},{\"finding\":\"Sparse arrays produce incorrect JSON-equivalence decisions.\",\"evidence\":\"isJsonCompatible accepts holes because Array.every skips them; stableStringify(new Array(1)) and stableStringify([]) both return \\\"[]\\\", although JSON serialization yields \\\"[null]\\\" and \\\"[]\\\" respectively.\",\"contract\":\"Only JSON-equivalent payload replays may be treated as duplicates.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Cyclic payloads fail open to an unexpected exception.",
+                  "evidence": "src/event-ledger.js: isJsonCompatible recursively traverses objects without cycle detection, so a self-referential payload throws RangeError rather than EventValidationError.",
+                  "contract": "Invalid input must throw EventValidationError with EVENT_VALIDATION_ERROR."
+                },
+                {
+                  "finding": "Repeated property reads permit validation/snapshot TOCTOU and tenant-key mismatch.",
+                  "evidence": "src/event-ledger.js reads tenantId, eventId, payload, and receivedAt during validation and again during keying/cloning. Getters can return tenant A for the composite key and tenant B for the stored record, or validate one payload and store another.",
+                  "contract": "Identity must be (tenantId,eventId), and the first accepted event must be an immutable snapshot of the accepted input."
+                },
+                {
+                  "finding": "Sparse arrays produce incorrect JSON-equivalence decisions.",
+                  "evidence": "isJsonCompatible accepts holes because Array.every skips them; stableStringify(new Array(1)) and stableStringify([]) both return \"[]\", although JSON serialization yields \"[null]\" and \"[]\" respectively.",
+                  "contract": "Only JSON-equivalent payload replays may be treated as duplicates."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.sequential.security.json",
+          "error": ""
+        },
+        {
+          "stage": "security-remediation",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 51425,
+          "usage": {
+            "input": 8978,
+            "output": 4358,
+            "cacheRead": 34048,
+            "cacheWrite": 0,
+            "effectiveTokens": 13336
+          },
+          "answer": {
+            "raw": "All 10 tests pass. Here's a summary of the three fixes:\n\n### Finding 1 — Cyclic payloads\n**Problem:** `isJsonCompatible` recursed without cycle detection → `RangeError` on self-referential objects.\n**Fix:** Added a `WeakSet` guard. If an object or array is encountered a second time during traversal, `check` returns `false`, which causes `isJsonCompatible` to return `false`, triggering `EventValidationError` with `EVENT_VALIDATION_ERROR`.\n\n### Finding 2 — TOCTOU on property reads\n**Problem:** `event.tenantId`, `eventId`, `payload`, and `receivedAt` were read from the event object during validation and again later for keying/cloning. A getter could return different values between reads (e.g., tenant A for the key, tenant B for the stored record).\n**Fix:** Destructured all four fields once into local variables at the top of the validation block. All subsequent logic — validation, keying, cloning — uses these locals, ensuring a single consistent snapshot of the input.\n\n### Finding 3 — Sparse arrays\n**Problem:** `Array.every` skips holes, so `[1,,3]` passes `isJsonCompatible`. Meanwhile `stableStringify` also skips holes (via `map`), making `stableStringify(new Array(1))` equal to `stableStringify([])` — both `\"[]\"` — even though `JSON.stringify` produces `\"[null]\"` vs `\"[]\"`.\n**Fix:** Added `val.length !== Object.keys(val).length` check inside the array branch of `isJsonCompatible`. This rejects sparse arrays as non-JSON-compatible (since JSON serialization would fill holes with `null`), causing `EventValidationError` instead of silently accepting them.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.sequential.security-remediation.json",
+          "error": ""
+        },
+        {
+          "stage": "architect",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 99236,
+          "usage": {
+            "input": 6172,
+            "output": 2382,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 8554
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"The payload boundary accepts non-JSON object instances and silently changes them.\",\"evidence\":\"isJsonCompatible accepts Date, Map, Set, and other instances with no enumerable values; stableStringify and deepClone then represent them as {}, potentially treating distinct payloads as equivalent.\",\"contract\":\"payload must be JSON-compatible; the first accepted event must be stored as an immutable snapshot, and differing payloads must conflict.\"},{\"finding\":\"Validation incorrectly rejects acyclic shared references.\",\"evidence\":\"isJsonCompatible uses one global WeakSet, so {a: child, b: child} is rejected as though cyclic even though it serializes to valid JSON.\",\"contract\":\"JSON-compatible payloads are allowed; validation must not narrow that behavior.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "The payload boundary accepts non-JSON object instances and silently changes them.",
+                  "evidence": "isJsonCompatible accepts Date, Map, Set, and other instances with no enumerable values; stableStringify and deepClone then represent them as {}, potentially treating distinct payloads as equivalent.",
+                  "contract": "payload must be JSON-compatible; the first accepted event must be stored as an immutable snapshot, and differing payloads must conflict."
+                },
+                {
+                  "finding": "Validation incorrectly rejects acyclic shared references.",
+                  "evidence": "isJsonCompatible uses one global WeakSet, so {a: child, b: child} is rejected as though cyclic even though it serializes to valid JSON.",
+                  "contract": "JSON-compatible payloads are allowed; validation must not narrow that behavior."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.sequential.architect.json",
+          "error": ""
+        },
+        {
+          "stage": "architect-remediation",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 97570,
+          "usage": {
+            "input": 14125,
+            "output": 7956,
+            "cacheRead": 39232,
+            "cacheWrite": 0,
+            "effectiveTokens": 22081
+          },
+          "answer": {
+            "raw": "All tests pass. Here's what was changed and why:\n\n### Changes to `isJsonCompatible` in `src/event-ledger.js`\n\n**Two changes, two findings:**\n\n1. **Plain-object prototype guard** (Finding 1): Added `Object.getPrototypeOf(val)` check in the object branch. Only objects with `Object.prototype` or `null` prototype (i.e., plain objects) are accepted. This rejects `Date`, `Map`, `Set`, `RegExp`, class instances, etc. — all of which `stableStringify` would silently collapse to `{}`, breaking the \"differing payloads must conflict\" contract.\n\n2. **Stack-based cycle detection** (Finding 2): Replaced the cumulative `WeakSet seen` with a `Set stack` that uses add-on-enter / delete-on-exit. A shared reference like `{a: child, b: child}` no longer triggers a false-positive cycle rejection, because `child` has been removed from the stack by the time `b` references it. Actual cycles (e.g., `a.self = a`) are still correctly rejected because the ancestor is still on the stack when the back-edge is encountered.\n\n**No tests were added, modified, or weakened.**",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.sequential.architect-remediation.json",
+          "error": ""
+        },
+        {
+          "stage": "verify",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 131999,
+          "usage": {
+            "input": 13423,
+            "output": 3646,
+            "cacheRead": 7680,
+            "cacheWrite": 0,
+            "effectiveTokens": 17069
+          },
+          "answer": {
+            "raw": "{\"passed\":false,\"commands\":[\"npm test\",\"node --input-type=module <<'NODE' … contract edge-case probes … NODE\"],\"risks\":[\"JSON-compatible cross-realm objects and class instances are rejected, improperly narrowing the specification.\",\"Accessor payloads are read repeatedly and can pass validation but store non-JSON-compatible values, violating snapshot guarantees.\",\"Boolean and arbitrary coercible objects are accepted as receivedAt date values.\"]}",
+            "parsed": {
+              "passed": false,
+              "commands": [
+                "npm test",
+                "node --input-type=module <<'NODE' … contract edge-case probes … NODE"
+              ],
+              "risks": [
+                "JSON-compatible cross-realm objects and class instances are rejected, improperly narrowing the specification.",
+                "Accessor payloads are read repeatedly and can pass validation but store non-JSON-compatible values, violating snapshot guarantees.",
+                "Boolean and arbitrary coercible objects are accepted as receivedAt date values."
+              ]
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.sequential.verify.json",
+          "error": ""
+        }
+      ]
+    },
+    {
+      "variant": "role_isolated_council",
+      "fixtureId": "event-ledger",
+      "workspace": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/event-ledger/council",
+      "wallMs": 620542,
+      "agentElapsedMs": 746697,
+      "parallelismSavingsMs": 126155,
+      "usage": {
+        "input": 78861,
+        "output": 36226,
+        "cacheRead": 168896,
+        "cacheWrite": 0,
+        "effectiveTokens": 115087
+      },
+      "accuracy": {
+        "tests": 7,
+        "passed": 6,
+        "failed": 1,
+        "rate": 0.8571428571428571,
+        "status": 1,
+        "output": "TAP version 13\n# Subtest: stores a normalized event and reports a new record\nok 1 - stores a normalized event and reports a new record\n  ---\n  duration_ms: 1.712958\n  type: 'test'\n  ...\n# Subtest: scopes identity by tenant\nok 2 - scopes identity by tenant\n  ---\n  duration_ms: 1.575042\n  type: 'test'\n  ...\n# Subtest: treats reordered JSON object keys as an idempotent replay\nok 3 - treats reordered JSON object keys as an idempotent replay\n  ---\n  duration_ms: 0.126334\n  type: 'test'\n  ...\n# Subtest: rejects a conflicting replay without mutating state\nok 4 - rejects a conflicting replay without mutating state\n  ---\n  duration_ms: 0.303166\n  type: 'test'\n  ...\n# Subtest: stores an immutable snapshot of nested payload data\nok 5 - stores an immutable snapshot of nested payload data\n  ---\n  duration_ms: 0.825583\n  type: 'test'\n  ...\n# Subtest: validates state and required identifiers without side effects\nok 6 - validates state and required identifiers without side effects\n  ---\n  duration_ms: 0.127209\n  type: 'test'\n  ...\n# Subtest: rejects invalid dates and non-JSON payloads without side effects\nnot ok 7 - rejects invalid dates and non-JSON payloads without side effects\n  ---\n  duration_ms: 2.630042\n  type: 'test'\n  location: '/private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/event-ledger/council/.viberig-hidden.test.mjs:88:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    The validation function is expected to return \"true\". Received false\n    \n    Caught error:\n    \n    RangeError: Maximum call stack size exceeded\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  stack: |-\n    TestContext.<anonymous> (file:///private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/event-ledger/council/.viberig-hidden.test.mjs:96:10)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1062:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:752:18)\n    Test.postRun (node:internal/test_runner/test:1191:19)\n    Test.run (node:internal/test_runner/test:1119:12)\n    async Test.processPendingSubtests (node:internal/test_runner/test:752:7)\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 6\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 92.870583\n"
+      },
+      "visibleTests": {
+        "passed": true,
+        "status": 0,
+        "output": ""
+      },
+      "verifierPassed": false,
+      "verifierRisks": [
+        "Circular payloads are not JSON-compatible but throw RangeError instead of EventValidationError with code EVENT_VALIDATION_ERROR. State remains unchanged, but the public error contract is violated."
+      ],
+      "technicalPass": false,
+      "sourceHash": "2426da8a6c2ba6ae17d080a924c9aba1753e6547eabb5afde4714085ea4241f5",
+      "runs": [
+        {
+          "stage": "implement",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 31863,
+          "usage": {
+            "input": 4323,
+            "output": 2202,
+            "cacheRead": 31168,
+            "cacheWrite": 0,
+            "effectiveTokens": 6525
+          },
+          "answer": {
+            "raw": "The implementation is complete. Here's a summary of what was fixed from the original code:\n\n| Requirement | Fix |\n|---|---|\n| **Tenant-scoped identity** | Composite key `${tenantId}\\0${eventId}` instead of just `eventId` |\n| **Validation** | Validates state is `Map`, tenantId/eventId are non-blank strings, payload is JSON-compatible, receivedAt is a valid date — all throw `EventValidationError` with `EVENT_VALIDATION_ERROR` |\n| **Immutability** | `deepClone()` on payload before storing; mutations to input won't affect stored record |\n| **Idempotent replay** | `stableStringify()` sorts keys recursively, so `{b:1,a:2}` equals `{a:2,b:1}` — returns original record with `duplicate: true` |\n| **Conflict detection** | Same identity + different payload → throws `EventConflictError` with `EVENT_ID_CONFLICT`; state unchanged |\n| **ISO normalization** | `record.receivedAt` stored as `new Date(receivedAt).toISOString()` |",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.common.implement.json",
+          "error": ""
+        },
+        {
+          "stage": "test-author",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 56714,
+          "usage": {
+            "input": 9850,
+            "output": 4512,
+            "cacheRead": 85760,
+            "cacheWrite": 0,
+            "effectiveTokens": 14362
+          },
+          "answer": {
+            "raw": "All done — **10 tests pass, 0 fail**.\n\n### Test file: `test/event-ledger.test.js`\n\n| # | Test | Risk covered |\n|---|------|-------------|\n| 1 | Stores new event → `duplicate: false`, correct fields & ISO `receivedAt` | Core happy path |\n| 2 | Same identity + equivalent payload → `duplicate: true`, same record ref | Idempotency |\n| 3 | Payload key order `{a:1,b:2}` vs `{b:2,a:1}` treated as equivalent | Stable comparison |\n| 4 | Different payload for same identity → `EventConflictError` / `EVENT_ID_CONFLICT` | Conflict detection |\n| 5 | State unchanged (size=1) after a failed conflict attempt | No partial writes |\n| 6 | Same `eventId` in tenants A & B → both stored | Tenant isolation |\n| 7 | Input mutation after store doesn't affect stored record | Immutability of snapshot |\n| 8 | `receivedAt: new Date(ts)` → normalized ISO string | Date normalization |\n| 9 | Non-Map state → `EventValidationError` / `EVENT_VALIDATION_ERROR` | State validation |\n| 10 | Blank `tenantId`, blank `eventId`, invalid `receivedAt` → validation error | Input validation |\n\nNo `src/` changes, no added dependencies, no internal storage assertions — only public API behavior tested.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.common.test-author.json",
+          "error": ""
+        },
+        {
+          "stage": "reviewer",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 60363,
+          "usage": {
+            "input": 5919,
+            "output": 1550,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 7469
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Composite-key encoding can merge distinct tenant/event identities.\",\"evidence\":\"src/event-ledger.js builds `${tenantId}\\\\0${eventId}`. Allowed IDs containing NUL collide, e.g. (`a\\\\0b`,`c`) and (`a`,`b\\\\0c`).\",\"contract\":\"Identity is exactly the pair (tenantId, eventId); all non-blank strings are allowed.\"},{\"finding\":\"Payload validation accepts non-JSON values.\",\"evidence\":\"isJsonCompatible only checks that JSON.stringify does not throw, so undefined, functions, symbols, NaN, Infinity, and objects containing them pass and are stored inconsistently.\",\"contract\":\"Invalid input must throw EventValidationError; payload must be JSON-compatible.\"},{\"finding\":\"Stored records are externally mutable.\",\"evidence\":\"src/event-ledger.js returns and stores the same unfrozen record and nested payload. Mutating res.record.payload changes state and subsequent duplicate/conflict behavior.\",\"contract\":\"The first accepted event must be stored as an immutable snapshot.\"},{\"finding\":\"Valid JSON objects with an own __proto__ key are cloned incorrectly.\",\"evidence\":\"deepClone assigns clone['__proto__'], changing the clone's prototype instead of preserving the own property; replaying the same JSON payload can then conflict.\",\"contract\":\"JSON-compatible payloads must be snapshotted and JSON-equivalent replays must be idempotent.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Composite-key encoding can merge distinct tenant/event identities.",
+                  "evidence": "src/event-ledger.js builds `${tenantId}\\0${eventId}`. Allowed IDs containing NUL collide, e.g. (`a\\0b`,`c`) and (`a`,`b\\0c`).",
+                  "contract": "Identity is exactly the pair (tenantId, eventId); all non-blank strings are allowed."
+                },
+                {
+                  "finding": "Payload validation accepts non-JSON values.",
+                  "evidence": "isJsonCompatible only checks that JSON.stringify does not throw, so undefined, functions, symbols, NaN, Infinity, and objects containing them pass and are stored inconsistently.",
+                  "contract": "Invalid input must throw EventValidationError; payload must be JSON-compatible."
+                },
+                {
+                  "finding": "Stored records are externally mutable.",
+                  "evidence": "src/event-ledger.js returns and stores the same unfrozen record and nested payload. Mutating res.record.payload changes state and subsequent duplicate/conflict behavior.",
+                  "contract": "The first accepted event must be stored as an immutable snapshot."
+                },
+                {
+                  "finding": "Valid JSON objects with an own __proto__ key are cloned incorrectly.",
+                  "evidence": "deepClone assigns clone['__proto__'], changing the clone's prototype instead of preserving the own property; replaying the same JSON payload can then conflict.",
+                  "contract": "JSON-compatible payloads must be snapshotted and JSON-equivalent replays must be idempotent."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.council.reviewer.json",
+          "error": ""
+        },
+        {
+          "stage": "security",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 79916,
+          "usage": {
+            "input": 6140,
+            "output": 1993,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 8133
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Composite-key encoding allows cross-tenant identity collisions.\",\"evidence\":\"`${tenantId}\\\\0${eventId}` maps (`a\\\\0b`,`c`) and (`a`,`b\\\\0c`) to the same key, although NUL is allowed in non-blank strings.\",\"contract\":\"Identity must be the exact `(tenantId,eventId)` pair and tenant-isolated.\"},{\"finding\":\"Stored records are externally mutable.\",\"evidence\":\"The mutable object inserted into `state` is also returned; callers can modify `record.payload`, changing ledger state and later conflict results.\",\"contract\":\"The first accepted event must be stored as an immutable snapshot.\"},{\"finding\":\"Payload validation fails open for non-JSON values.\",\"evidence\":\"`JSON.stringify(undefined)`, functions, and symbols does not throw, so `isJsonCompatible` accepts them. `deepClone` also mishandles JSON-stringifiable exotic objects and `__proto__` keys.\",\"contract\":\"Invalid/non-JSON-compatible payloads must throw `EventValidationError` without storage.\"},{\"finding\":\"Validation is TOCTOU-prone and can leak wrong errors.\",\"evidence\":\"Fields/getters are read repeatedly during validation, canonicalization, cloning, and date normalization. Accessors can return different values; `new Date(Symbol())` throws raw `TypeError`.\",\"contract\":\"Invalid input must consistently throw `EventValidationError`, and accepted identity/payload must match the validated snapshot.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Composite-key encoding allows cross-tenant identity collisions.",
+                  "evidence": "`${tenantId}\\0${eventId}` maps (`a\\0b`,`c`) and (`a`,`b\\0c`) to the same key, although NUL is allowed in non-blank strings.",
+                  "contract": "Identity must be the exact `(tenantId,eventId)` pair and tenant-isolated."
+                },
+                {
+                  "finding": "Stored records are externally mutable.",
+                  "evidence": "The mutable object inserted into `state` is also returned; callers can modify `record.payload`, changing ledger state and later conflict results.",
+                  "contract": "The first accepted event must be stored as an immutable snapshot."
+                },
+                {
+                  "finding": "Payload validation fails open for non-JSON values.",
+                  "evidence": "`JSON.stringify(undefined)`, functions, and symbols does not throw, so `isJsonCompatible` accepts them. `deepClone` also mishandles JSON-stringifiable exotic objects and `__proto__` keys.",
+                  "contract": "Invalid/non-JSON-compatible payloads must throw `EventValidationError` without storage."
+                },
+                {
+                  "finding": "Validation is TOCTOU-prone and can leak wrong errors.",
+                  "evidence": "Fields/getters are read repeatedly during validation, canonicalization, cloning, and date normalization. Accessors can return different values; `new Date(Symbol())` throws raw `TypeError`.",
+                  "contract": "Invalid input must consistently throw `EventValidationError`, and accepted identity/payload must match the validated snapshot."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.council.security.json",
+          "error": ""
+        },
+        {
+          "stage": "architect",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 65800,
+          "usage": {
+            "input": 6189,
+            "output": 1927,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 8116
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Composite-key encoding can merge distinct tenant/event identities.\",\"evidence\":\"src/event-ledger.js builds `${tenantId}\\\\0${eventId}`. Pairs (`a\\\\0b`,`c`) and (`a`,`b\\\\0c`) produce the same key.\",\"contract\":\"Identity is the exact pair `(tenantId, eventId)`; non-blank strings containing NUL are allowed.\"},{\"finding\":\"Payload validation accepts non-JSON values.\",\"evidence\":\"isJsonCompatible only checks whether JSON.stringify throws, so undefined, functions, symbols, NaN, Infinity, and objects containing omitted values are accepted.\",\"contract\":\"Non-JSON-compatible payloads must throw EventValidationError without changing state.\"},{\"finding\":\"Accepted payloads are canonicalized and cloned inconsistently.\",\"evidence\":\"Date and toJSON-bearing values pass isJsonCompatible, but stableStringify treats them as ordinary objects and deepClone changes them; a Date payload becomes `{}` and compares equal to `{}`.\",\"contract\":\"The stored value must be a snapshot of the accepted payload, and idempotency requires JSON-equivalent—not implementation-equivalent—payloads.\"},{\"finding\":\"Some invalid receivedAt values escape as native errors.\",\"evidence\":\"isValidDate calls `new Date(value)` outside a try/catch; Symbol or BigInt values throw TypeError.\",\"contract\":\"All invalid input must throw EventValidationError with code EVENT_VALIDATION_ERROR.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Composite-key encoding can merge distinct tenant/event identities.",
+                  "evidence": "src/event-ledger.js builds `${tenantId}\\0${eventId}`. Pairs (`a\\0b`,`c`) and (`a`,`b\\0c`) produce the same key.",
+                  "contract": "Identity is the exact pair `(tenantId, eventId)`; non-blank strings containing NUL are allowed."
+                },
+                {
+                  "finding": "Payload validation accepts non-JSON values.",
+                  "evidence": "isJsonCompatible only checks whether JSON.stringify throws, so undefined, functions, symbols, NaN, Infinity, and objects containing omitted values are accepted.",
+                  "contract": "Non-JSON-compatible payloads must throw EventValidationError without changing state."
+                },
+                {
+                  "finding": "Accepted payloads are canonicalized and cloned inconsistently.",
+                  "evidence": "Date and toJSON-bearing values pass isJsonCompatible, but stableStringify treats them as ordinary objects and deepClone changes them; a Date payload becomes `{}` and compares equal to `{}`.",
+                  "contract": "The stored value must be a snapshot of the accepted payload, and idempotency requires JSON-equivalent—not implementation-equivalent—payloads."
+                },
+                {
+                  "finding": "Some invalid receivedAt values escape as native errors.",
+                  "evidence": "isValidDate calls `new Date(value)` outside a try/catch; Symbol or BigInt values throw TypeError.",
+                  "contract": "All invalid input must throw EventValidationError with code EVENT_VALIDATION_ERROR."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.council.architect.json",
+          "error": ""
+        },
+        {
+          "stage": "aggregate",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 144553,
+          "usage": {
+            "input": 10081,
+            "output": 4474,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 14555
+          },
+          "answer": {
+            "raw": "{\"accepted\":[{\"severity\":\"blocking\",\"finding\":\"Composite-key encoding merges distinct tenant/event identities.\",\"evidence\":\"`src/event-ledger.js` uses `${event.tenantId}\\\\0${event.eventId}`. Valid pairs such as (`a\\\\0b`,`c`) and (`a`,`b\\\\0c`) produce the same Map key, violating exact pair identity and tenant isolation.\"},{\"severity\":\"blocking\",\"finding\":\"Payload handling neither enforces JSON-compatible values nor consistently follows JSON semantics.\",\"evidence\":\"`isJsonCompatible` accepts values whenever `JSON.stringify` does not throw, admitting `undefined`, functions, symbols, `NaN`, `Infinity`, and nested omitted values. It also accepts Date/toJSON-bearing values while `stableStringify` and `deepClone` treat them as ordinary objects; for example, a Date is stored and compared as `{}`, potentially colliding with an actual `{}` payload.\"},{\"severity\":\"blocking\",\"finding\":\"Stored records are externally mutable rather than immutable snapshots.\",\"evidence\":\"The unfrozen `record` and nested cloned payload are both stored in `state` and returned. Mutating `res.record.payload` therefore mutates ledger state and changes later duplicate/conflict behavior.\"},{\"severity\":\"blocking\",\"finding\":\"Cloning corrupts valid JSON objects containing an own `__proto__` property.\",\"evidence\":\"`deepClone` assigns properties into `{}` with `clone[key] = ...`. For an own `__proto__` key, this invokes the prototype setter instead of creating the own property, so the stored snapshot differs and an equivalent replay can conflict.\"},{\"severity\":\"blocking\",\"finding\":\"Validation can leak native errors and can use values different from those validated.\",\"evidence\":\"`isValidDate` calls `new Date(value)` without catching conversion errors, so Symbol or BigInt values throw `TypeError` rather than `EventValidationError`. Event fields are also read repeatedly during validation, key creation, canonicalization, cloning, and normalization, allowing accessors to change or throw between validation and storage.\"}],\"rejected\":[],\"blocking\":[\"Composite-key encoding is collision-prone.\",\"Payload validation and JSON canonicalization are incorrect.\",\"Stored records are mutable through returned references.\",\"Valid `__proto__` payload properties are corrupted.\",\"Validation can leak native errors or store values different from those validated.\"],\"residualRisks\":[]}",
+            "parsed": {
+              "accepted": [
+                {
+                  "severity": "blocking",
+                  "finding": "Composite-key encoding merges distinct tenant/event identities.",
+                  "evidence": "`src/event-ledger.js` uses `${event.tenantId}\\0${event.eventId}`. Valid pairs such as (`a\\0b`,`c`) and (`a`,`b\\0c`) produce the same Map key, violating exact pair identity and tenant isolation."
+                },
+                {
+                  "severity": "blocking",
+                  "finding": "Payload handling neither enforces JSON-compatible values nor consistently follows JSON semantics.",
+                  "evidence": "`isJsonCompatible` accepts values whenever `JSON.stringify` does not throw, admitting `undefined`, functions, symbols, `NaN`, `Infinity`, and nested omitted values. It also accepts Date/toJSON-bearing values while `stableStringify` and `deepClone` treat them as ordinary objects; for example, a Date is stored and compared as `{}`, potentially colliding with an actual `{}` payload."
+                },
+                {
+                  "severity": "blocking",
+                  "finding": "Stored records are externally mutable rather than immutable snapshots.",
+                  "evidence": "The unfrozen `record` and nested cloned payload are both stored in `state` and returned. Mutating `res.record.payload` therefore mutates ledger state and changes later duplicate/conflict behavior."
+                },
+                {
+                  "severity": "blocking",
+                  "finding": "Cloning corrupts valid JSON objects containing an own `__proto__` property.",
+                  "evidence": "`deepClone` assigns properties into `{}` with `clone[key] = ...`. For an own `__proto__` key, this invokes the prototype setter instead of creating the own property, so the stored snapshot differs and an equivalent replay can conflict."
+                },
+                {
+                  "severity": "blocking",
+                  "finding": "Validation can leak native errors and can use values different from those validated.",
+                  "evidence": "`isValidDate` calls `new Date(value)` without catching conversion errors, so Symbol or BigInt values throw `TypeError` rather than `EventValidationError`. Event fields are also read repeatedly during validation, key creation, canonicalization, cloning, and normalization, allowing accessors to change or throw between validation and storage."
+                }
+              ],
+              "rejected": [],
+              "blocking": [
+                "Composite-key encoding is collision-prone.",
+                "Payload validation and JSON canonicalization are incorrect.",
+                "Stored records are mutable through returned references.",
+                "Valid `__proto__` payload properties are corrupted.",
+                "Validation can leak native errors or store values different from those validated."
+              ],
+              "residualRisks": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.council.aggregate.json",
+          "error": ""
+        },
+        {
+          "stage": "remediation",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 221542,
+          "usage": {
+            "input": 21285,
+            "output": 17135,
+            "cacheRead": 46336,
+            "cacheWrite": 0,
+            "effectiveTokens": 38420
+          },
+          "answer": {
+            "raw": "All 10 tests pass. Here's a summary of the fixes applied for each blocking finding:\n\n### 1. Composite-key encoding merges distinct tenant/event identities\n**Fix:** Replaced `${event.tenantId}\\0${event.eventId}` with `JSON.stringify([tenantId, eventId])`. JSON array encoding produces `[\"a\\u0000b\",\"c\"]` vs `[\"a\",\"b\\u0000c\"]`, eliminating the collision.\n\n### 2. Payload validation and JSON canonicalization are incorrect\n**Fix:** Rewrote `isJsonCompatible` to perform recursive type-checking instead of relying on `JSON.stringify` not throwing. Now rejects: `undefined`, functions, symbols, `NaN`, `Infinity`, `Date` objects, `RegExp`, `Map`, `Set`, and any non-plain-object prototype chain. Only accepts `null`, booleans, finite numbers, strings, arrays, and plain objects (`Object.prototype` or `null` proto).\n\n### 3. Stored records are mutable through returned references\n**Fix:** Added `deepFreeze()` which recursively freezes the record and its nested payload after construction. The record returned and the record stored in state are now truly immutable snapshots — any external mutation attempt throws in strict mode (ES modules are strict by default).\n\n### 4. Cloning corrupts valid JSON objects containing `__proto__`\n**Fix:** Replaced `clone[key] = deepClone(obj[key])` in `deepClone` with `Object.defineProperty(clone, key, { value: ..., writable: true, enumerable: true, configurable: true })`. This creates an actual own property instead of invoking the prototype setter, preserving `__proto__` as a data property.\n\n### 5. Validation can leak native errors or use values different from those validated\n**Fixes:**\n- Wrapped `new Date(value)` in `isValidDate` with `try/catch` — `Symbol`/`BigInt` now return `false` instead of throwing `TypeError`.\n- Snapshot event fields via destructuring (`const { tenantId, eventId, payload, receivedAt } = event`) once at the top of `recordEvent`. All subsequent code uses these captured values, preventing any getter-based inconsistency between validation and storage.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.council.remediation.json",
+          "error": ""
+        },
+        {
+          "stage": "verify",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 85946,
+          "usage": {
+            "input": 15074,
+            "output": 2433,
+            "cacheRead": 5632,
+            "cacheWrite": 0,
+            "effectiveTokens": 17507
+          },
+          "answer": {
+            "raw": "{\"passed\":false,\"commands\":[\"npm test\",\"node --input-type=module <circular-payload contract probes>\"],\"risks\":[\"Circular payloads are not JSON-compatible but throw RangeError instead of EventValidationError with code EVENT_VALIDATION_ERROR. State remains unchanged, but the public error contract is violated.\"]}",
+            "parsed": {
+              "passed": false,
+              "commands": [
+                "npm test",
+                "node --input-type=module <circular-payload contract probes>"
+              ],
+              "risks": [
+                "Circular payloads are not JSON-compatible but throw RangeError instead of EventValidationError with code EVENT_VALIDATION_ERROR. State remains unchanged, but the public error contract is violated."
+              ]
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/event-ledger.council.verify.json",
+          "error": ""
+        }
+      ]
+    },
+    {
+      "variant": "mimo_dev_only",
+      "fixtureId": "oauth-config",
+      "workspace": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/base",
+      "wallMs": 35127,
+      "agentElapsedMs": 35127,
+      "parallelismSavingsMs": 0,
+      "usage": {
+        "input": 4308,
+        "output": 2227,
+        "cacheRead": 36672,
+        "cacheWrite": 0,
+        "effectiveTokens": 6535
+      },
+      "accuracy": {
+        "tests": 7,
+        "passed": 6,
+        "failed": 1,
+        "rate": 0.8571428571428571,
+        "status": 1,
+        "output": "TAP version 13\n# Subtest: encrypts the exact secret and commits config plus audit atomically\nok 1 - encrypts the exact secret and commits config plus audit atomically\n  ---\n  duration_ms: 1.781875\n  type: 'test'\n  ...\n# Subtest: persists an allowlisted encrypted configuration shape\nok 2 - persists an allowlisted encrypted configuration shape\n  ---\n  duration_ms: 0.120583\n  type: 'test'\n  ...\n# Subtest: writes a secret-free allowlisted audit event\nok 3 - writes a secret-free allowlisted audit event\n  ---\n  duration_ms: 0.175084\n  type: 'test'\n  ...\n# Subtest: returns only a masked public projection\nok 4 - returns only a masked public projection\n  ---\n  duration_ms: 0.125833\n  type: 'test'\n  ...\n# Subtest: rejects invalid input before encryption or database work\nnot ok 5 - rejects invalid input before encryption or database work\n  ---\n  duration_ms: 0.493417\n  type: 'test'\n  location: '/private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/base/.viberig-hidden.test.mjs:131:1'\n  failureType: 'testCodeFailure'\n  error: 'Missing expected rejection.'\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  stack: |-\n    async TestContext.<anonymous> (file:///private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/base/.viberig-hidden.test.mjs:139:5)\n    async Test.run (node:internal/test_runner/test:1069:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:752:7)\n  ...\n# Subtest: rolls back when the audit append fails\nok 6 - rolls back when the audit append fails\n  ---\n  duration_ms: 0.121791\n  type: 'test'\n  ...\n# Subtest: does not enter a transaction when encryption fails\nok 7 - does not enter a transaction when encryption fails\n  ---\n  duration_ms: 0.079666\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 6\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 48.207583\n"
+      },
+      "visibleTests": {
+        "passed": true,
+        "status": 0,
+        "output": ""
+      },
+      "verifierPassed": null,
+      "verifierRisks": [],
+      "technicalPass": false,
+      "sourceHash": "5c218e6ffbfbbb78a6cd3047adb9180e01d810573bedb343766b3ebef4555889",
+      "runs": [
+        {
+          "stage": "implement",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 35127,
+          "usage": {
+            "input": 4308,
+            "output": 2227,
+            "cacheRead": 36672,
+            "cacheWrite": 0,
+            "effectiveTokens": 6535
+          },
+          "answer": {
+            "raw": "All 15 checks pass. Here's a summary of the implementation:\n\n**Key behaviors in `saveOAuthConfig(deps, input)`:**\n\n1. **Input validation** — All four fields (`tenantId`, `clientId`, `clientSecret`, `actorId`) must be non-empty strings. Invalid input throws `OAuthConfigValidationError` with code `OAUTH_CONFIG_VALIDATION_ERROR` before any encryption or DB work.\n\n2. **Secret preservation** — `clientSecret` is passed to `deps.encrypt()` exactly as-is, without trimming or normalization.\n\n3. **Single transaction** — Both `config.upsert` and `audit.append` run inside one `deps.db.transaction(...)` call, so if either fails, neither is committed.\n\n4. **Audit hygiene** — The audit event contains only `action` (`oauth_client.updated`), `tenantId`, `clientId`, `actorId`, and `timestamp`. No secret, ciphertext, or keyVersion leaks.\n\n5. **Clean return** — Returns `{ tenantId, clientId, configured: true, secretMasked: \"••••\", updatedAt }` with no sensitive data.\n\n6. **No mutations** — The original `input` object is never modified.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.common.implement.json",
+          "error": ""
+        }
+      ]
+    },
+    {
+      "variant": "sequential_strong_gates",
+      "fixtureId": "oauth-config",
+      "workspace": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/sequential",
+      "wallMs": 364355,
+      "agentElapsedMs": 364333,
+      "parallelismSavingsMs": 0,
+      "usage": {
+        "input": 56782,
+        "output": 13262,
+        "cacheRead": 148352,
+        "cacheWrite": 0,
+        "effectiveTokens": 70044
+      },
+      "accuracy": {
+        "tests": 7,
+        "passed": 6,
+        "failed": 1,
+        "rate": 0.8571428571428571,
+        "status": 1,
+        "output": "TAP version 13\n# Subtest: encrypts the exact secret and commits config plus audit atomically\nok 1 - encrypts the exact secret and commits config plus audit atomically\n  ---\n  duration_ms: 1.809416\n  type: 'test'\n  ...\n# Subtest: persists an allowlisted encrypted configuration shape\nok 2 - persists an allowlisted encrypted configuration shape\n  ---\n  duration_ms: 0.286667\n  type: 'test'\n  ...\n# Subtest: writes a secret-free allowlisted audit event\nok 3 - writes a secret-free allowlisted audit event\n  ---\n  duration_ms: 0.222625\n  type: 'test'\n  ...\n# Subtest: returns only a masked public projection\nok 4 - returns only a masked public projection\n  ---\n  duration_ms: 0.140875\n  type: 'test'\n  ...\n# Subtest: rejects invalid input before encryption or database work\nnot ok 5 - rejects invalid input before encryption or database work\n  ---\n  duration_ms: 0.552625\n  type: 'test'\n  location: '/private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/sequential/.viberig-hidden.test.mjs:131:1'\n  failureType: 'testCodeFailure'\n  error: 'Missing expected rejection.'\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  stack: |-\n    async TestContext.<anonymous> (file:///private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/sequential/.viberig-hidden.test.mjs:139:5)\n    async Test.run (node:internal/test_runner/test:1069:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:752:7)\n  ...\n# Subtest: rolls back when the audit append fails\nok 6 - rolls back when the audit append fails\n  ---\n  duration_ms: 0.121542\n  type: 'test'\n  ...\n# Subtest: does not enter a transaction when encryption fails\nok 7 - does not enter a transaction when encryption fails\n  ---\n  duration_ms: 0.078\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 6\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 50.775416\n"
+      },
+      "visibleTests": {
+        "passed": true,
+        "status": 0,
+        "output": ""
+      },
+      "verifierPassed": true,
+      "verifierRisks": [
+        "Transaction rollback atomicity depends on deps.db.transaction honoring its contract."
+      ],
+      "technicalPass": false,
+      "sourceHash": "eff2a6498abe08ad1ccb02566ecdb6527fa3167a6c708cb44e474a1dc497ba28",
+      "runs": [
+        {
+          "stage": "implement",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 35127,
+          "usage": {
+            "input": 4308,
+            "output": 2227,
+            "cacheRead": 36672,
+            "cacheWrite": 0,
+            "effectiveTokens": 6535
+          },
+          "answer": {
+            "raw": "All 15 checks pass. Here's a summary of the implementation:\n\n**Key behaviors in `saveOAuthConfig(deps, input)`:**\n\n1. **Input validation** — All four fields (`tenantId`, `clientId`, `clientSecret`, `actorId`) must be non-empty strings. Invalid input throws `OAuthConfigValidationError` with code `OAUTH_CONFIG_VALIDATION_ERROR` before any encryption or DB work.\n\n2. **Secret preservation** — `clientSecret` is passed to `deps.encrypt()` exactly as-is, without trimming or normalization.\n\n3. **Single transaction** — Both `config.upsert` and `audit.append` run inside one `deps.db.transaction(...)` call, so if either fails, neither is committed.\n\n4. **Audit hygiene** — The audit event contains only `action` (`oauth_client.updated`), `tenantId`, `clientId`, `actorId`, and `timestamp`. No secret, ciphertext, or keyVersion leaks.\n\n5. **Clean return** — Returns `{ tenantId, clientId, configured: true, secretMasked: \"••••\", updatedAt }` with no sensitive data.\n\n6. **No mutations** — The original `input` object is never modified.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.common.implement.json",
+          "error": ""
+        },
+        {
+          "stage": "test-author",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 33355,
+          "usage": {
+            "input": 3886,
+            "output": 2230,
+            "cacheRead": 20096,
+            "cacheWrite": 0,
+            "effectiveTokens": 6116
+          },
+          "answer": {
+            "raw": "All 10 tests pass. Here's a summary of the risk-driven cases in `test/saveOAuthConfig.test.js`:\n\n| # | Risk | Test |\n|---|------|------|\n| 1 | Missing required field | Rejects when `tenantId` is missing |\n| 2 | Empty string bypass | Rejects when `clientId` is `\"\"` |\n| 3 | Missing required field | Rejects when `clientSecret` is missing |\n| 4 | Missing required field | Rejects when `actorId` is undefined |\n| 5 | Wrong type | Rejects non-string `tenantId` |\n| 6 | Secret/ciphertext leak | Output has no `clientSecret`, `ciphertext`, or `keyVersion` |\n| 7 | Normalization | `clientId` is trimmed in output |\n| 8 | Side-effect on caller | `input` object is not mutated |\n| 9 | Secret normalization | `encrypt` receives the exact `clientSecret` (spaces preserved) |\n| 10 | Audit leak | Audit entry has `action`, `tenantId`, `clientId`, `actorId`, `timestamp` — no secret or ciphertext |",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.common.test-author.json",
+          "error": ""
+        },
+        {
+          "stage": "reviewer",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 28253,
+          "usage": {
+            "input": 5932,
+            "output": 643,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 6575
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Null or undefined input rejects with TypeError instead of OAuthConfigValidationError.\",\"evidence\":\"src/oauth-config.js accesses input.tenantId directly before verifying that input is an object.\",\"contract\":\"All invalid input must be rejected with OAuthConfigValidationError and code OAUTH_CONFIG_VALIDATION_ERROR before encryption or database work.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Null or undefined input rejects with TypeError instead of OAuthConfigValidationError.",
+                  "evidence": "src/oauth-config.js accesses input.tenantId directly before verifying that input is an object.",
+                  "contract": "All invalid input must be rejected with OAuthConfigValidationError and code OAUTH_CONFIG_VALIDATION_ERROR before encryption or database work."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.sequential.reviewer.json",
+          "error": ""
+        },
+        {
+          "stage": "reviewer-remediation",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 49836,
+          "usage": {
+            "input": 6946,
+            "output": 1609,
+            "cacheRead": 44544,
+            "cacheWrite": 0,
+            "effectiveTokens": 8555
+          },
+          "answer": {
+            "raw": "All fixed. Here's a summary:\n\n**Finding:** `null`/`undefined` input caused a `TypeError` when accessing `input.tenantId` before the validation check.\n\n**Fix:** Added a guard clause at the top of `saveOAuthConfig` that checks `typeof input !== 'object' || input === null` and throws `OAuthConfigValidationError` before any property access.\n\n**Result:** All 10 existing tests pass. Null, undefined, and non-object inputs now correctly reject with `OAuthConfigValidationError` / `OAUTH_CONFIG_VALIDATION_ERROR` before any encryption or database work, matching the public contract.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.sequential.reviewer-remediation.json",
+          "error": ""
+        },
+        {
+          "stage": "security",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 50693,
+          "usage": {
+            "input": 8135,
+            "output": 1180,
+            "cacheRead": 2560,
+            "cacheWrite": 0,
+            "effectiveTokens": 9315
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Validated input is re-read after asynchronous boundaries, enabling TOCTOU tenant/audit corruption.\",\"evidence\":\"src/oauth-config.js validates fields at lines 21-24, then re-reads input.clientSecret at 33, input.tenantId at 38/47/55, and input.actorId at 49. A caller or accessor can change values during encryption/upsert, producing unvalidated data or mismatched configuration and audit tenants.\",\"contract\":\"Invalid input must be rejected before encryption/database work, and persisted/audited tenant and actor values must correspond to the validated input.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Validated input is re-read after asynchronous boundaries, enabling TOCTOU tenant/audit corruption.",
+                  "evidence": "src/oauth-config.js validates fields at lines 21-24, then re-reads input.clientSecret at 33, input.tenantId at 38/47/55, and input.actorId at 49. A caller or accessor can change values during encryption/upsert, producing unvalidated data or mismatched configuration and audit tenants.",
+                  "contract": "Invalid input must be rejected before encryption/database work, and persisted/audited tenant and actor values must correspond to the validated input."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.sequential.security.json",
+          "error": ""
+        },
+        {
+          "stage": "security-remediation",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 32514,
+          "usage": {
+            "input": 5836,
+            "output": 1954,
+            "cacheRead": 44480,
+            "cacheWrite": 0,
+            "effectiveTokens": 7790
+          },
+          "answer": {
+            "raw": "**Fix applied.** Here's what changed and why:\n\n**The TOCTOU problem:** After validation at lines 21–24, the original code continued to read `input.tenantId`, `input.clientSecret`, and `input.actorId` from the `input` object reference during async operations (`deps.encrypt` and `deps.db.transaction`). Since `input` is an object passed by reference, a caller could mutate properties between the validation check and their actual use, causing:\n- Unvalidated data to be encrypted and persisted\n- Mismatched `tenantId` between the config upsert and the audit entry\n\n**The fix:** Immediately after validation, all four validated field values are snapshotted into `const` local variables (`validatedTenantId`, `validatedClientId`, `validatedClientSecret`, `validatedActorId`). All subsequent reads—from encryption, database upsert, audit append, and the return value—use these locals instead of re-reading from `input`. This guarantees the values used downstream are exactly the ones that passed validation.\n\n**No tests were modified.** All 10 tests pass, including the \"does not mutate input\" test, which confirms `input` itself is never written to.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.sequential.security-remediation.json",
+          "error": ""
+        },
+        {
+          "stage": "architect",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 33567,
+          "usage": {
+            "input": 5995,
+            "output": 672,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 6667
+          },
+          "answer": {
+            "raw": "{\"blocking\":[],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.sequential.architect.json",
+          "error": ""
+        },
+        {
+          "stage": "verify",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 100988,
+          "usage": {
+            "input": 15744,
+            "output": 2747,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 18491
+          },
+          "answer": {
+            "raw": "{\"passed\":true,\"commands\":[\"npm test — 10/10 passed\",\"Supplemental Node contract probes — passed\"],\"risks\":[\"Transaction rollback atomicity depends on deps.db.transaction honoring its contract.\"]}",
+            "parsed": {
+              "passed": true,
+              "commands": [
+                "npm test — 10/10 passed",
+                "Supplemental Node contract probes — passed"
+              ],
+              "risks": [
+                "Transaction rollback atomicity depends on deps.db.transaction honoring its contract."
+              ]
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.sequential.verify.json",
+          "error": ""
+        }
+      ]
+    },
+    {
+      "variant": "role_isolated_council",
+      "fixtureId": "oauth-config",
+      "workspace": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/council",
+      "wallMs": 340729,
+      "agentElapsedMs": 418258,
+      "parallelismSavingsMs": 77529,
+      "usage": {
+        "input": 63707,
+        "output": 14192,
+        "cacheRead": 109376,
+        "cacheWrite": 0,
+        "effectiveTokens": 77899
+      },
+      "accuracy": {
+        "tests": 7,
+        "passed": 6,
+        "failed": 1,
+        "rate": 0.8571428571428571,
+        "status": 1,
+        "output": "TAP version 13\n# Subtest: encrypts the exact secret and commits config plus audit atomically\nok 1 - encrypts the exact secret and commits config plus audit atomically\n  ---\n  duration_ms: 3.523625\n  type: 'test'\n  ...\n# Subtest: persists an allowlisted encrypted configuration shape\nok 2 - persists an allowlisted encrypted configuration shape\n  ---\n  duration_ms: 0.344709\n  type: 'test'\n  ...\n# Subtest: writes a secret-free allowlisted audit event\nok 3 - writes a secret-free allowlisted audit event\n  ---\n  duration_ms: 0.350584\n  type: 'test'\n  ...\n# Subtest: returns only a masked public projection\nok 4 - returns only a masked public projection\n  ---\n  duration_ms: 0.149333\n  type: 'test'\n  ...\n# Subtest: rejects invalid input before encryption or database work\nnot ok 5 - rejects invalid input before encryption or database work\n  ---\n  duration_ms: 0.564625\n  type: 'test'\n  location: '/private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/council/.viberig-hidden.test.mjs:131:1'\n  failureType: 'testCodeFailure'\n  error: 'Missing expected rejection.'\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  stack: |-\n    async TestContext.<anonymous> (file:///private/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/workspaces/oauth-config/council/.viberig-hidden.test.mjs:139:5)\n    async Test.run (node:internal/test_runner/test:1069:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:752:7)\n  ...\n# Subtest: rolls back when the audit append fails\nok 6 - rolls back when the audit append fails\n  ---\n  duration_ms: 0.115958\n  type: 'test'\n  ...\n# Subtest: does not enter a transaction when encryption fails\nok 7 - does not enter a transaction when encryption fails\n  ---\n  duration_ms: 0.080125\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 6\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 70.084167\n"
+      },
+      "visibleTests": {
+        "passed": true,
+        "status": 0,
+        "output": ""
+      },
+      "verifierPassed": false,
+      "verifierRisks": [
+        "src/oauth-config.js rejects callable inputs containing all required string fields because typeof input !== \"object\". The contract is structural and does not impose this restriction, so the change narrows the specification."
+      ],
+      "technicalPass": false,
+      "sourceHash": "63716a2aa1cf7ce54e65b0dae682fd1375d0aab6977b63c112493b284c24b8fd",
+      "runs": [
+        {
+          "stage": "implement",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 35127,
+          "usage": {
+            "input": 4308,
+            "output": 2227,
+            "cacheRead": 36672,
+            "cacheWrite": 0,
+            "effectiveTokens": 6535
+          },
+          "answer": {
+            "raw": "All 15 checks pass. Here's a summary of the implementation:\n\n**Key behaviors in `saveOAuthConfig(deps, input)`:**\n\n1. **Input validation** — All four fields (`tenantId`, `clientId`, `clientSecret`, `actorId`) must be non-empty strings. Invalid input throws `OAuthConfigValidationError` with code `OAUTH_CONFIG_VALIDATION_ERROR` before any encryption or DB work.\n\n2. **Secret preservation** — `clientSecret` is passed to `deps.encrypt()` exactly as-is, without trimming or normalization.\n\n3. **Single transaction** — Both `config.upsert` and `audit.append` run inside one `deps.db.transaction(...)` call, so if either fails, neither is committed.\n\n4. **Audit hygiene** — The audit event contains only `action` (`oauth_client.updated`), `tenantId`, `clientId`, `actorId`, and `timestamp`. No secret, ciphertext, or keyVersion leaks.\n\n5. **Clean return** — Returns `{ tenantId, clientId, configured: true, secretMasked: \"••••\", updatedAt }` with no sensitive data.\n\n6. **No mutations** — The original `input` object is never modified.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.common.implement.json",
+          "error": ""
+        },
+        {
+          "stage": "test-author",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 33355,
+          "usage": {
+            "input": 3886,
+            "output": 2230,
+            "cacheRead": 20096,
+            "cacheWrite": 0,
+            "effectiveTokens": 6116
+          },
+          "answer": {
+            "raw": "All 10 tests pass. Here's a summary of the risk-driven cases in `test/saveOAuthConfig.test.js`:\n\n| # | Risk | Test |\n|---|------|------|\n| 1 | Missing required field | Rejects when `tenantId` is missing |\n| 2 | Empty string bypass | Rejects when `clientId` is `\"\"` |\n| 3 | Missing required field | Rejects when `clientSecret` is missing |\n| 4 | Missing required field | Rejects when `actorId` is undefined |\n| 5 | Wrong type | Rejects non-string `tenantId` |\n| 6 | Secret/ciphertext leak | Output has no `clientSecret`, `ciphertext`, or `keyVersion` |\n| 7 | Normalization | `clientId` is trimmed in output |\n| 8 | Side-effect on caller | `input` object is not mutated |\n| 9 | Secret normalization | `encrypt` receives the exact `clientSecret` (spaces preserved) |\n| 10 | Audit leak | Audit entry has `action`, `tenantId`, `clientId`, `actorId`, `timestamp` — no secret or ciphertext |",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.common.test-author.json",
+          "error": ""
+        },
+        {
+          "stage": "reviewer",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 46755,
+          "usage": {
+            "input": 5902,
+            "output": 809,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 6711
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Null or undefined input throws TypeError instead of OAuthConfigValidationError.\",\"evidence\":\"saveOAuthConfig directly evaluates input.tenantId before guarding that input is non-null.\",\"contract\":\"Invalid input must be rejected with OAuthConfigValidationError and code OAUTH_CONFIG_VALIDATION_ERROR before encryption or database work.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Null or undefined input throws TypeError instead of OAuthConfigValidationError.",
+                  "evidence": "saveOAuthConfig directly evaluates input.tenantId before guarding that input is non-null.",
+                  "contract": "Invalid input must be rejected with OAuthConfigValidationError and code OAUTH_CONFIG_VALIDATION_ERROR before encryption or database work."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.council.reviewer.json",
+          "error": ""
+        },
+        {
+          "stage": "security",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 44830,
+          "usage": {
+            "input": 5926,
+            "output": 1101,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 7027
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Malformed top-level input is not rejected with OAuthConfigValidationError.\",\"evidence\":\"saveOAuthConfig directly reads input.tenantId; null or undefined input throws TypeError instead of code OAUTH_CONFIG_VALIDATION_ERROR.\",\"contract\":\"Reject invalid input with OAuthConfigValidationError before encryption or database work.\"},{\"finding\":\"Validated tenant and actor values are re-read from mutable input after async boundaries, enabling TOCTOU tenant/audit corruption.\",\"evidence\":\"tenantId and actorId are validated, then input.tenantId/input.actorId are accessed again after await deps.encrypt and during the transaction. Caller mutation or getters can make persisted, audited, and returned tenants differ or substitute an unvalidated actor.\",\"contract\":\"Validation and tenant-isolated persistence/auditing must operate on the validated input values; input must not be mutated.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Malformed top-level input is not rejected with OAuthConfigValidationError.",
+                  "evidence": "saveOAuthConfig directly reads input.tenantId; null or undefined input throws TypeError instead of code OAUTH_CONFIG_VALIDATION_ERROR.",
+                  "contract": "Reject invalid input with OAuthConfigValidationError before encryption or database work."
+                },
+                {
+                  "finding": "Validated tenant and actor values are re-read from mutable input after async boundaries, enabling TOCTOU tenant/audit corruption.",
+                  "evidence": "tenantId and actorId are validated, then input.tenantId/input.actorId are accessed again after await deps.encrypt and during the transaction. Caller mutation or getters can make persisted, audited, and returned tenants differ or substitute an unvalidated actor.",
+                  "contract": "Validation and tenant-isolated persistence/auditing must operate on the validated input values; input must not be mutated."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.council.security.json",
+          "error": ""
+        },
+        {
+          "stage": "architect",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 32704,
+          "usage": {
+            "input": 5604,
+            "output": 752,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 6356
+          },
+          "answer": {
+            "raw": "{\"blocking\":[{\"finding\":\"Null or undefined input bypasses the required validation error boundary.\",\"evidence\":\"saveOAuthConfig immediately dereferences input.tenantId, so saveOAuthConfig(deps, null) throws TypeError instead of OAuthConfigValidationError.\",\"contract\":\"Reject invalid input with OAuthConfigValidationError and code OAUTH_CONFIG_VALIDATION_ERROR before encryption or database work.\"}],\"nonBlocking\":[]}",
+            "parsed": {
+              "blocking": [
+                {
+                  "finding": "Null or undefined input bypasses the required validation error boundary.",
+                  "evidence": "saveOAuthConfig immediately dereferences input.tenantId, so saveOAuthConfig(deps, null) throws TypeError instead of OAuthConfigValidationError.",
+                  "contract": "Reject invalid input with OAuthConfigValidationError and code OAUTH_CONFIG_VALIDATION_ERROR before encryption or database work."
+                }
+              ],
+              "nonBlocking": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.council.architect.json",
+          "error": ""
+        },
+        {
+          "stage": "aggregate",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 61512,
+          "usage": {
+            "input": 7156,
+            "output": 1372,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "effectiveTokens": 8528
+          },
+          "answer": {
+            "raw": "{\"accepted\":[{\"severity\":\"blocking\",\"finding\":\"Null or undefined input throws TypeError instead of OAuthConfigValidationError.\",\"evidence\":\"In src/oauth-config.js, validation immediately evaluates input.tenantId without first checking input. This violates the required OAUTH_CONFIG_VALIDATION_ERROR boundary for invalid input.\"},{\"severity\":\"blocking\",\"finding\":\"Validated tenantId and actorId are re-read from mutable input after asynchronous work, allowing unvalidated values and tenant/audit inconsistencies.\",\"evidence\":\"After validation, src/oauth-config.js awaits deps.encrypt and then repeatedly reads input.tenantId and input.actorId during persistence, audit, and return. Caller mutation while encryption is pending can substitute values that were never validated; repeated reads or getters can also make configuration, audit, and return values disagree.\"}],\"rejected\":[],\"blocking\":[\"Null or undefined input is outside the required validation error boundary.\",\"Mutable input is re-read after validation, permitting tenant and audit corruption.\"],\"residualRisks\":[]}",
+            "parsed": {
+              "accepted": [
+                {
+                  "severity": "blocking",
+                  "finding": "Null or undefined input throws TypeError instead of OAuthConfigValidationError.",
+                  "evidence": "In src/oauth-config.js, validation immediately evaluates input.tenantId without first checking input. This violates the required OAUTH_CONFIG_VALIDATION_ERROR boundary for invalid input."
+                },
+                {
+                  "severity": "blocking",
+                  "finding": "Validated tenantId and actorId are re-read from mutable input after asynchronous work, allowing unvalidated values and tenant/audit inconsistencies.",
+                  "evidence": "After validation, src/oauth-config.js awaits deps.encrypt and then repeatedly reads input.tenantId and input.actorId during persistence, audit, and return. Caller mutation while encryption is pending can substitute values that were never validated; repeated reads or getters can also make configuration, audit, and return values disagree."
+                }
+              ],
+              "rejected": [],
+              "blocking": [
+                "Null or undefined input is outside the required validation error boundary.",
+                "Mutable input is re-read after validation, permitting tenant and audit corruption."
+              ],
+              "residualRisks": []
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.council.aggregate.json",
+          "error": ""
+        },
+        {
+          "stage": "remediation",
+          "model": "mimo-v2.5",
+          "status": "passed",
+          "elapsedMs": 30091,
+          "usage": {
+            "input": 5717,
+            "output": 2302,
+            "cacheRead": 27008,
+            "cacheWrite": 0,
+            "effectiveTokens": 8019
+          },
+          "answer": {
+            "raw": "Both findings are fixed. Here's a summary:\n\n### Fix 1 — Null/undefined input guard (line 23–25)\nAdded `if (!input || typeof input !== 'object')` before any property access. This ensures `null`, `undefined`, and non-object primitives all throw `OAuthConfigValidationError` with code `OAUTH_CONFIG_VALIDATION_ERROR` instead of a `TypeError`.\n\n### Fix 2 — Snapshot validated values (lines 34–37)\nImmediately after validation, all four validated fields (`tenantId`, `clientId`, `clientSecret`, `actorId`) are copied into local `const` variables. From that point on, only these locals are used — never `input.*` again. This eliminates the TOCTOU window where caller mutation during `await deps.encrypt(...)` could:\n- Substitute an unvalidated value into persistence, audit, or return\n- Cause the three consumers (upsert, audit, return) to disagree with each other\n\n### No findings conflict with REQUIREMENTS.md\nBoth fixes are fully consistent with the contract. No tests were skipped, weakened, or modified. All 10 tests pass.",
+            "parsed": null
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.council.remediation.json",
+          "error": ""
+        },
+        {
+          "stage": "verify",
+          "model": "gpt-5.6-sol",
+          "status": "passed",
+          "elapsedMs": 133884,
+          "usage": {
+            "input": 25208,
+            "output": 3399,
+            "cacheRead": 25600,
+            "cacheWrite": 0,
+            "effectiveTokens": 28607
+          },
+          "answer": {
+            "raw": "{\"passed\":false,\"commands\":[\"npm test\",\"node --input-type=module (independent contract probes)\",\"node --input-type=module (callable structural-input probe)\"],\"risks\":[\"src/oauth-config.js rejects callable inputs containing all required string fields because typeof input !== \\\"object\\\". The contract is structural and does not impose this restriction, so the change narrows the specification.\"]}",
+            "parsed": {
+              "passed": false,
+              "commands": [
+                "npm test",
+                "node --input-type=module (independent contract probes)",
+                "node --input-type=module (callable structural-input probe)"
+              ],
+              "risks": [
+                "src/oauth-config.js rejects callable inputs containing all required string fields because typeof input !== \"object\". The contract is structural and does not impose this restriction, so the change narrows the specification."
+              ]
+            }
+          },
+          "tracePath": "/var/folders/qf/q_40zkxx1713f1tyn6ksbmhh0000gn/T/viberig-pi-council-ab-2MrCVK/oauth-config.council.verify.json",
+          "error": ""
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "mimo_dev_only": {
+      "fixtures": 2,
+      "accuracy": {
+        "passed": 13,
+        "tests": 14,
+        "rate": 0.9285714285714286
+      },
+      "technicalPasses": 1,
+      "wallMs": 66990,
+      "agentElapsedMs": 66990,
+      "effectiveTokens": 13060,
+      "inputTokens": 8631,
+      "outputTokens": 4429
+    },
+    "sequential_strong_gates": {
+      "fixtures": 2,
+      "accuracy": {
+        "passed": 13,
+        "tests": 14,
+        "rate": 0.9285714285714286
+      },
+      "technicalPasses": 0,
+      "wallMs": 1132434,
+      "agentElapsedMs": 1132403,
+      "effectiveTokens": 193788,
+      "inputTokens": 140935,
+      "outputTokens": 52853
+    },
+    "role_isolated_council": {
+      "fixtures": 2,
+      "accuracy": {
+        "passed": 12,
+        "tests": 14,
+        "rate": 0.8571428571428571
+      },
+      "technicalPasses": 0,
+      "wallMs": 961271,
+      "agentElapsedMs": 1164955,
+      "effectiveTokens": 192986,
+      "inputTokens": 142568,
+      "outputTokens": 50418
+    }
+  }
+}
