@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-03T10:12:19.575Z",
+  "purpose": "Pre-PR A/B validation for the AI-native Harness V2 foundation",
+  "runner": "scripts/run-workflow-model-matrix.mjs",
+  "command": "node scripts/run-workflow-model-matrix.mjs --suite screen --model gpt-5.6-luna --fixtures ai-native-project-bootstrap,minimal-fullstack-split,local-real-environment-runbook --concurrency 3 --repeat 2",
+  "model": {
+    "id": "gpt-5.6-luna",
+    "effort": "low"
+  },
+  "suite": "screen",
+  "repeat": 2,
+  "fixtures": [
+    "ai-native-project-bootstrap",
+    "minimal-fullstack-split",
+    "local-real-environment-runbook"
+  ],
+  "baseline": {
+    "runs": 6,
+    "earned": 74,
+    "total": 90,
+    "rate": 0.8222222222222222,
+    "durationMs": 189997,
+    "usage": {
+      "input_tokens": 132339,
+      "cached_input_tokens": 16128,
+      "output_tokens": 4095,
+      "reasoning_output_tokens": 2203
+    }
+  },
+  "candidate": {
+    "runs": 6,
+    "earned": 90,
+    "total": 90,
+    "rate": 1,
+    "durationMs": 145952,
+    "usage": {
+      "input_tokens": 136918,
+      "cached_input_tokens": 19968,
+      "output_tokens": 3996,
+      "reasoning_output_tokens": 1964
+    }
+  },
+  "delta": {
+    "earned": 16,
+    "ratePercentagePoints": 17.77777777777778,
+    "durationMs": -44045
+  },
+  "result": "pass",
+  "notes": [
+    "All candidate checks passed in both repeats for all three fixtures.",
+    "The Codex parent process required normal access to its local state database; every evaluated child remained in a read-only sandbox.",
+    "The planning-only split fixture does not require continuous implementation execution; it measures verification-graph inheritance, minimal vertical slicing, and contract-locked concurrency."
+  ]
+}

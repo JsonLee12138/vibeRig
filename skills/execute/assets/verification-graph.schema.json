@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VibeRig Verification Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "workItemId", "nodes", "edges"],
+  "properties": {
+    "version": { "const": 1 },
+    "workItemId": { "type": "string", "minLength": 1 },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["outcome", "ac", "tc", "stage", "evidence"] },
+          "testType": { "enum": ["unit", "contract", "integration", "api_e2e", "ui_e2e", "visual", "security", "performance", "smoke", "owner_uat", "post_release"] },
+          "authoritativeStage": { "enum": ["issue_local", "pr_ci", "milestone", "owner_uat", "post_release"] },
+          "requiredFidelity": { "enum": ["mock", "fake", "stub", "ephemeral", "sandbox", "real", "real_browser"] },
+          "command": { "type": "string" },
+          "artifacts": { "type": "array", "items": { "type": "string" } },
+          "invalidatedBy": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "relation"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "relation": { "enum": ["defines", "verifies", "executes_at", "produces"] }
+        }
+      }
+    }
+  }
+}

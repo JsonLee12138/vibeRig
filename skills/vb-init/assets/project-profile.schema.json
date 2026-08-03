@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VibeRig Project Profile V2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "project", "documents", "environment", "commands", "evidence", "tracking", "gate_policy"],
+  "properties": {
+    "version": { "const": 2 },
+    "project": {
+      "type": "object",
+      "required": ["name", "root"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "repo_url": { "type": "string" },
+        "architecture": { "type": "string" }
+      }
+    },
+    "documents": {
+      "type": "object",
+      "required": ["mode", "requirement_root", "context_routes"],
+      "properties": {
+        "mode": { "enum": ["discover", "managed"] },
+        "requirement_root": { "type": "string", "minLength": 1 },
+        "exec_plan_root": { "type": "string" },
+        "runbook_index": { "type": "string" },
+        "context_routes": { "type": "string", "minLength": 1 }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "required": ["manifest", "default_profile"],
+      "properties": {
+        "manifest": { "type": "string", "minLength": 1 },
+        "default_profile": { "type": "string", "minLength": 1 }
+      }
+    },
+    "commands": { "type": "object" },
+    "evidence": {
+      "type": "object",
+      "required": ["root", "retention"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "retention": { "enum": ["none", "accepted_only", "all"] }
+      }
+    },
+    "tracking": {
+      "type": "object",
+      "required": ["provider", "mode"],
+      "properties": {
+        "provider": { "enum": ["none", "linear", "github", "auto"] },
+        "mode": { "enum": ["adapter", "authoritative"] }
+      }
+    },
+    "gate_policy": { "type": "object" }
+  }
+}

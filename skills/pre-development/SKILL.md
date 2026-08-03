@@ -42,9 +42,12 @@ L0/L1 使用 Work Item 中的 scope、AC 和测试策略直接进入 `execute`�
 - `risk-register.json`
 - `release-plan.md` / `delivery-plan.md`
 - `traceability.json`
+- `verification-graph.json`（多 AC、跨阶段或 L2/L3 时）
 - `pre-development-review.md`
 
 不要为满足清单创建空洞文档。不适用产物在 review 中写理由。
+
+同时通过 Context Router 识别项目已有 spec、contract、ADR 和 Runbook owner。规划只写回原 owner 或保存引用，不创建平行真相源。涉及运行、迁移、部署、恢复、监控或外部依赖变化时，把 Runbook 更新与演练作为 TC，而不是额外文档阶段。
 
 ## 语义漂移
 
@@ -68,3 +71,4 @@ L0/L1 使用 Work Item 中的 scope、AC 和测试策略直接进入 `execute`�
 - [ ] L2 未固定启动完整红白队。
 - [ ] 产品语义漂移已返回 `intake`。
 - [ ] 技术计划已自动交给 `execute`。
+- [ ] Verification Graph 指定了 TC 的权威阶段和最低保真度；Operational change 已映射 Runbook Gate。

@@ -55,6 +55,13 @@ ${fixture.prompt}
 - mayClaimTargetNow 表示以当前证据和授权是否已经可以宣称目标完成，而不是未来补齐 Gate 后能否继续。
 - invalidatesStaleEvidence 表示候选 revision 改变时是否作废旧证据并重新验证。
 - externalWritePolicy 判断是否尊重只读/确认前不写入/明确授权。
+- usesContextRouter 表示是否按路径/风险只加载必要项目上下文，而不是整库灌入。
+- preservesTruthOwners 表示是否复用已有 PRD/spec/ADR/Runbook/任务系统，而不制造第二套真相源。
+- usesExecutableEnvironment 表示是否优先运行项目声明的 bootstrap/start/health 等真实环境命令。
+- usesVerificationGraph 表示是否把 Outcome、AC、TC、权威阶段和 Evidence 形成机器可追踪关系。
+- requiresRunbookExercise 表示 Operational change 是否要求实际演练 Runbook，而不只生成文档。
+- taskSplitPolicy 判断任务采用最少充分垂直切片、技术分层拆分，或不适用。
+- parallelPolicy 判断并发是否要求契约稳定并规避冲突集合。
 - notes 只写最多 5 条可由 Skill 文本直接支持的观察。
 
 ${skills}`;
@@ -95,6 +102,20 @@ function score(result, expect) {
     add('automatic-test-environment', !['ask_user', 'not_applicable'].includes(result.testEnvironmentStrategy), 2);
     add('evidence-fidelity', result.distinguishesEvidenceFidelity, 1);
   }
+  if (expect.contextRouter)
+    add('context-router', result.usesContextRouter, 2);
+  if (expect.preserveTruthOwners)
+    add('preserve-truth-owners', result.preservesTruthOwners, 2);
+  if (expect.executableEnvironment)
+    add('executable-environment', result.usesExecutableEnvironment, 2);
+  if (expect.verificationGraph)
+    add('verification-graph', result.usesVerificationGraph, 2);
+  if (expect.runbookExercise)
+    add('runbook-exercise', result.requiresRunbookExercise, 2);
+  if (expect.verticalMinimalSplit)
+    add('vertical-minimal-split', result.taskSplitPolicy === 'vertical_minimal', 2);
+  if (expect.contractLockedParallel)
+    add('contract-locked-parallel', result.parallelPolicy === 'contract_locked', 2);
   const earned = checks.filter(check => check.pass).reduce((sum, check) => sum + check.weight, 0);
   const total = checks.reduce((sum, check) => sum + check.weight, 0);
   return { earned, total, rate: earned / total, checks };

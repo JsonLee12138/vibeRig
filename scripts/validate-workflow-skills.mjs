@@ -12,9 +12,14 @@ const requiredFiles = [
   'skills/execute/references/contracts.md',
   'skills/execute/references/goal-loop.md',
   'skills/execute/references/test-environment-broker.md',
+  'skills/execute/references/context-router.md',
+  'skills/execute/references/environment-driver.md',
+  'skills/execute/references/verification-graph.md',
+  'skills/execute/references/runbook-contract.md',
   'skills/execute/assets/work-item.schema.json',
   'skills/execute/assets/goal-contract.schema.json',
   'skills/execute/assets/evidence-packet.schema.json',
+  'skills/execute/assets/verification-graph.schema.json',
   'skills/accept-deliver/SKILL.md',
   'skills/accept-deliver/references/acceptance-and-delivery.md',
   'skills/subagent-routing/references/model-routing.md',
@@ -22,6 +27,10 @@ const requiredFiles = [
   'skills/subagent-routing/assets/model-capability-prior.schema.json',
   'skills/subagent-routing/assets/route-observation.schema.json',
   'skills/update-team/assets/model-routing-profile.schema.json',
+  'skills/vb-init/assets/project-profile.schema.json',
+  'skills/vb-init/assets/context-routes.schema.json',
+  'skills/vb-init/assets/environment-profile.schema.json',
+  'skills/vb-init/assets/runbook-index.schema.json',
 ];
 
 for (const path of requiredFiles) {
@@ -40,7 +49,7 @@ for (const path of requiredFiles.filter(path => path.endsWith('.json'))) {
 
 const skillExpectations = {
   'skills/intake/SKILL.md': ['统一 Work Item', '人工 Gate 1', 'work-item.json', '自动交接'],
-  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'accept-deliver'],
+  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'Verification Graph', 'Environment Driver', 'accept-deliver'],
   'skills/accept-deliver/SKILL.md': ['人工验收', 'Evidence', '明确授权', 'execute'],
   'skills/record-issue/SKILL.md': ['兼容', 'intake'],
   'skills/bugger/SKILL.md': ['兼容', 'intake', 'execute'],

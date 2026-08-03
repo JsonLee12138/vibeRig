@@ -1,5 +1,84 @@
 [
   {
+    "id": "ai-native-project-bootstrap",
+    "stage": "init",
+    "suites": ["screen", "full"],
+    "prompt": "一个已有 AGENTS.md、ADR、OpenAPI、Runbook、Makefile 和 GitHub Issues 的成熟项目要接入 VibeRig。不要复制第二套文档；Agent 需要按改动目录读取最小上下文，并能够使用本地可丢弃环境。应该怎样初始化？",
+    "baselineFiles": [
+      "skills/vb-init/SKILL.md",
+      "skills/vb-init/references/project-config-template.md",
+      "skills/vb-init/assets/agents-md-inject.md"
+    ],
+    "candidateFiles": [
+      "skills/vb-init/SKILL.md",
+      "skills/vb-init/references/project-config-template.md",
+      "skills/vb-init/assets/agents-md-inject.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": false,
+      "contextRouter": true,
+      "preserveTruthOwners": true,
+      "executableEnvironment": true
+    }
+  },
+  {
+    "id": "minimal-fullstack-split",
+    "stage": "planning",
+    "suites": ["screen", "full"],
+    "prompt": "已确认需求：用户可上传头像。API contract 稳定后前后端可并行，但都会触碰共享 contract；测试、迁移、文档都服务同一个用户行为。请拆近期里程碑，不要按 controller/service/repository/frontend 分层制造微任务。",
+    "baselineFiles": [
+      "skills/split-issues/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/split-issues/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/verification-graph.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": false,
+      "verificationGraph": true,
+      "verticalMinimalSplit": true,
+      "contractLockedParallel": true
+    }
+  },
+  {
+    "id": "local-real-environment-runbook",
+    "stage": "execute",
+    "suites": ["screen", "full"],
+    "prompt": "需求已确认：修改数据库 migration 和部署后 smoke。项目声明了 bootstrap/start/health/reset 命令，有可丢弃 PostgreSQL 和本地开发凭据，禁止生产网络。目标是做到可人工 UAT；如何验证并判断完成？",
+    "baselineFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/test-environment-broker.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/environment-driver.md",
+      "skills/execute/references/verification-graph.md",
+      "skills/execute/references/runbook-contract.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": true,
+      "humanAcceptance": true,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "executableEnvironment": true,
+      "verificationGraph": true,
+      "runbookExercise": true
+    }
+  },
+  {
     "id": "bug-fix-to-pr",
     "stage": "overall",
     "suites": ["screen", "full"],

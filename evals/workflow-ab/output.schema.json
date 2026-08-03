@@ -15,6 +15,13 @@
     "mayClaimTargetNow",
     "invalidatesStaleEvidence",
     "externalWritePolicy",
+    "usesContextRouter",
+    "preservesTruthOwners",
+    "usesExecutableEnvironment",
+    "usesVerificationGraph",
+    "requiresRunbookExercise",
+    "taskSplitPolicy",
+    "parallelPolicy",
     "notes"
   ],
   "properties": {
@@ -74,6 +81,19 @@
     "externalWritePolicy": {
       "type": "string",
       "enum": ["respects_authority", "writes_before_confirmation", "unclear"]
+    },
+    "usesContextRouter": { "type": "boolean" },
+    "preservesTruthOwners": { "type": "boolean" },
+    "usesExecutableEnvironment": { "type": "boolean" },
+    "usesVerificationGraph": { "type": "boolean" },
+    "requiresRunbookExercise": { "type": "boolean" },
+    "taskSplitPolicy": {
+      "type": "string",
+      "enum": ["vertical_minimal", "technical_layers", "not_applicable", "unclear"]
+    },
+    "parallelPolicy": {
+      "type": "string",
+      "enum": ["contract_locked", "unbounded", "serial_or_not_applicable", "unclear"]
     },
     "notes": {
       "type": "array",

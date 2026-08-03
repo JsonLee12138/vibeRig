@@ -1,11 +1,11 @@
 ---
 name: vb-init
-description: Initialize or reconcile a project for the Linear-native VibeRig workflow. Use when the user asks to set up VibeRig, create .vibeRig project registration, connect to Linear, configure CI gates, set up the agent team, or wire the global ~/.vb-skills approved tool-skill store. Do not use to create requirements, tasks, or implementation branches.
+description: Initialize or reconcile a project for the AI-native VibeRig workflow. Use when the user asks to set up VibeRig, create the V2 project profile and executable Harness manifests, connect an optional tracker, configure gates, or set up the agent team. Do not use to create requirements, tasks, or implementation branches.
 ---
 
 # VB Init
 
-Prepare a project for the VibeRig Harness: local docs structure, `.vibeRig/project.yaml`, optional Linear registration, Codex agent team, and the global user-approved tool-skill store at `~/.vb-skills`. The knowledge store `~/.vb-wiki` remains lazy and is bootstrapped by `vb-wiki` on its first novelty-gated accepted write.
+Prepare a project for the VibeRig Harness: a discover-first V2 project profile, context routes, environment and Runbook manifests, local requirement state, optional tracker registration, agent team, and the global user-approved tool-skill store at `~/.vb-skills`. The knowledge store `~/.vb-wiki` remains lazy and is bootstrapped by `vb-wiki` on its first novelty-gated accepted write.
 
 All steps are **idempotent** — re-running skips what already exists.
 
@@ -15,6 +15,8 @@ Single responsibility: initialise or reconcile **one project** and its optional 
 
 Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 
+CLI initialization confirmation and Linear team/project selection are configuration choices. They are not `requirement_confirmation` or `delivery_authorization`, and must not route the user into requirement intake.
+
 ## Output
 
 ```text
@@ -22,6 +24,9 @@ Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 ├── AGENTS.md                    (VibeRig inject block from assets/agents-md-inject.md)
 ├── CLAUDE.md  ->  AGENTS.md
 ├── .vibeRig/project.yaml        (see references/project-config-template.md)
+├── .vibeRig/context-routes.yaml (path/risk → context, checks and reviewers)
+├── .vibeRig/environments.yaml   (environment and credential policy)
+├── .vibeRig/runbooks.yaml       (operational trigger and exercise index)
 ├── .vibeRig/prd/                (PRD 目录，含 archive/)
 ├── .vibeRig/requirements/       (需求目录，含 archive/)
 ├── .gitignore                   (".worktrees/" entry ensured)
@@ -46,7 +51,16 @@ Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 Use current workspace or git root unless the user provides a path.
 Inspect existing `AGENTS.md`, `.vibeRig/project.yaml`, and `.vibeRig/requirements/`.
 
-### 2. Project scaffolding
+### 2. Project scaffolding and explicit V1 migration
+
+Prefer the deterministic CLI:
+
+```bash
+viberig init --yes
+viberig init --upgrade --yes # only when an existing V1 profile should be reconciled
+```
+
+The command never overwrites context/environment/Runbook manifests. `--upgrade` preserves extension keys, migrates `docs.root`, and removes the obsolete `workspace` section. Without the CLI, create equivalent files from the bundled schemas and template.
 
 ```bash
 mkdir -p .vibeRig/requirements/archive .vibeRig/prd/archive .worktrees
@@ -91,11 +105,13 @@ mkdir -p ~/.claude/skills
 > **Critical**: symlinks must be `~/.agents/skills/vb → ~/.vb-skills` and `~/.claude/skills/vb → ~/.vb-skills`.
 > `~/.agents/vb` (sibling of `skills/`) is outside Codex scan depth and will never be discovered.
 
-### 4. project.yaml
+### 4. Project Profile and Harness manifests
 
 Create or update `.vibeRig/project.yaml` from [references/project-config-template.md](./references/project-config-template.md).
-Required fields: `output.language` (BCP 47), pull request policy, gate policy, Linear ids, the four `subagents` defaults (`default_research`, `default_qa`, `default_security_audit`, `default_review`).
+Validate against [project-profile.schema.json](./assets/project-profile.schema.json). Required fields include document discovery and context routing, environment profile, executable project commands, Evidence retention, tracking adapter, output language, PR/Gate policy and the four recurring Subagent defaults.
 There is no `workspace` section — the worktree root is always the fixed project path `.worktrees/`.
+
+Validate `.vibeRig/context-routes.yaml`, `.vibeRig/environments.yaml` and `.vibeRig/runbooks.yaml` against their bundled schemas. Discover existing project commands and documentation before filling optional values; do not invent commands or force a standard `docs/` tree.
 
 ### 5. AGENTS.md
 
@@ -140,14 +156,15 @@ Report as **partial** when Linear tools are unavailable (including login decline
 
 ### 8. Report
 
-Project YAML, AGENTS.md, docs root, output language, Linear Project/Document status,
+Project Profile version, AGENTS.md, context routes, environment/credential boundary, Runbook policy, docs owner mode, output language, tracker status,
 gate policy, agent team (created / existed / skipped), approved tool-skill store status, and the fact that `vb-wiki` bootstraps its knowledge store lazily.
 
 ## Validation
 
 ```bash
 # Local project
-ls .vibeRig/project.yaml .vibeRig/requirements/ .worktrees/ AGENTS.md
+ls .vibeRig/project.yaml .vibeRig/context-routes.yaml .vibeRig/environments.yaml .vibeRig/runbooks.yaml .vibeRig/requirements/ .worktrees/ AGENTS.md
+grep 'version: 2' .vibeRig/project.yaml
 grep "language:" .vibeRig/project.yaml
 grep -qxF '.worktrees/' .gitignore && echo "gitignore ok"
 test -L CLAUDE.md && readlink CLAUDE.md | grep -q AGENTS.md && echo "symlink ok"
@@ -166,7 +183,8 @@ test -L ~/.claude/skills/vb \
   && echo "symlink ok" || echo "SYMLINK MISSING"
 ```
 
-- [ ] `.vibeRig/project.yaml` has all required sections including `output.language`; no `workspace` section present.
+- [ ] `.vibeRig/project.yaml` is V2, has document/environment/evidence/tracking contracts and no legacy `docs` or `workspace` section.
+- [ ] Context routes, environment profiles and Runbook index exist, preserve project truth owners and pass their schemas.
 - [ ] Root `AGENTS.md` contains the VibeRig inject block.
 - [ ] `CLAUDE.md` symlinks to `AGENTS.md` (or was already a real file, left untouched).
 - [ ] `.claude/skills` symlinks to `../.agents/skills`.

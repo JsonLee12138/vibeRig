@@ -7,7 +7,7 @@ import { skillLockCommand } from './commands/skill-lock.js';
 const main = defineCommand({
   meta: {
     name: 'viberig',
-    version: '0.2.7',
+    version: '1.2.1',
     description: 'VibeRig project workflow CLI',
   },
   subCommands: {

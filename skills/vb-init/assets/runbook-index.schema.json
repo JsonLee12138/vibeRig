@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VibeRig Runbook Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "policy", "runbooks"],
+  "properties": {
+    "version": { "const": 1 },
+    "policy": {
+      "type": "object",
+      "required": ["require_for_operational_change", "require_exercise_evidence"],
+      "properties": {
+        "require_for_operational_change": { "type": "boolean" },
+        "require_exercise_evidence": { "type": "boolean" }
+      }
+    },
+    "runbooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "owner", "triggers", "commands"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "owner": { "type": "string", "minLength": 1 },
+          "triggers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "commands": {
+            "type": "object",
+            "properties": {
+              "diagnose": { "type": "string" },
+              "execute": { "type": "string" },
+              "verify": { "type": "string" },
+              "rollback": { "type": "string" }
+            }
+          },
+          "last_exercised": {
+            "type": ["object", "null"],
+            "properties": {
+              "commit": { "type": "string" },
+              "environment": { "type": "string" },
+              "result": { "enum": ["passed", "failed", "blocked"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

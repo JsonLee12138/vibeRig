@@ -53,6 +53,8 @@ See `references/testing-patterns.md` for code examples.
 
 Record the decision and reason. "Looks right" is not evidence.
 
+Human approval applies to the business oracle, not every generated test. L0/L1 test semantics are checked by the main agent or QA; L2 uses an independent QA review when useful. Require owner/technical-owner review of the test contract only for money, authorization, core invariants, irreversible migration, safety/compliance, or another explicitly high-consequence boundary.
+
 Unavailable test infrastructure is not a skip reason. Read `../execute/references/test-environment-broker.md` and automatically resolve fixtures, fake values, protocol stubs, disposable dependencies, emulators, or sandboxes. Ask the user only when the TC requires a real environment that cannot be safely simulated.
 
 ## Test Pyramid
@@ -83,6 +85,7 @@ For detailed code examples and anti-patterns, see `references/testing-patterns.m
 - Skipping tests to make the suite pass
 - Running the same test command twice without an intervening code change
 - Asking the user for test-only secrets that can be generated or simulated
+- Interrupting every implementation to request approval for ordinary failing tests
 - Claiming a mock pass satisfies a sandbox/real TC
 
 ## Verification
