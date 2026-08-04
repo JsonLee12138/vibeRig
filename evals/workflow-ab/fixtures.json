@@ -187,6 +187,152 @@
     }
   },
   {
+    "id": "ui-implementation-visual-acceptance",
+    "stage": "overall",
+    "suites": ["screen", "full"],
+    "prompt": "需求、UIFLOW.md 和 DESIGN.md 已确认：实现响应式结算页并做到 PR，不要合并。浏览器行为测试通过不代表视觉正确；桌面和移动端截图、键盘可达性以及产品 owner 的体验验收都必须可追踪。系统应如何实现、验证和交付？",
+    "baselineFiles": [
+      "skills/uiux-design/SKILL.md",
+      "skills/uiux-design/references/visual-qa.md",
+      "skills/execute/SKILL.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/uiux-design/SKILL.md",
+      "skills/uiux-design/references/visual-qa.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/verification-graph.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": true,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "verificationGraph": true,
+      "uiVerification": true,
+      "targetMode": "pr_ready"
+    }
+  },
+  {
+    "id": "confirmed-requirement-to-pr",
+    "stage": "overall",
+    "suites": ["screen", "full"],
+    "prompt": "需求已完整确认，授权范围包括实现、测试、提交和创建 PR，但不包括合并：新增团队成员邀请，涉及 UI、API、数据库迁移和邮件 sandbox。项目已有 ADR、OpenAPI、测试命令和 Runbook。系统应从已确认需求持续做到可验收 PR，不能在内部阶段反复要求用户接力。",
+    "baselineFiles": [
+      "skills/intake/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/contracts.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/intake/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/context-router.md",
+      "skills/execute/references/environment-driver.md",
+      "skills/execute/references/verification-graph.md",
+      "skills/execute/references/contracts.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": true,
+      "continuousExecution": true,
+      "humanAcceptance": true,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "contextRouter": true,
+      "preserveTruthOwners": true,
+      "executableEnvironment": true,
+      "verificationGraph": true,
+      "deliveryFlow": true,
+      "targetMode": "pr_ready"
+    }
+  },
+  {
+    "id": "repeated-failure-strategy-recovery",
+    "stage": "execute",
+    "suites": ["screen", "full"],
+    "prompt": "需求已确认，目标为 verified：修复批量导入重复写入。相同单元测试修补已经连续失败两次，但仍能检查幂等键、事务边界、并发时序并提升到 integration test。没有权限障碍，也不需要新的业务决策。系统应该如何恢复并判断何时才形成 Blocker？",
+    "baselineFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/goal-loop.md",
+      "skills/test-driven-development/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/goal-loop.md",
+      "skills/execute/references/verification-graph.md",
+      "skills/test-driven-development/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": true,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": false,
+      "recoveryPolicy": true,
+      "targetMode": "verified"
+    }
+  },
+  {
+    "id": "multi-agent-shared-contract-conflict",
+    "stage": "execute",
+    "suites": ["screen", "full"],
+    "prompt": "已确认的头像上传切片要做到 verified。API contract 冻结后前端和后端可并行，但两边原计划都会修改同一个 OpenAPI 文件和生成 SDK；另有独立安全审查。系统如何安排 Agent、隔离写入冲突、集成结果并完成验证？",
+    "baselineFiles": [
+      "skills/split-issues/SKILL.md",
+      "skills/subagent-routing/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/split-issues/SKILL.md",
+      "skills/subagent-routing/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/verification-graph.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": true,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "verificationGraph": true,
+      "contractLockedParallel": true,
+      "subagentIntegration": true,
+      "targetMode": "verified"
+    }
+  },
+  {
+    "id": "declared-real-e2e-execution",
+    "stage": "execute",
+    "suites": ["screen", "full"],
+    "prompt": "需求已确认，目标为 verified：修改登录回调和会话 cookie。单测与 mock 浏览器测试已通过，但 TC 明确要求在项目声明的本地可丢弃环境中启动真实后端、浏览器和 sandbox IdP，执行一次完整登录 E2E；禁止生产网络。系统是否可以用 mock 结果替代，应该如何完成验证？",
+    "baselineFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/test-environment-broker.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/execute/SKILL.md",
+      "skills/execute/references/environment-driver.md",
+      "skills/execute/references/test-environment-broker.md",
+      "skills/execute/references/verification-graph.md",
+      "skills/accept-deliver/SKILL.md"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": true,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "executableEnvironment": true,
+      "verificationGraph": true,
+      "realE2E": true,
+      "targetMode": "verified"
+    }
+  },
+  {
     "id": "execution-recovery-loop",
     "stage": "execute",
     "suites": ["full"],

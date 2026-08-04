@@ -16,6 +16,7 @@ const selectedModels = new Set((valueAfter('--models') || '').split(',').filter(
 const selectedFixtures = new Set((valueAfter('--fixtures') || '').split(',').filter(Boolean));
 const selectedVariant = valueAfter('--variant');
 const repeat = Number(valueAfter('--repeat') || 1);
+const baselineRef = valueAfter('--baseline-ref') || 'HEAD';
 const outputDir = mkdtempSync(resolve(tmpdir(), `viberig-model-${suite}-`));
 
 if (!matrix[suite])
@@ -27,7 +28,7 @@ function valueAfter(flag) {
 }
 
 function loadBaseline(path) {
-  return execFileSync('git', ['show', `HEAD:${path}`], { cwd: root, encoding: 'utf8' });
+  return execFileSync('git', ['show', `${baselineRef}:${path}`], { cwd: root, encoding: 'utf8' });
 }
 
 function loadCandidate(path) {
@@ -62,6 +63,11 @@ ${fixture.prompt}
 - requiresRunbookExercise 表示 Operational change 是否要求实际演练 Runbook，而不只生成文档。
 - taskSplitPolicy 判断任务采用最少充分垂直切片、技术分层拆分，或不适用。
 - parallelPolicy 判断并发是否要求契约稳定并规避冲突集合。
+- uiVerificationPolicy 判断 UI 是否同时区分浏览器行为、截图/视觉比较和 owner UAT 三类证据。
+- recoveryPolicy 判断重复失败后是否改变假设或策略，并只在连续无进展后形成 Blocker。
+- deliveryFlowPolicy 判断既有授权是否跨内部阶段持续到目标，还是要求用户手动接力 Skill。
+- subagentIntegrationPolicy 判断并发 Agent 是否隔离冲突范围并由主 Agent 统一集成和裁决。
+- e2eExecutionPolicy 判断 TC 要求真实 E2E 时是否运行声明环境，还是用 mock 冒充。
 - notes 只写最多 5 条可由 Skill 文本直接支持的观察。
 
 ${skills}`;
@@ -116,6 +122,18 @@ function score(result, expect) {
     add('vertical-minimal-split', result.taskSplitPolicy === 'vertical_minimal', 2);
   if (expect.contractLockedParallel)
     add('contract-locked-parallel', result.parallelPolicy === 'contract_locked', 2);
+  if (expect.targetMode)
+    add('target-mode', result.targetMode === expect.targetMode, 2);
+  if (expect.uiVerification)
+    add('ui-behavior-visual-owner-uat', result.uiVerificationPolicy === 'behavior_visual_owner_uat', 3);
+  if (expect.recoveryPolicy)
+    add('strategy-changing-recovery', result.recoveryPolicy === 'change_strategy_then_block_after_no_progress', 3);
+  if (expect.deliveryFlow)
+    add('continuous-delivery-flow', result.deliveryFlowPolicy === 'continuous_to_authorized_target', 3);
+  if (expect.subagentIntegration)
+    add('conflict-aware-integration', result.subagentIntegrationPolicy === 'conflict_aware_main_agent', 3);
+  if (expect.realE2E)
+    add('real-e2e-fidelity', result.e2eExecutionPolicy === 'real_or_declared_fidelity', 3);
   const earned = checks.filter(check => check.pass).reduce((sum, check) => sum + check.weight, 0);
   const total = checks.reduce((sum, check) => sum + check.weight, 0);
   return { earned, total, rate: earned / total, checks };
@@ -228,6 +246,7 @@ const summary = models.map(config => ({
 const report = {
   generatedAt: new Date().toISOString(),
   runner: 'codex exec --json',
+  baselineRef,
   suite,
   concurrency,
   outputDir,

@@ -22,6 +22,11 @@
     "requiresRunbookExercise",
     "taskSplitPolicy",
     "parallelPolicy",
+    "uiVerificationPolicy",
+    "recoveryPolicy",
+    "deliveryFlowPolicy",
+    "subagentIntegrationPolicy",
+    "e2eExecutionPolicy",
     "notes"
   ],
   "properties": {
@@ -94,6 +99,26 @@
     "parallelPolicy": {
       "type": "string",
       "enum": ["contract_locked", "unbounded", "serial_or_not_applicable", "unclear"]
+    },
+    "uiVerificationPolicy": {
+      "type": "string",
+      "enum": ["behavior_visual_owner_uat", "behavior_only", "visual_only", "not_applicable", "unclear"]
+    },
+    "recoveryPolicy": {
+      "type": "string",
+      "enum": ["change_strategy_then_block_after_no_progress", "repeat_same_strategy", "ask_user_early", "not_applicable", "unclear"]
+    },
+    "deliveryFlowPolicy": {
+      "type": "string",
+      "enum": ["continuous_to_authorized_target", "manual_stage_handoffs", "not_applicable", "unclear"]
+    },
+    "subagentIntegrationPolicy": {
+      "type": "string",
+      "enum": ["conflict_aware_main_agent", "agents_write_shared_scope", "unbounded_fanout", "not_applicable", "unclear"]
+    },
+    "e2eExecutionPolicy": {
+      "type": "string",
+      "enum": ["real_or_declared_fidelity", "mock_substitution", "planning_only", "not_applicable", "unclear"]
     },
     "notes": {
       "type": "array",

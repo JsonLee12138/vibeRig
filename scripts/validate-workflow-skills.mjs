@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
+const workflowFixtures = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/fixtures.json'), 'utf8'));
+const workflowOutputSchema = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/output.schema.json'), 'utf8'));
 
 const requiredFiles = [
   'skills/intake/SKILL.md',
@@ -107,6 +109,37 @@ for (const phrase of ['intake', 'execute', 'accept-deliver', 'Goal Loop', 'Work 
 
 if (/bugger.*quick.*accept-issue/i.test(readmes))
   failures.push('README still advertises the legacy bugger -> quick -> accept-issue chain');
+
+const requiredEvalFixtures = [
+  'ui-implementation-visual-acceptance',
+  'confirmed-requirement-to-pr',
+  'repeated-failure-strategy-recovery',
+  'multi-agent-shared-contract-conflict',
+  'declared-real-e2e-execution',
+];
+const fixtureIds = workflowFixtures.map(fixture => fixture.id);
+if (new Set(fixtureIds).size !== fixtureIds.length)
+  failures.push('workflow A/B fixture ids must be unique');
+for (const id of requiredEvalFixtures) {
+  if (!fixtureIds.includes(id))
+    failures.push(`missing workflow A/B fixture: ${id}`);
+}
+
+for (const field of [
+  'uiVerificationPolicy',
+  'recoveryPolicy',
+  'deliveryFlowPolicy',
+  'subagentIntegrationPolicy',
+  'e2eExecutionPolicy',
+]) {
+  if (!workflowOutputSchema.required.includes(field) || !workflowOutputSchema.properties[field])
+    failures.push(`workflow A/B output schema missing required field: ${field}`);
+}
+
+for (const runner of ['scripts/run-workflow-ab.mjs', 'scripts/run-workflow-model-matrix.mjs']) {
+  if (!readFileSync(resolve(root, runner), 'utf8').includes('--baseline-ref'))
+    failures.push(`${runner} does not support an explicit baseline ref`);
+}
 
 if (failures.length > 0) {
   console.error(failures.join('\n'));

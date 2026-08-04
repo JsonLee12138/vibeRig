@@ -131,3 +131,9 @@ viberig init --upgrade --yes
 - 不把所有 40+ Skills 重写成新入口；
 - 不让 VibeRig 取代现有 issue tracker、CI 或 secrets provider；
 - 不将生产写入权限从本地高自治自动推断出来。
+
+## 扩展行为 A/B
+
+UI 视觉验收、已确认需求到 PR、重复失败恢复、多 Agent 共享契约冲突和声明式真实 E2E 五类场景已加入 `screen` / `full` suite。评测器支持 `--baseline-ref`，避免提交后错误地把候选版本自身作为基线。
+
+2026-08-04 使用 `gpt-5.6-luna/low`、`origin/main` 基线、每类 5 次重复的独立评测中，旧版与 V2 均为 `510/510`。结论是这些成熟工作流保持行为一致且未发现回归；该 suite 没有证明额外分数提升。V2 在这些场景中的价值是把视觉/行为/UAT、恢复策略、交付授权、冲突集成和真实 E2E 保真度变成显式可评分契约。完整校准过程和限制见 `docs/design/evidence/ai-native-harness-v2-expanded-luna-ab-2026-08-04.json`。
