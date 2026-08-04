@@ -148,12 +148,69 @@ const e2eContract = {
     redEvidenceRef: 'artifacts/viberig/E2E-1-red.json',
     passingEvidenceRef: null,
     invalidatedBy: ['AC, test path, fixture, environment or contract revision changes'],
+    backendExecution: null,
   }],
 };
 assertSchema('skills/pre-development/assets/e2e-contract.schema.json', e2eContract, true);
 assertSchema('skills/pre-development/assets/e2e-contract.schema.json', {
   ...e2eContract,
   contracts: [{ ...e2eContract.contracts[0], oracleApproval: { status: 'pending', source: 'requirement_gate', approvedRevision: null } }],
+}, false);
+
+const backendE2EContract = {
+  ...e2eContract,
+  contracts: [{
+    ...e2eContract.contracts[0],
+    id: 'E2E-2',
+    title: 'Create invitation through the public API',
+    type: 'api_e2e',
+    requiredFidelity: 'ephemeral',
+    testPath: 'tests/api-e2e/invitations.spec.ts',
+    backendExecution: {
+      boundary: 'public_protocol_to_owned_state',
+      transport: 'http',
+      sutRuntime: 'declared_runtime',
+      ownedDependencies: ['database'],
+      externalDependencyPolicy: 'protocol_fake_at_boundary',
+      isolation: 'unique_namespace_and_reset',
+      commands: {
+        bootstrap: 'make e2e-up',
+        health: 'make e2e-health',
+        test: 'make e2e-api',
+        reset: 'make e2e-reset',
+      },
+      assertionKinds: ['response', 'durable_state', 'side_effect'],
+      negativePathKinds: ['authorization', 'idempotency'],
+      asyncWait: 'bounded_polling',
+      artifactKinds: ['test_report', 'service_logs', 'database_snapshot'],
+      repositoryGrounding: {
+        testFramework: 'vitest',
+        configPath: 'vitest.e2e.config.ts',
+        discoveryCommand: 'pnpm vitest --config vitest.e2e.config.ts --list tests/api-e2e/invitations.spec.ts',
+        collectionEvidenceRef: 'artifacts/viberig/E2E-2-collection.json',
+        testFileHash: 'sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      },
+    },
+  }],
+};
+assertSchema('skills/pre-development/assets/e2e-contract.schema.json', backendE2EContract, true);
+assertSchema('skills/pre-development/assets/e2e-contract.schema.json', {
+  ...backendE2EContract,
+  contracts: [{ ...backendE2EContract.contracts[0], backendExecution: null }],
+}, false);
+assertSchema('skills/pre-development/assets/e2e-contract.schema.json', {
+  ...backendE2EContract,
+  contracts: [{
+    ...backendE2EContract.contracts[0],
+    backendExecution: {
+      ...backendE2EContract.contracts[0].backendExecution,
+      repositoryGrounding: {
+        ...backendE2EContract.contracts[0].backendExecution.repositoryGrounding,
+        collectionEvidenceRef: null,
+        testFileHash: null,
+      },
+    },
+  }],
 }, false);
 
 const verificationGraph = {

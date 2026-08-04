@@ -34,3 +34,21 @@ RED evidence must show that the test fails because the required behavior is abse
 - Owner: performs UAT as a separate node; automation never marks it passed.
 
 Every E2E contract points to one test file, one authoritative stage, required fidelity, declared environment, invalidation rules, RED Evidence and—after success—PASS Evidence tied to the current revision.
+
+## Backend API E2E construction
+
+An `api_e2e` test crosses the service's public protocol boundary and observes owned state or externally visible side effects. Calling a controller/handler in-process with mocked repositories is an integration test, not API E2E. Start the SUT through the project's declared runtime (process, container, or emulator), send real HTTP/gRPC/GraphQL/message traffic, and use disposable real instances for owned databases, caches and brokers. An uncontrollable third-party may be replaced only at its system boundary by a declared sandbox or protocol-faithful fake; never replace the SUT or its owned persistence to make E2E convenient.
+
+Build the smallest risk-based suite around an AC or invariant, not one E2E per endpoint and not a duplicate of the unit-test matrix:
+
+1. bootstrap the declared runtime and disposable dependencies, then wait for health/readiness;
+2. create isolated data through public setup APIs or versioned fixtures with a unique run namespace;
+3. exercise the public protocol with production-equivalent authentication, serialization and middleware;
+4. assert the response plus relevant durable state and observable side effects, without coupling to private functions;
+5. cover the critical negative boundary for the risk: authentication/authorization, validation, tenant isolation, idempotency, rollback or concurrency;
+6. for asynchronous outcomes, poll an observable condition with a deadline and diagnostic output—never use an unexplained fixed sleep;
+7. always reset or destroy the namespace and record the exact bootstrap, health, test and reset commands.
+
+The runnable test is the deliverable. A prose procedure or generated pseudocode is insufficient when the project has an executable test framework. Evidence should retain the test report and, when relevant, service logs, protocol traces, database snapshots or message traces. RED review must first prove setup and health succeeded, then show the locked business assertion failing for the expected missing behavior.
+
+Before writing, use the Context Router to inspect the repository's existing E2E framework, configuration, fixture helpers, API contract and declared environment commands. Do not invent generic paths such as `tests/e2e/example.*`, leave placeholders, or describe “the project's command.” A draft may record unresolved grounding, but it cannot become `locked` until the test exists at an exact repository path, the exact command collects that file, and Evidence records the file hash plus collection result. Only then run and review RED.

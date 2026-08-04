@@ -29,6 +29,7 @@
     "e2eExecutionPolicy",
     "e2eContractPolicy",
     "deliveryPlanPolicy",
+    "backendE2EBlueprint",
     "notes"
   ],
   "properties": {
@@ -129,6 +130,48 @@
     "deliveryPlanPolicy": {
       "type": "string",
       "enum": ["schema_validated_vertical", "prose_only", "technical_layers", "not_applicable", "unclear"]
+    },
+    "backendE2EBlueprint": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "boundary", "transport", "sutRuntime", "realComponents", "substitutedComponents",
+        "setupSteps", "repositoryGrounding", "testArtifact", "testPath", "command", "assertionKinds",
+        "negativePathKinds", "asyncWait", "cleanupSteps", "artifactKinds", "redCauseCheck"
+      ],
+      "properties": {
+        "boundary": { "enum": ["public_protocol_to_owned_state", "in_process_or_mocked_sut", "not_applicable", "unclear"] },
+        "transport": { "enum": ["http", "grpc", "graphql", "message", "not_applicable", "unclear"] },
+        "sutRuntime": { "enum": ["declared_runtime", "mocked", "not_applicable", "unclear"] },
+        "realComponents": {
+          "type": "array",
+          "items": { "enum": ["service_runtime", "database", "cache", "broker", "object_store"] }
+        },
+        "substitutedComponents": {
+          "type": "array",
+          "items": { "enum": ["external_sandbox", "external_protocol_fake", "sut", "owned_persistence"] }
+        },
+        "setupSteps": { "type": "array", "items": { "type": "string" } },
+        "repositoryGrounding": { "enum": ["exact_collected_file", "inspect_before_lock", "fabricated_or_placeholder", "not_applicable", "unclear"] },
+        "testArtifact": { "enum": ["runnable_test", "pseudocode", "prose_procedure", "not_applicable", "unclear"] },
+        "testPath": { "type": ["string", "null"] },
+        "command": { "type": ["string", "null"] },
+        "assertionKinds": {
+          "type": "array",
+          "items": { "enum": ["response", "durable_state", "side_effect", "absence", "authorization_boundary"] }
+        },
+        "negativePathKinds": {
+          "type": "array",
+          "items": { "enum": ["authentication", "authorization", "validation", "tenant_isolation", "idempotency", "rollback", "concurrency"] }
+        },
+        "asyncWait": { "enum": ["bounded_polling", "no_async", "fixed_sleep", "not_applicable", "unclear"] },
+        "cleanupSteps": { "type": "array", "items": { "type": "string" } },
+        "artifactKinds": {
+          "type": "array",
+          "items": { "enum": ["test_report", "service_logs", "protocol_trace", "database_snapshot", "message_trace"] }
+        },
+        "redCauseCheck": { "enum": ["setup_healthy_then_business_assertion", "setup_failure", "not_applicable", "unclear"] }
+      }
     },
     "notes": {
       "type": "array",

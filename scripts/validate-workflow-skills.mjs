@@ -121,6 +121,9 @@ const requiredEvalFixtures = [
   'declared-real-e2e-execution',
   'locked-e2e-contract-before-implementation',
   'schema-validated-milestone-issue-plan',
+  'backend-api-invitation-e2e-blueprint',
+  'backend-webhook-idempotency-e2e-blueprint',
+  'backend-tenant-isolation-e2e-blueprint',
 ];
 const fixtureIds = workflowFixtures.map(fixture => fixture.id);
 if (new Set(fixtureIds).size !== fixtureIds.length)
@@ -142,6 +145,9 @@ for (const field of [
   if (!workflowOutputSchema.required.includes(field) || !workflowOutputSchema.properties[field])
     failures.push(`workflow A/B output schema missing required field: ${field}`);
 }
+
+if (!workflowOutputSchema.properties.backendE2EBlueprint)
+  failures.push('workflow A/B output schema missing backendE2EBlueprint');
 
 for (const runner of ['scripts/run-workflow-ab.mjs', 'scripts/run-workflow-model-matrix.mjs']) {
   if (!readFileSync(resolve(root, runner), 'utf8').includes('--baseline-ref'))

@@ -70,6 +70,7 @@ ${fixture.prompt}
 - e2eExecutionPolicy 判断 TC 要求真实 E2E 时是否运行声明环境，还是用 mock 冒充。
 - e2eContractPolicy 判断必需 E2E 是否在生产实现前产生正确 RED、经独立 review 并锁定 revision，修改语义时重新审批。
 - deliveryPlanPolicy 判断 Milestone/Issue 是否采用 schema 校验的最少充分垂直计划，而不是纯文本或技术分层。
+- 当场景要求产出后端 E2E 时，backendE2EBlueprint 必须根据 Skill 构造具体可执行蓝图；不要把候选枚举当检查清单机械全选。repositoryGrounding 区分已由仓库证据确认的 exact_collected_file、上下文不足时先检查再锁定的 inspect_before_lock，以及编造路径。非后端 E2E 场景设为 null。
 - notes 只写最多 5 条可由 Skill 文本直接支持的观察。
 
 ${skills}`;
@@ -140,6 +141,31 @@ function score(result, expect) {
     add('red-reviewed-locked-e2e', result.e2eContractPolicy === 'red_review_locked', 3);
   if (expect.schemaValidatedDeliveryPlan)
     add('schema-validated-vertical-plan', result.deliveryPlanPolicy === 'schema_validated_vertical', 3);
+  if (expect.backendE2EBlueprint) {
+    const blueprint = result.backendE2EBlueprint || {};
+    add('backend-public-stateful-boundary', blueprint.boundary === 'public_protocol_to_owned_state', 3);
+    add('backend-declared-runtime', blueprint.sutRuntime === 'declared_runtime', 2);
+    const grounding = expect.backendE2EBlueprint.repositoryGrounding;
+    const runnableGrounded = grounding === 'exact_collected_file'
+      ? Boolean(blueprint.testPath) && Boolean(blueprint.command)
+      : blueprint.repositoryGrounding === 'inspect_before_lock';
+    add('backend-runnable-test', blueprint.testArtifact === 'runnable_test' && runnableGrounded, 3);
+    if (grounding)
+      add('backend-repository-grounding', blueprint.repositoryGrounding === grounding, 3);
+    add('backend-setup-and-cleanup', blueprint.setupSteps?.length >= 2 && blueprint.cleanupSteps?.length >= 1, 2);
+    add('backend-red-cause', blueprint.redCauseCheck === 'setup_healthy_then_business_assertion', 2);
+    for (const component of expect.backendE2EBlueprint.realComponents || [])
+      add(`backend-real-${component}`, blueprint.realComponents?.includes(component), 1);
+    for (const assertion of expect.backendE2EBlueprint.assertionKinds || [])
+      add(`backend-assert-${assertion}`, blueprint.assertionKinds?.includes(assertion), 1);
+    for (const negative of expect.backendE2EBlueprint.negativePathKinds || [])
+      add(`backend-negative-${negative}`, blueprint.negativePathKinds?.includes(negative), 1);
+    for (const artifact of expect.backendE2EBlueprint.artifactKinds || [])
+      add(`backend-artifact-${artifact}`, blueprint.artifactKinds?.includes(artifact), 1);
+    if (expect.backendE2EBlueprint.asyncWait)
+      add('backend-bounded-async-wait', blueprint.asyncWait === expect.backendE2EBlueprint.asyncWait, 2);
+    add('backend-does-not-substitute-sut', !blueprint.substitutedComponents?.includes('sut') && !blueprint.substitutedComponents?.includes('owned_persistence'), 2);
+  }
   const earned = checks.filter(check => check.pass).reduce((sum, check) => sum + check.weight, 0);
   const total = checks.reduce((sum, check) => sum + check.weight, 0);
   return { earned, total, rate: earned / total, checks };

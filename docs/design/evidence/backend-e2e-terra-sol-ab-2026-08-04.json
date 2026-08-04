@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T07:35:40.313Z",
+  "purpose": "Evaluate and improve backend API E2E authoring behavior with gpt-5.6-sol and gpt-5.6-terra.",
+  "runner": "codex exec --json",
+  "baselineRef": "origin/main",
+  "models": [
+    { "model": "gpt-5.6-sol", "effort": "low" },
+    { "model": "gpt-5.6-terra", "effort": "low" }
+  ],
+  "fixtures": [
+    "backend-api-invitation-e2e-blueprint",
+    "backend-webhook-idempotency-e2e-blueprint",
+    "backend-tenant-isolation-e2e-blueprint"
+  ],
+  "initialAB": {
+    "generatedAt": "2026-08-04T07:25:38.253Z",
+    "command": "node scripts/run-workflow-model-matrix.mjs --suite screen --models gpt-5.6-terra,gpt-5.6-sol --baseline-ref origin/main --fixtures backend-api-invitation-e2e-blueprint,backend-webhook-idempotency-e2e-blueprint,backend-tenant-isolation-e2e-blueprint --concurrency 4 --repeat 3",
+    "requested": 36,
+    "passed": 36,
+    "failed": 0,
+    "scores": {
+      "gpt-5.6-sol": {
+        "baseline": { "earned": 355, "total": 399, "rate": 0.8897243108 },
+        "candidate": { "earned": 390, "total": 399, "rate": 0.977443609 }
+      },
+      "gpt-5.6-terra": {
+        "baseline": { "earned": 357, "total": 399, "rate": 0.8947368421 },
+        "candidate": { "earned": 375, "total": 399, "rate": 0.9398496241 }
+      }
+    },
+    "candidateByFixture": {
+      "gpt-5.6-sol": {
+        "backend-api-invitation-e2e-blueprint": "135/135",
+        "backend-webhook-idempotency-e2e-blueprint": "132/135",
+        "backend-tenant-isolation-e2e-blueprint": "123/129"
+      },
+      "gpt-5.6-terra": {
+        "backend-api-invitation-e2e-blueprint": "131/135",
+        "backend-webhook-idempotency-e2e-blueprint": "124/135",
+        "backend-tenant-isolation-e2e-blueprint": "120/129"
+      }
+    },
+    "finding": "The candidate consistently improved RED-review-lock behavior and backend boundary coverage. Sol was more robust than Terra at supplying a concrete test path and command, but the synthetic fixture lacked enough repository context to prove those paths existed."
+  },
+  "groundingCorrection": {
+    "generatedAt": "2026-08-04T07:32:00.541Z",
+    "candidateOnlyRuns": 18,
+    "finding": "After the Skill explicitly prohibited invented paths, both models correctly left paths unresolved until repository inspection. The former runnable-path score was therefore identified as an invalid oracle that rewarded fabrication."
+  },
+  "calibratedAB": {
+    "generatedAt": "2026-08-04T07:35:40.313Z",
+    "command": "node scripts/run-workflow-model-matrix.mjs --suite screen --models gpt-5.6-terra,gpt-5.6-sol --baseline-ref origin/main --fixtures backend-api-invitation-e2e-blueprint,backend-webhook-idempotency-e2e-blueprint,backend-tenant-isolation-e2e-blueprint --concurrency 4 --repeat 1",
+    "requested": 12,
+    "passed": 12,
+    "failed": 0,
+    "oracle": "When exact repository paths are absent, inspect_before_lock is correct; exact_collected_file requires real collection evidence.",
+    "scores": {
+      "gpt-5.6-sol": {
+        "baseline": { "earned": 133, "total": 142, "rate": 0.9366197183 },
+        "candidate": { "earned": 142, "total": 142, "rate": 1.0 }
+      },
+      "gpt-5.6-terra": {
+        "baseline": { "earned": 136, "total": 142, "rate": 0.9577464789 },
+        "candidate": { "earned": 141, "total": 142, "rate": 0.9929577465 }
+      }
+    },
+    "remainingFinding": "Terra omitted the webhook side-effect assertion in one calibrated candidate run. Sol covered every calibrated check."
+  },
+  "deterministicEvidence": {
+    "backendContract": "API E2E requires public protocol to owned state, declared runtime, disposable owned dependencies, isolation/reset, exact commands, risk-based assertions, bounded async waits and artifacts.",
+    "repositoryGrounding": "Locked/passing API E2E requires test framework/config, collection command, collection Evidence and sha256 test file hash.",
+    "negativeValidation": "A locked API E2E without backend execution or collection/hash grounding is rejected."
+  },
+  "routingConclusion": {
+    "default": "gpt-5.6-sol/low",
+    "fallback": "gpt-5.6-terra/low",
+    "confidence": "experimental",
+    "boundary": "Applies to Codex backend E2E authoring only. Main-agent verification of a collected file, trustworthy RED and authoritative PASS remains mandatory."
+  },
+  "limitations": [
+    "The fixtures evaluate structured test blueprints from supplied Skill text, not compilation against a real product repository.",
+    "The calibrated comparison has one run per model, variant and fixture; it is a calibration signal, not statistical significance.",
+    "Scenario facts expose some expected assertions, so high absolute scores should not be treated as autonomous coding success.",
+    "Provider pricing was unavailable; token usage and latency are informational only."
+  ]
+}

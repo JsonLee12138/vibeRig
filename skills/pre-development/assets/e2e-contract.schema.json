@@ -18,7 +18,7 @@
           "id", "title", "type", "scope", "acIds", "preconditions", "steps", "expected",
           "requiredFidelity", "environment", "testPath", "status", "contractRevision",
           "oracleApproval", "implementationReview", "lock", "redEvidenceRef", "passingEvidenceRef",
-          "invalidatedBy"
+          "invalidatedBy", "backendExecution"
         ],
         "properties": {
           "id": { "type": "string", "pattern": "^E2E-[0-9]+$" },
@@ -66,7 +66,70 @@
           },
           "redEvidenceRef": { "type": ["string", "null"] },
           "passingEvidenceRef": { "type": ["string", "null"] },
-          "invalidatedBy": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          "invalidatedBy": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "backendExecution": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": [
+              "boundary", "transport", "sutRuntime", "ownedDependencies", "externalDependencyPolicy",
+              "isolation", "commands", "assertionKinds", "negativePathKinds", "asyncWait",
+              "artifactKinds", "repositoryGrounding"
+            ],
+            "properties": {
+              "boundary": { "const": "public_protocol_to_owned_state" },
+              "transport": { "enum": ["http", "grpc", "graphql", "message"] },
+              "sutRuntime": { "const": "declared_runtime" },
+              "ownedDependencies": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "enum": ["database", "cache", "broker", "object_store"] }
+              },
+              "externalDependencyPolicy": { "enum": ["real_sandbox", "protocol_fake_at_boundary", "not_applicable"] },
+              "isolation": { "const": "unique_namespace_and_reset" },
+              "commands": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["bootstrap", "health", "test", "reset"],
+                "properties": {
+                  "bootstrap": { "type": "string", "minLength": 1 },
+                  "health": { "type": "string", "minLength": 1 },
+                  "test": { "type": "string", "minLength": 1 },
+                  "reset": { "type": "string", "minLength": 1 }
+                }
+              },
+              "assertionKinds": {
+                "type": "array",
+                "minItems": 2,
+                "uniqueItems": true,
+                "items": { "enum": ["response", "durable_state", "side_effect", "absence", "authorization_boundary"] }
+              },
+              "negativePathKinds": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "enum": ["authentication", "authorization", "validation", "tenant_isolation", "idempotency", "rollback", "concurrency"] }
+              },
+              "asyncWait": { "enum": ["bounded_polling", "not_applicable"] },
+              "artifactKinds": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "enum": ["test_report", "service_logs", "protocol_trace", "database_snapshot", "message_trace"] }
+              },
+              "repositoryGrounding": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["testFramework", "configPath", "discoveryCommand", "collectionEvidenceRef", "testFileHash"],
+                "properties": {
+                  "testFramework": { "type": "string", "minLength": 1 },
+                  "configPath": { "type": "string", "minLength": 1 },
+                  "discoveryCommand": { "type": "string", "minLength": 1 },
+                  "collectionEvidenceRef": { "type": ["string", "null"] },
+                  "testFileHash": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" }
+                }
+              }
+            }
+          }
         },
         "allOf": [
           {
@@ -91,6 +154,33 @@
           {
             "if": { "properties": { "status": { "const": "passing" } } },
             "then": { "properties": { "passingEvidenceRef": { "type": "string", "minLength": 1 } } }
+          },
+          {
+            "if": { "properties": { "type": { "const": "api_e2e" } } },
+            "then": { "properties": { "backendExecution": { "type": "object" } } },
+            "else": { "properties": { "backendExecution": { "type": "null" } } }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": { "const": "api_e2e" },
+                "status": { "enum": ["locked", "passing"] }
+              }
+            },
+            "then": {
+              "properties": {
+                "backendExecution": {
+                  "properties": {
+                    "repositoryGrounding": {
+                      "properties": {
+                        "collectionEvidenceRef": { "type": "string", "minLength": 1 },
+                        "testFileHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         ]
       }

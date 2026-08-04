@@ -443,5 +443,113 @@
       "requirementConfirmation": false,
       "automaticTestEnvironment": false
     }
+  },
+  {
+    "id": "backend-api-invitation-e2e-blueprint",
+    "stage": "planning",
+    "suites": ["screen", "full"],
+    "prompt": "需求与 AC 已确认：团队管理员通过 POST /teams/{id}/invitations 邀请成员；成功时返回 201、PostgreSQL 中产生 invitation，并由 sandbox mailer 异步收到一封邮件；非管理员返回 403 且不能留下 invitation。项目声明 make e2e-up/e2e-health/e2e-api/e2e-reset，已有 TypeScript API 测试框架。请基于提供的 Skill 产出可以交给实现 Agent 的后端 E2E blueprint，而不是泛泛测试建议。",
+    "baselineFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/e2e-test-contract.md",
+      "skills/pre-development/assets/e2e-contract.schema.json"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "realE2E": true,
+      "lockedE2EContract": true,
+      "targetMode": "planned",
+      "backendE2EBlueprint": {
+        "repositoryGrounding": "inspect_before_lock",
+        "realComponents": ["service_runtime", "database"],
+        "assertionKinds": ["response", "durable_state", "side_effect", "absence", "authorization_boundary"],
+        "negativePathKinds": ["authorization"],
+        "artifactKinds": ["test_report", "service_logs", "database_snapshot"],
+        "asyncWait": "bounded_polling"
+      }
+    }
+  },
+  {
+    "id": "backend-webhook-idempotency-e2e-blueprint",
+    "stage": "planning",
+    "suites": ["screen", "full"],
+    "prompt": "需求与 AC 已确认：支付 webhook 通过公开 HTTP endpoint 接收事件，写入 PostgreSQL outbox，经真实本地 broker 异步生成一条 ledger entry；相同 provider event 重放两次仍只能产生一条 ledger entry。第三方 provider 不能在本地运行，但已有协议一致的 boundary fake。项目已有容器化启动、健康检查、测试和销毁命令。请产出实现前可锁定的后端 E2E blueprint，并明确如何得到可信 RED。",
+    "baselineFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/e2e-test-contract.md",
+      "skills/pre-development/assets/e2e-contract.schema.json"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "realE2E": true,
+      "lockedE2EContract": true,
+      "targetMode": "planned",
+      "backendE2EBlueprint": {
+        "repositoryGrounding": "inspect_before_lock",
+        "realComponents": ["service_runtime", "database", "broker"],
+        "assertionKinds": ["response", "durable_state", "side_effect"],
+        "negativePathKinds": ["idempotency"],
+        "artifactKinds": ["test_report", "service_logs", "database_snapshot", "message_trace"],
+        "asyncWait": "bounded_polling"
+      }
+    }
+  },
+  {
+    "id": "backend-tenant-isolation-e2e-blueprint",
+    "stage": "planning",
+    "suites": ["screen", "full"],
+    "prompt": "需求与 AC 已确认：GET /documents/{id} 必须阻止跨租户读取。使用两个租户和真实本地 PostgreSQL；租户 A 的成员能读取自己的文档，使用同一 token 读取租户 B 文档时必须失败且响应不能泄露标题、owner 或存在性。项目已有可执行 API E2E 框架和本地环境命令。请产出最小但足够的后端 E2E blueprint。",
+    "baselineFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/e2e-test-contract.md",
+      "skills/pre-development/assets/e2e-contract.schema.json"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "realE2E": true,
+      "lockedE2EContract": true,
+      "targetMode": "planned",
+      "backendE2EBlueprint": {
+        "repositoryGrounding": "inspect_before_lock",
+        "realComponents": ["service_runtime", "database"],
+        "assertionKinds": ["response", "absence", "authorization_boundary"],
+        "negativePathKinds": ["tenant_isolation", "authorization"],
+        "artifactKinds": ["test_report", "service_logs"],
+        "asyncWait": "no_async"
+      }
+    }
   }
 ]

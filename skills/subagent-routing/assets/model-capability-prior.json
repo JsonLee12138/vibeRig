@@ -1,8 +1,8 @@
 {
   "$schema": "./model-capability-prior.schema.json",
-  "version": "codex-workflow-2026-07-23-v1",
+  "version": "codex-workflow-2026-08-04-v2",
   "provider": "codex-chatgpt",
-  "measuredAt": "2026-07-23",
+  "measuredAt": "2026-08-04",
   "runner": "codex-cli 0.144.6",
   "evidence": "docs/design/evidence/workflow-model-matrix-2026-07-23.zh-CN.md",
   "pricing": {
@@ -49,6 +49,17 @@
       "durationMs": 83434,
       "confidence": "provisional",
       "boundary": "Do not explore in the decision path. A challenger may run read-only in shadow mode but cannot decide acceptance, authority, merge, or release."
+    },
+    {
+      "taskFamily": "backend-e2e-authoring",
+      "phase": "planning",
+      "default": { "model": "gpt-5.6-sol", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+      "quality": { "earned": 142, "total": 142 },
+      "durationMs": 161468,
+      "confidence": "experimental",
+      "evidence": "docs/design/evidence/backend-e2e-terra-sol-ab-2026-08-04.json",
+      "boundary": "Use Sol for L2/L3 backend API E2E contract and runnable-test authoring when Codex model overrides are available. Terra is the lower-latency fallback. Synthetic results do not bypass main-agent checks that the exact file is collected, produces a trustworthy RED, and passes against the declared runtime."
     },
     {
       "taskFamily": "complex-escalation",

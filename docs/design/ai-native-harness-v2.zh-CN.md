@@ -146,3 +146,11 @@ UI 视觉验收、已确认需求到 PR、重复失败恢复、多 Agent 共享�
 - `delivery-plan.json` 使 Milestone/Issue 的用户价值、垂直切片、AC/TC/风险/依赖、完成证据和超过 8 个 Issue 的例外理由可校验。
 
 2026-08-04 的 40 次 `gpt-5.6-luna/low` 新旧对照均成功，主评分同为 `314/325`。已有真实 E2E 执行能力保持 `105/105`；全场景非主评分观察中，candidate 有 `18/20` 次明确采用 RED→复核→锁定，baseline 为 `8/20`。专用场景的提示过于显式，导致基线在新分类器上饱和，因此不宣称主评分提升。Schema 结构、锁定条件及正反例拒绝由确定性契约测试负责。详细证据和限制见 `docs/design/evidence/ai-native-harness-v2-contract-luna-ab-2026-08-04.json`。
+
+## 后端 E2E 编写加固与模型路由
+
+后端 `api_e2e` 不再只声明“使用真实环境”，而是要求从公开协议边界进入真实声明运行时，使用可丢弃的 owned database/cache/broker，且只能在不可控第三方边界使用 sandbox 或协议一致 fake。测试需覆盖响应、持久化状态、外部可观察副作用、风险对应负向路径、唯一 namespace、bounded polling、清理命令和诊断 artifacts。
+
+锁定前还必须完成仓库 grounding：读取现有测试框架、配置和 fixture helper，写入精确测试路径，证明声明命令能够收集该文件，并记录 collection Evidence 与文件 hash。缺少仓库上下文时保持 draft 并先检查，不得编造路径或用伪代码冒充 runnable test。
+
+Terra/Sol 后端 E2E A/B 使用邀请、webhook 幂等和跨租户隔离三个场景。三次重复的初始 36 次有效样本中，Sol 从 `355/399` 提升到 `390/399`，Terra 从 `357/399` 提升到 `375/399`；Sol candidate 的明确路径/命令稳定性高于 Terra，但该指标随后被发现会奖励在仓库上下文不足时编造路径。修正 grounding oracle 后的 12 次校准中，Sol candidate 为 `142/142`、baseline 为 `133/142`；Terra candidate 为 `141/142`、baseline 为 `136/142`。因此 Codex 上暂以 `gpt-5.6-sol/low` 作为实验性后端 E2E authoring prior，Terra 作为低延迟 fallback；真实文件收集、RED 原因和 PASS 仍必须由主 Agent 验证。详细过程见 `docs/design/evidence/backend-e2e-terra-sol-ab-2026-08-04.json`。

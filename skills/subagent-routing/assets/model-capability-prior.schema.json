@@ -36,7 +36,8 @@
           },
           "durationMs": { "type": ["integer", "null"], "minimum": 0 },
           "confidence": { "enum": ["heuristic", "experimental", "provisional", "trusted"] },
-          "boundary": { "type": "string", "minLength": 1 }
+          "boundary": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string", "minLength": 1 }
         }
       }
     },

@@ -153,6 +153,7 @@ Bundled evidence lives in [model-capability-prior.json](./assets/model-capabilit
 - bounded intake → `gpt-5.6-luna/low`;
 - confirmed deterministic execute → `gpt-5.4-mini/low`, escalating to Luna/Terra on ambiguity, cross-module scope, repeated failure, or risk;
 - open-ended/high-value escalation → `gpt-5.6-sol`, starting low and increasing reasoning only when evidence justifies it.
+- backend API E2E authoring → experimental `gpt-5.6-sol/low`, with Terra as the lower-latency fallback; the route is valid only when the main agent verifies an exact collected test file and trustworthy RED Evidence.
 
 Use these only when the exact model is available on Codex and no fresher comparable project evidence invalidates the prior. Other platforms remain `inherit` until they have provider-specific observations.
 
