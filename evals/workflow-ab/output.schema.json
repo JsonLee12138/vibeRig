@@ -27,6 +27,8 @@
     "deliveryFlowPolicy",
     "subagentIntegrationPolicy",
     "e2eExecutionPolicy",
+    "e2eContractPolicy",
+    "deliveryPlanPolicy",
     "notes"
   ],
   "properties": {
@@ -119,6 +121,14 @@
     "e2eExecutionPolicy": {
       "type": "string",
       "enum": ["real_or_declared_fidelity", "mock_substitution", "planning_only", "not_applicable", "unclear"]
+    },
+    "e2eContractPolicy": {
+      "type": "string",
+      "enum": ["red_review_locked", "test_after_implementation", "oracle_unlocked", "not_applicable", "unclear"]
+    },
+    "deliveryPlanPolicy": {
+      "type": "string",
+      "enum": ["schema_validated_vertical", "prose_only", "technical_layers", "not_applicable", "unclear"]
     },
     "notes": {
       "type": "array",

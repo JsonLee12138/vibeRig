@@ -137,3 +137,12 @@ viberig init --upgrade --yes
 UI 视觉验收、已确认需求到 PR、重复失败恢复、多 Agent 共享契约冲突和声明式真实 E2E 五类场景已加入 `screen` / `full` suite。评测器支持 `--baseline-ref`，避免提交后错误地把候选版本自身作为基线。
 
 2026-08-04 使用 `gpt-5.6-luna/low`、`origin/main` 基线、每类 5 次重复的独立评测中，旧版与 V2 均为 `510/510`。结论是这些成熟工作流保持行为一致且未发现回归；该 suite 没有证明额外分数提升。V2 在这些场景中的价值是把视觉/行为/UAT、恢复策略、交付授权、冲突集成和真实 E2E 保真度变成显式可评分契约。完整校准过程和限制见 `docs/design/evidence/ai-native-harness-v2-expanded-luna-ab-2026-08-04.json`。
+
+## E2E Contract 与 Delivery Plan 加固
+
+规划阶段新增两个机器契约：
+
+- `e2e-contract.json` 将 AC 到 E2E 的流程固化为可运行 RED、独立复核、oracle 锁定、实现和对应 revision 的 PASS；
+- `delivery-plan.json` 使 Milestone/Issue 的用户价值、垂直切片、AC/TC/风险/依赖、完成证据和超过 8 个 Issue 的例外理由可校验。
+
+2026-08-04 的 40 次 `gpt-5.6-luna/low` 新旧对照均成功，主评分同为 `314/325`。已有真实 E2E 执行能力保持 `105/105`；全场景非主评分观察中，candidate 有 `18/20` 次明确采用 RED→复核→锁定，baseline 为 `8/20`。专用场景的提示过于显式，导致基线在新分类器上饱和，因此不宣称主评分提升。Schema 结构、锁定条件及正反例拒绝由确定性契约测试负责。详细证据和限制见 `docs/design/evidence/ai-native-harness-v2-contract-luna-ab-2026-08-04.json`。

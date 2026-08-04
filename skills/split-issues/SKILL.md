@@ -20,7 +20,7 @@ description: 把已确认 Work Item 的里程碑拆成可验证垂直 Issue。�
 
 由 `pre-development` 调用，不操作 Linear：
 
-1. 为所有里程碑在 `delivery-plan.md` 生成 Issue 草案；
+1. 为所有里程碑生成供人阅读的 `delivery-plan.md` 和机器权威 `delivery-plan.json`，后者通过 `../pre-development/assets/delivery-plan.schema.json`；
 2. 第一个里程碑拆到可执行粒度，后续里程碑保持可估算的规划粒度并标记 `indicative`；
 3. 每项写目标、范围、非目标、AC/TC/风险 IDs、验证图节点、契约引用、验证摘要、尺寸、依赖、内部实施清单、并行组、冲突集合、集成点、回滚单元和完成证据；保留验证图声明的 stage/fidelity，跨 Issue 的 E2E/回归 TC 只绑定 Milestone；
 4. 依赖采用 `blocks` / `blockedBy` 语义；不选择实现人员或 subagent；
@@ -76,6 +76,7 @@ Issue 中的 TC 只表达责任范围，不保存运行结果。`manual`、`owne
 - [ ] 不能独立验收的候选已合并为 checklist；超过 8 个 Issue 时有逐项理由。
 - [ ] `parallelGroup`、`conflictSet`、`integrationPoints` 和 `rollbackUnit` 足以约束执行并发。
 - [ ] `traceability.json` 可从 Outcome/AC/TC 定位到本地或 Linear Issue；跨 Issue 与老板验收 TC 留在 Milestone。
+- [ ] `delivery-plan.json` schema-valid，机器字段与人读草案一致；超过 8 个 Issue 有独立验收理由。
 - [ ] L2/L3 Issue 继承验证图节点及其 stage/fidelity，没有把 Milestone E2E 降级为单 Issue 模拟测试。
 - [ ] 审批前无 Linear 副作用。
 - [ ] Materialize 只处理下一个 Milestone，已查重且未指派。

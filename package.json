@@ -53,6 +53,7 @@
     "@antfu/eslint-config": "^9.1.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.0.10",
+    "ajv": "^6.15.0",
     "eslint": "^10.6.0",
     "eslint-plugin-format": "^2.0.1",
     "tsdown": "^0.13.0",

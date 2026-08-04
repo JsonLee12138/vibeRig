@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viberig.dev/schemas/e2e-contract.schema.json",
+  "title": "VibeRig E2E Test Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "requirementId", "contracts"],
+  "properties": {
+    "version": { "const": 1 },
+    "requirementId": { "type": "string", "minLength": 1 },
+    "contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id", "title", "type", "scope", "acIds", "preconditions", "steps", "expected",
+          "requiredFidelity", "environment", "testPath", "status", "contractRevision",
+          "oracleApproval", "implementationReview", "lock", "redEvidenceRef", "passingEvidenceRef",
+          "invalidatedBy"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^E2E-[0-9]+$" },
+          "title": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["api_e2e", "ui_e2e"] },
+          "scope": { "enum": ["issue_local", "milestone"] },
+          "acIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^AC-[0-9]+$" } },
+          "preconditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "steps": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "expected": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "requiredFidelity": { "enum": ["ephemeral", "sandbox", "real", "real_browser"] },
+          "environment": { "type": "string", "minLength": 1 },
+          "testPath": { "type": ["string", "null"] },
+          "status": { "enum": ["drafted", "red_verified", "locked", "passing", "invalidated"] },
+          "contractRevision": { "type": "integer", "minimum": 1 },
+          "oracleApproval": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "source", "approvedRevision"],
+            "properties": {
+              "status": { "enum": ["pending", "approved", "rejected"] },
+              "source": { "enum": ["requirement_gate", "owner_review"] },
+              "approvedRevision": { "type": ["integer", "null"], "minimum": 1 }
+            }
+          },
+          "implementationReview": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "reviewerKind", "reviewedRevision"],
+            "properties": {
+              "status": { "enum": ["pending", "approved", "changes_requested"] },
+              "reviewerKind": { "enum": ["independent_qa", "technical_owner", "product_owner"] },
+              "reviewedRevision": { "type": ["integer", "null"], "minimum": 1 }
+            }
+          },
+          "lock": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "lockedRevision", "changePolicy"],
+            "properties": {
+              "status": { "enum": ["unlocked", "locked", "superseded"] },
+              "lockedRevision": { "type": ["integer", "null"], "minimum": 1 },
+              "changePolicy": { "const": "reopen_contract_review" }
+            }
+          },
+          "redEvidenceRef": { "type": ["string", "null"] },
+          "passingEvidenceRef": { "type": ["string", "null"] },
+          "invalidatedBy": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "status": { "enum": ["red_verified", "locked", "passing"] } } },
+            "then": {
+              "properties": {
+                "testPath": { "type": "string", "minLength": 1 },
+                "redEvidenceRef": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "status": { "enum": ["locked", "passing"] } } },
+            "then": {
+              "properties": {
+                "oracleApproval": { "properties": { "status": { "const": "approved" }, "approvedRevision": { "type": "integer", "minimum": 1 } } },
+                "implementationReview": { "properties": { "status": { "const": "approved" }, "reviewedRevision": { "type": "integer", "minimum": 1 } } },
+                "lock": { "properties": { "status": { "const": "locked" }, "lockedRevision": { "type": "integer", "minimum": 1 } } }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "status": { "const": "passing" } } },
+            "then": { "properties": { "passingEvidenceRef": { "type": "string", "minLength": 1 } } }
+          }
+        ]
+      }
+    }
+  }
+}

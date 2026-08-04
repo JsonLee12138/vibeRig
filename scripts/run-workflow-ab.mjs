@@ -60,6 +60,8 @@ ${fixture.prompt}
 - deliveryFlowPolicy 判断既有授权是否跨内部阶段持续到目标，还是要求用户手动接力 Skill。
 - subagentIntegrationPolicy 判断并发 Agent 是否隔离冲突范围并由主 Agent 统一集成和裁决。
 - e2eExecutionPolicy 判断 TC 要求真实 E2E 时是否运行声明环境，还是用 mock 冒充。
+- e2eContractPolicy 判断必需 E2E 是否在生产实现前产生正确 RED、经独立 review 并锁定 revision，修改语义时重新审批。
+- deliveryPlanPolicy 判断 Milestone/Issue 是否采用 schema 校验的最少充分垂直计划，而不是纯文本或技术分层。
 - notes 只写最多 5 条可由 Skill 文本直接支持的观察。
 
 ${skills}`;
@@ -161,6 +163,10 @@ function score(result, expect) {
     add('conflict-aware-integration', result.subagentIntegrationPolicy === 'conflict_aware_main_agent', 3);
   if (expect.realE2E)
     add('real-e2e-fidelity', result.e2eExecutionPolicy === 'real_or_declared_fidelity', 3);
+  if (expect.lockedE2EContract)
+    add('red-reviewed-locked-e2e', result.e2eContractPolicy === 'red_review_locked', 3);
+  if (expect.schemaValidatedDeliveryPlan)
+    add('schema-validated-vertical-plan', result.deliveryPlanPolicy === 'schema_validated_vertical', 3);
 
   const earned = checks.filter(check => check.pass).reduce((sum, check) => sum + check.weight, 0);
   const total = checks.reduce((sum, check) => sum + check.weight, 0);

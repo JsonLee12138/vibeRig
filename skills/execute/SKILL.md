@@ -106,6 +106,8 @@ description: 在需求基线已确认后，以 Goal Loop 持续完成软件开�
 
 L2/L3 或含多个 AC/执行阶段的工作使用 [Verification Graph](./references/verification-graph.md) 将 Outcome、AC、TC、权威阶段和 Evidence 连接起来。L0/L1 可把等价最小映射内嵌在 Goal Contract，不能因此省略完成判据。
 
+必需 API/UI E2E 同时读取 [E2E Test Contract](./references/e2e-test-contract.md)。开始生产实现前确认当前 contract revision 已有正确 RED Evidence 和所需 review/lock；实现循环不得自行弱化锁定测试。Milestone E2E 在集成阶段运行，Issue Agent 只交接该节点。
+
 每轮 Plan 检查 [Runbook Contract](./references/runbook-contract.md) 的触发条件。只有运行、部署、迁移、恢复、外部依赖、监控或 Smoke 行为变化时更新权威 Runbook，并在允许环境实际演练；未触发时记录 `not_applicable`，不创建空文档。
 
 使用 [evidence-packet.schema.json](./assets/evidence-packet.schema.json) 组织证据。每条 Evidence 必须记录：

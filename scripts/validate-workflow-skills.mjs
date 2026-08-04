@@ -18,10 +18,13 @@ const requiredFiles = [
   'skills/execute/references/environment-driver.md',
   'skills/execute/references/verification-graph.md',
   'skills/execute/references/runbook-contract.md',
+  'skills/execute/references/e2e-test-contract.md',
   'skills/execute/assets/work-item.schema.json',
   'skills/execute/assets/goal-contract.schema.json',
   'skills/execute/assets/evidence-packet.schema.json',
   'skills/execute/assets/verification-graph.schema.json',
+  'skills/pre-development/assets/delivery-plan.schema.json',
+  'skills/pre-development/assets/e2e-contract.schema.json',
   'skills/accept-deliver/SKILL.md',
   'skills/accept-deliver/references/acceptance-and-delivery.md',
   'skills/subagent-routing/references/model-routing.md',
@@ -116,6 +119,8 @@ const requiredEvalFixtures = [
   'repeated-failure-strategy-recovery',
   'multi-agent-shared-contract-conflict',
   'declared-real-e2e-execution',
+  'locked-e2e-contract-before-implementation',
+  'schema-validated-milestone-issue-plan',
 ];
 const fixtureIds = workflowFixtures.map(fixture => fixture.id);
 if (new Set(fixtureIds).size !== fixtureIds.length)
@@ -131,6 +136,8 @@ for (const field of [
   'deliveryFlowPolicy',
   'subagentIntegrationPolicy',
   'e2eExecutionPolicy',
+  'e2eContractPolicy',
+  'deliveryPlanPolicy',
 ]) {
   if (!workflowOutputSchema.required.includes(field) || !workflowOutputSchema.properties[field])
     failures.push(`workflow A/B output schema missing required field: ${field}`);

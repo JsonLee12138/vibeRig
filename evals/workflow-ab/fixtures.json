@@ -333,6 +333,59 @@
     }
   },
   {
+    "id": "locked-e2e-contract-before-implementation",
+    "stage": "planning",
+    "suites": ["screen", "full"],
+    "prompt": "L2 需求和 AC 已确认：新增团队邀请，必须有 API E2E，之后才实现生产代码。请说明谁编写测试、如何证明 RED 原因正确、如何复核并锁定业务 oracle，以及实现 Agent 是否能为了 GREEN 自行修改测试。不要增加逐单测的人工作业。",
+    "baselineFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/pre-development/SKILL.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/execute/SKILL.md",
+      "skills/execute/references/e2e-test-contract.md",
+      "skills/pre-development/assets/e2e-contract.schema.json"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": true,
+      "verificationGraph": true,
+      "lockedE2EContract": true,
+      "targetMode": "planned"
+    }
+  },
+  {
+    "id": "schema-validated-milestone-issue-plan",
+    "stage": "planning",
+    "suites": ["screen", "full"],
+    "prompt": "需求和 AC 已确认：用户可上传并看到头像。请先输出 Milestone/Issue 草案，不创建工单。Milestone 必须是可演示用户价值，Issue 使用最少充分垂直切片；测试、迁移、文档属于同一行为 checklist。计划如何避免漏字段、超过 8 个微任务或只写一份无法校验的 Markdown？",
+    "baselineFiles": [
+      "skills/split-milestones/SKILL.md",
+      "skills/split-issues/SKILL.md"
+    ],
+    "candidateFiles": [
+      "skills/split-milestones/SKILL.md",
+      "skills/split-issues/SKILL.md",
+      "skills/pre-development/assets/delivery-plan.schema.json"
+    ],
+    "expect": {
+      "completeWorkItem": false,
+      "continuousExecution": false,
+      "humanAcceptance": false,
+      "requirementConfirmation": false,
+      "automaticTestEnvironment": false,
+      "verticalMinimalSplit": true,
+      "schemaValidatedDeliveryPlan": true,
+      "targetMode": "planned"
+    }
+  },
+  {
     "id": "execution-recovery-loop",
     "stage": "execute",
     "suites": ["full"],

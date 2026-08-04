@@ -35,9 +35,10 @@ description: 对已完成技术验证的 VibeRig 工作执行证据审计、人�
 1. 解析 Work Item、scope、AC/TC、风险和交付目标；
 2. `git fetch` 或读取 provider 状态，确认 Evidence、CI、PR head 与当前 commit 一致；
 3. 检查 Verification Graph required 节点的环境、权威阶段和保真度；
-4. 复用仍有效的证据，只重跑失效或聚合层 Gate；
-5. 汇总 blocking finding、SKIP/BLOCKED 和残余风险；
-6. 生成用户可执行的最短 UAT 清单。
+4. 必需 E2E 检查 contract revision、oracle approval、review/lock、RED/PASS Evidence 与当前测试路径一致；锁定后被静默改写视为 blocking finding；
+5. 复用仍有效的证据，只重跑失效或聚合层 Gate；
+6. 汇总 blocking finding、SKIP/BLOCKED 和残余风险；
+7. 生成用户可执行的最短 UAT 清单。
 
 Mock、fake 或 local pass 不能满足要求 sandbox、real、owner UAT 或 post-release 的条件。
 自动 E2E 与 owner UAT 可以验证同一 AC，但不能互相替代。Operational change 没有当前 Runbook 演练证据时不得宣称 release-ready。
