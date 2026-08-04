@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T09:50:04.492Z",
+  "purpose": "Evaluate backend API E2E test authoring against a runnable repository fixture and real HTTP mutation oracle through Codex MCP.",
+  "baseCommit": "2f74115535b5d0ec95791fb23bc0ec18f3b5e5e6",
+  "workspaceState": "Evidence was produced from the uncommitted live-benchmark diff that contains this file.",
+  "runner": "codex mcp-server 0.145.0 over stdio + generated Go test + real HTTP mutation oracle",
+  "model": "gpt-5.6-sol",
+  "effort": "low",
+  "baselineRef": "origin/main",
+  "fixture": "evals/backend-e2e-live/fixture",
+  "authorizedArtifact": "e2e/invitations_test.go",
+  "fidelity": "ephemeral real Go HTTP process with file-backed owned state and sandbox-mail capture state",
+  "canonicalOracle": {
+    "strong": { "earned": 32, "total": 32 },
+    "weakHealthOnly": { "earned": 16, "total": 32 },
+    "mutants": [
+      "missing_mail",
+      "auth_bypass",
+      "missing_persistence",
+      "delayed_forbidden_side_effects",
+      "reference"
+    ]
+  },
+  "initialSixCallAB": {
+    "generatedAt": "2026-08-04T09:33:04.959Z",
+    "calls": 6,
+    "transport": "codex MCP; one fresh thread per call",
+    "rawReportSha256": "96bc27368c8bd1633fdd9a486366b13f0cb810f2e9b03b76d962fffb9ce213d4",
+    "initialOracle": {
+      "baseline": { "earned": 84, "total": 84 },
+      "candidate": { "earned": 84, "total": 84 },
+      "finding": "The three-mutant oracle had a false ceiling because it did not test delayed forbidden side effects."
+    },
+    "calibratedOracle": {
+      "rawReportSha256": "2e9039c5e61898c369ea6244e46e85df0a7a71e72627de75ec367164c5441442",
+      "baseline": {
+        "earned": 96,
+        "total": 96,
+        "normalCompletion": "2/3",
+        "artifactPass": "3/3",
+        "durationsMs": [213206, 188739, 240003],
+        "testSha256": [
+          "2704dd9342d113fb102cc4c0ca27b27b281f720446acf95763f8c07fee17e5da",
+          "e7b9ad04fcdf9aa60bd9f1b0fd211efc3177bc627b9364da4070e95cde866c65",
+          "868d72073fb20cf777c08aa5dee6a1bf1e01fa8401a6a98bc50bdcfee86f2503"
+        ]
+      },
+      "candidate": {
+        "earned": 88,
+        "total": 96,
+        "normalCompletion": "3/3",
+        "artifactPass": "1/3",
+        "durationsMs": [208931, 155378, 179381],
+        "failedMutant": "delayed_forbidden_side_effects in repeats 1 and 3",
+        "testSha256": [
+          "b1aae77f0e3b7c793ab97d76c6c58b14c8bc1a32f0223f3044bf81f3fce5d1a7",
+          "89387b31769ab434dee1d8ae58dc6aa5a2c9a68c5029d6f1afd005e8af754e6e",
+          "e7121a4c4479dc2474a097fedb2b4a7d8f09e1951dd8f8b71f9cb5aa541ab8e1"
+        ]
+      }
+    }
+  },
+  "optimization": {
+    "change": "Require a bounded stability window when asserting absence of asynchronous side effects; reject a single immediate snapshot as proof of absence.",
+    "optimizedCandidate": {
+      "generatedAt": "2026-08-04T09:50:04.492Z",
+      "calls": 3,
+      "earned": 96,
+      "total": 96,
+      "normalCompletion": "3/3",
+      "artifactPass": "3/3",
+      "durationsMs": [178693, 182755, 166943],
+      "rawReportSha256": "fc5749639335caf9b98be6bf67b04448989a3d1e3a264722532d9a4b92d8fdbd",
+      "threadIds": [
+        "019fcc25-aa64-7c43-8591-7eca166bcf17",
+        "019fcc28-8f5d-7b63-8687-7885e29e9f57",
+        "019fcc2b-7952-7482-904c-95a288418e53"
+      ],
+      "testSha256": [
+        "c83f635c5f85ae6a193a38a9dc5ed35a60e3bacf2d156c627b88bdec80726970",
+        "ecadb50f5e1ba450aed4d216ae06f308f7eb2c69c37b509895b951326cfea76d",
+        "d44fcad2f43b37394f23a361aae4155b2c9e389642bb4d48290b7dbbf2fa4c93"
+      ]
+    }
+  },
+  "conclusion": {
+    "quality": "The calibrated candidate improved from 88/96 to 96/96 and from 1/3 to 3/3 delayed-side-effect detection. It matches the locked baseline's artifact quality on this fixture.",
+    "completion": "The optimized candidate completed 3/3 MCP calls normally; the locked baseline completed 2/3 normally although all three artifacts passed.",
+    "latency": "Optimized candidate total latency was 528391ms versus 641948ms for baseline, but baseline includes one 240000ms timeout and the sample is too small for a stable speed claim.",
+    "decision": "Keep the asynchronous-absence contract change and the live mutation benchmark. Do not claim a general backend E2E quality advantage from one fixture."
+  },
+  "limitations": [
+    "This is one intentionally small Go backend fixture with three runs per compared variant, not a statistical production benchmark.",
+    "Codex model sandboxes could build the fixture but could not bind the loopback port; authoritative dynamic scoring was therefore executed by the outer real HTTP mutation oracle after each generated artifact was locked.",
+    "Codex MCP does not expose token usage in this tool response, so token counters are unavailable.",
+    "Raw MCP reports were not committed because progress notifications made them 7-15 MB; their hashes are retained and the runner now stores notification counts instead of payloads."
+  ]
+}

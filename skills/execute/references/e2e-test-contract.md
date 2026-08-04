@@ -47,7 +47,8 @@ Build the smallest risk-based suite around an AC or invariant, not one E2E per e
 4. assert the response plus relevant durable state and observable side effects, without coupling to private functions;
 5. cover the critical negative boundary for the risk: authentication/authorization, validation, tenant isolation, idempotency, rollback or concurrency;
 6. for asynchronous outcomes, poll an observable condition with a deadline and diagnostic output—never use an unexplained fixed sleep;
-7. always reset or destroy the namespace and record the exact bootstrap, health, test and reset commands.
+7. when asserting that an asynchronous side effect is absent, observe the owned state for a bounded stability window and fail immediately if the forbidden effect appears; a single immediate snapshot cannot prove absence;
+8. always reset or destroy the namespace and record the exact bootstrap, health, test and reset commands.
 
 The runnable test is the deliverable. A prose procedure or generated pseudocode is insufficient when the project has an executable test framework. Evidence should retain the test report and, when relevant, service logs, protocol traces, database snapshots or message traces. RED review must first prove setup and health succeeded, then show the locked business assertion failing for the expected missing behavior.
 

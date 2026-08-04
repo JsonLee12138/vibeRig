@@ -1,0 +1,167 @@
+package e2e
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"testing"
+	"time"
+)
+
+type fixtureState struct {
+	Invitations []struct {
+		TeamID string `json:"teamId"`
+		Email  string `json:"email"`
+	} `json:"invitations"`
+	Mails []struct {
+		To string `json:"to"`
+	} `json:"mails"`
+}
+
+func TestInvitationE2E(t *testing.T) {
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		t.Fatal("BASE_URL is required")
+	}
+	client := &http.Client{Timeout: 2 * time.Second}
+
+	t.Run("administrator creates durable invitation and mail", func(t *testing.T) {
+		resetFixture(t, client, baseURL)
+		status, body := createInvitation(t, client, baseURL, "admin-token", "new@example.com")
+		if status != http.StatusCreated {
+			t.Fatalf("POST invitation status=%d body=%s, want 201", status, body)
+		}
+		var response struct {
+			TeamID string `json:"teamId"`
+			Email  string `json:"email"`
+		}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Fatalf("decode invitation response: %v", err)
+		}
+		if response.TeamID != "team-1" || response.Email != "new@example.com" {
+			t.Fatalf("unexpected invitation response: %+v", response)
+		}
+
+		deadline := time.NewTimer(1200 * time.Millisecond)
+		defer deadline.Stop()
+		ticker := time.NewTicker(20 * time.Millisecond)
+		defer ticker.Stop()
+		var latest fixtureState
+		for {
+			latest = readState(t, client, baseURL)
+			if invitationCount(latest, "new@example.com") == 1 && mailCount(latest, "new@example.com") == 1 {
+				break
+			}
+			select {
+			case <-deadline.C:
+				t.Fatalf("invitation and mail did not converge before deadline: %+v", latest)
+			case <-ticker.C:
+			}
+		}
+		if invitationCount(latest, "new@example.com") != 1 || mailCount(latest, "new@example.com") != 1 {
+			t.Fatalf("expected exactly one invitation and mail: %+v", latest)
+		}
+	})
+
+	t.Run("member is forbidden without side effects", func(t *testing.T) {
+		resetFixture(t, client, baseURL)
+		status, body := createInvitation(t, client, baseURL, "member-token", "blocked@example.com")
+		if status != http.StatusForbidden {
+			t.Fatalf("member POST status=%d body=%s, want 403", status, body)
+		}
+		deadline := time.Now().Add(300 * time.Millisecond)
+		for {
+			state := readState(t, client, baseURL)
+			if invitationCount(state, "blocked@example.com") != 0 || mailCount(state, "blocked@example.com") != 0 {
+				t.Fatalf("forbidden invitation produced side effects: %+v", state)
+			}
+			if time.Now().After(deadline) {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+	})
+}
+
+func createInvitation(t *testing.T, client *http.Client, baseURL, token, email string) (int, []byte) {
+	t.Helper()
+	body := []byte(fmt.Sprintf(`{"email":%q}`, email))
+	request, err := http.NewRequest(http.MethodPost, baseURL+"/teams/team-1/invitations", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Authorization", "Bearer "+token)
+	request.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("POST invitation: %v", err)
+	}
+	defer response.Body.Close()
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return response.StatusCode, responseBody
+}
+
+func resetFixture(t *testing.T, client *http.Client, baseURL string) {
+	t.Helper()
+	request, err := http.NewRequest(http.MethodDelete, baseURL+"/__test/reset", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("X-Test-Key", "fixture-key")
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("reset fixture: %v", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusNoContent {
+		t.Fatalf("reset status=%d, want 204", response.StatusCode)
+	}
+}
+
+func readState(t *testing.T, client *http.Client, baseURL string) fixtureState {
+	t.Helper()
+	request, err := http.NewRequest(http.MethodGet, baseURL+"/__test/state", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("X-Test-Key", "fixture-key")
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("read fixture state: %v", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("state status=%d, want 200", response.StatusCode)
+	}
+	var state fixtureState
+	if err := json.NewDecoder(response.Body).Decode(&state); err != nil {
+		t.Fatalf("decode fixture state: %v", err)
+	}
+	return state
+}
+
+func invitationCount(state fixtureState, email string) int {
+	count := 0
+	for _, invitation := range state.Invitations {
+		if invitation.TeamID == "team-1" && invitation.Email == email {
+			count++
+		}
+	}
+	return count
+}
+
+func mailCount(state fixtureState, email string) int {
+	count := 0
+	for _, mail := range state.Mails {
+		if mail.To == email {
+			count++
+		}
+	}
+	return count
+}
