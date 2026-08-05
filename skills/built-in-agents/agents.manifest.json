@@ -1,8 +1,66 @@
 {
-  "version": 3,
+  "version": 5,
+  "platformModelDefaults": {
+    "codex": {
+      "architecture_red_team": "gpt-5.6-sol",
+      "backend_architect": "gpt-5.6-terra",
+      "backend_e2e_engineer": "gpt-5.6-sol",
+      "code_review": "gpt-5.6-terra",
+      "data_architect": "gpt-5.6-terra",
+      "frontend_architect": "gpt-5.6-terra",
+      "implementation": "gpt-5.6-luna",
+      "integrator": "gpt-5.6-terra",
+      "qa": "gpt-5.6-terra",
+      "reliability_engineer": "gpt-5.6-terra",
+      "researcher": "gpt-5.6-luna",
+      "security_auditor": "gpt-5.6-sol",
+      "test_engineer": "gpt-5.6-luna",
+      "uiux_design": "gpt-5.6-terra"
+    }
+  },
+  "coreAgents": [
+    "code_review",
+    "implementation",
+    "integrator",
+    "qa",
+    "researcher",
+    "security_auditor",
+    "test_engineer"
+  ],
+  "conditionalAgents": [
+    {
+      "name": "backend_architect",
+      "signals": ["api", "backend", "service", "controller", "rpc", "openapi"]
+    },
+    {
+      "name": "backend_e2e_engineer",
+      "signals": ["backend-e2e", "api-e2e", "real-http-test", "public-protocol-to-owned-state"]
+    },
+    {
+      "name": "frontend_architect",
+      "signals": ["frontend", "web", "react", "vue", "svelte", "page", "component"]
+    },
+    {
+      "name": "data_architect",
+      "signals": ["database", "schema", "migration", "orm", "sql", "persistence"]
+    },
+    {
+      "name": "uiux_design",
+      "signals": ["user-visible-ui", "design", "interaction", "visual", "accessibility"]
+    },
+    {
+      "name": "reliability_engineer",
+      "signals": ["deployment", "docker", "kubernetes", "slo", "observability", "runbook", "rollback"]
+    },
+    {
+      "name": "architecture_red_team",
+      "signals": ["risk:L2-irreversible", "risk:L3", "public-contract", "security-boundary", "data-loss"]
+    }
+  ],
   "agents": [
     "architecture_red_team",
     "backend_architect",
+    "backend_e2e_engineer",
     "code_review",
     "data_architect",
     "frontend_architect",

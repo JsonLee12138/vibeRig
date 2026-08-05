@@ -1,11 +1,11 @@
 ---
 name: vb-init
-description: Initialize or reconcile a project for the Linear-native VibeRig workflow. Use when the user asks to set up VibeRig, create .vibeRig project registration, connect to Linear, configure CI gates, set up the agent team, or wire the global ~/.vb-skills approved tool-skill store. Do not use to create requirements, tasks, or implementation branches.
+description: Initialize or reconcile a project for the AI-native VibeRig workflow. Use when the user asks to set up VibeRig, create the V2 project profile and executable Harness manifests, connect an optional tracker, configure gates, or set up the agent team. Do not use to create requirements, tasks, or implementation branches.
 ---
 
 # VB Init
 
-Prepare a project for the VibeRig Harness: local docs structure, `.vibeRig/project.yaml`, optional Linear registration, Codex agent team, and the global user-approved tool-skill store at `~/.vb-skills`. The knowledge store `~/.vb-wiki` remains lazy and is bootstrapped by `vb-wiki` on its first novelty-gated accepted write.
+Prepare a project for the VibeRig Harness: a discover-first V2 project profile, context routes, environment and Runbook manifests, local requirement state, optional tracker registration, agent team, and the global user-approved tool-skill store at `~/.vb-skills`. The knowledge store `~/.vb-wiki` remains lazy and is bootstrapped by `vb-wiki` on its first novelty-gated accepted write.
 
 All steps are **idempotent** — re-running skips what already exists.
 
@@ -15,6 +15,8 @@ Single responsibility: initialise or reconcile **one project** and its optional 
 
 Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 
+CLI initialization confirmation and Linear team/project selection are configuration choices. They are not `requirement_confirmation` or `delivery_authorization`, and must not route the user into requirement intake.
+
 ## Output
 
 ```text
@@ -22,12 +24,17 @@ Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 ├── AGENTS.md                    (VibeRig inject block from assets/agents-md-inject.md)
 ├── CLAUDE.md  ->  AGENTS.md
 ├── .vibeRig/project.yaml        (see references/project-config-template.md)
+├── .vibeRig/context-routes.yaml (path/risk → context, checks and reviewers)
+├── .vibeRig/environments.yaml   (environment and credential policy)
+├── .vibeRig/runbooks.yaml       (operational trigger and exercise index)
+├── .vibeRig/team-profile.yaml   (7 core + evidence-activated conditional agents)
+├── .vibeRig/model-routing.yaml  (capability × mode × risk runtime model routes)
 ├── .vibeRig/prd/                (PRD 目录，含 archive/)
 ├── .vibeRig/requirements/       (需求目录，含 archive/)
 ├── .gitignore                   (".worktrees/" entry ensured)
 ├── .agents/skills/              (pre-installed: insights, skill-builder, skillos-lite)
 ├── .claude/skills  ->  ../.agents/skills
-├── .codex/agents/*.toml         (baseline team, all 3 platforms rendered by built-in-agents)
+├── .codex/agents/*.toml         (selected team; Codex models fixed by role)
 ├── .claude/agents/*.md
 ├── .cursor/agents/*.md
 └── .worktrees/                  (fixed path — not configurable)
@@ -46,7 +53,16 @@ Do not create requirements, tasks, branches, dashboards, or MCP runner config.
 Use current workspace or git root unless the user provides a path.
 Inspect existing `AGENTS.md`, `.vibeRig/project.yaml`, and `.vibeRig/requirements/`.
 
-### 2. Project scaffolding
+### 2. Project scaffolding and explicit V1 migration
+
+Prefer the deterministic CLI:
+
+```bash
+viberig init --yes
+viberig init --upgrade --yes # only when an existing V1 profile should be reconciled
+```
+
+The command never overwrites context/environment/Runbook manifests. `--upgrade` preserves extension keys, migrates `docs.root`, and removes the obsolete `workspace` section. Without the CLI, create equivalent files from the bundled schemas and template.
 
 ```bash
 mkdir -p .vibeRig/requirements/archive .vibeRig/prd/archive .worktrees
@@ -91,11 +107,13 @@ mkdir -p ~/.claude/skills
 > **Critical**: symlinks must be `~/.agents/skills/vb → ~/.vb-skills` and `~/.claude/skills/vb → ~/.vb-skills`.
 > `~/.agents/vb` (sibling of `skills/`) is outside Codex scan depth and will never be discovered.
 
-### 4. project.yaml
+### 4. Project Profile and Harness manifests
 
 Create or update `.vibeRig/project.yaml` from [references/project-config-template.md](./references/project-config-template.md).
-Required fields: `output.language` (BCP 47), pull request policy, gate policy, Linear ids, the four `subagents` defaults (`default_research`, `default_qa`, `default_security_audit`, `default_review`).
+Validate against [project-profile.schema.json](./assets/project-profile.schema.json). Required fields include document discovery and context routing, environment profile, executable project commands, Evidence retention, tracking adapter, output language, PR/Gate policy and the four recurring Subagent defaults.
 There is no `workspace` section — the worktree root is always the fixed project path `.worktrees/`.
+
+Validate `.vibeRig/context-routes.yaml`, `.vibeRig/environments.yaml` and `.vibeRig/runbooks.yaml` against their bundled schemas. Discover existing project commands and documentation before filling optional values; do not invent commands or force a standard `docs/` tree.
 
 ### 5. AGENTS.md
 
@@ -128,32 +146,56 @@ See the `vb-linear` skill for tool selection and fallback behavior.
 
 Report as **partial** when Linear tools are unavailable (including login declined/failed); do not claim full registration.
 
-### 7. Agent team
+### 7. Agent team and runtime model routing
 
-**7a. 安装插件基线 agents**
+Read [team composition policy](../update-team/references/team-composition.md) before materializing Agents.
 
-调用 `built-in-agents`，按其 `agents.manifest.json` 将当前基线团队渲染或安全升级到 Codex（`.codex/agents/*.toml`）、Claude Code（`.claude/agents/*.md`）、Cursor（`.cursor/agents/*.md`）三个平台。未修改的旧基线可升级；用户定制文件不覆盖；废弃 Agent 只报告，不自动删除。
+**7a. 安装七个 core Agents**
 
-**7b. 调用 `update-team` 分析项目**
+调用 `built-in-agents --core`，仅将 `researcher`、`implementation`、`test_engineer`、`code_review`、`qa`、`security_auditor`、`integrator` 渲染到 Codex、Claude Code、Cursor。不得把 manifest 的完整 `agents[]` 当作 init 默认集合。未修改的旧文件可升级；用户定制文件不覆盖；废弃 Agent 只报告，不自动删除。
 
-调用 `update-team`，基于 `.vibeRig/requirements/` 或 `.vibeRig/prd/` 和 Linear 未执行 issues 或 milestones 推理出项目所需的额外 agent 角色，并完成创建与 `project.yaml` 的 `subagents` 更新。
+**7b. 调用 `update-team` 激活 conditional Agents**
+
+调用 `update-team`，基于 `.vibeRig/requirements/`、`.vibeRig/prd/`、Linear 未执行 work items 和实际项目结构：
+
+1. 为 backend、frontend、data、UI/UX、reliability 和 architecture red-team 收集正向证据；
+2. 只把证据命中的 conditional Agent 精确列表交给 `built-in-agents --only`；存在 backend E2E TC/contract 时必须包含 `backend_e2e_engineer`；
+3. 将 truly project-specific 角色交给 `agent-creator`；
+4. 生成并 schema 校验 `.vibeRig/team-profile.yaml`；
+5. 保留未选中但已存在或定制的 Agent，不自动删除。
+
+**7c. 生成 Codex runtime model routes**
+
+由 `update-team` 生成 `.vibeRig/model-routing.yaml`。Portable spec 保持 `model: inherit`，但 Codex 原生 Agent 文件必须应用 manifest 固定默认模型，避免父会话漏掉分发：
+
+- `researcher`、`implementation`、`test_engineer` → Luna；
+- `code_review`、`qa`、`integrator` 和领域架构 Agent → Terra；
+- `backend_e2e_engineer`、`security_auditor`、`architecture_red_team` → Sol；
+- Claude Code/Cursor 缺少自身 accepted Evidence 时保持 `inherit`。
+
+`test_engineer` 只负责 unit/contract/integration/regression；backend E2E 必须委派给独立 `backend_e2e_engineer`。`.vibeRig/model-routing.yaml` 继续记录 capability、mode/task family、risk、fallback 和 escalation，不得把 challenger 写入 Agent 文件。
 
 ### 8. Report
 
-Project YAML, AGENTS.md, docs root, output language, Linear Project/Document status,
-gate policy, agent team (created / existed / skipped), approved tool-skill store status, and the fact that `vb-wiki` bootstraps its knowledge store lazily.
+Project Profile version, AGENTS.md, context routes, environment/credential boundary, Runbook policy, docs owner mode, output language, tracker status,
+gate policy, core/conditional team evidence (created / existed / dormant / skipped), runtime model routes, approved tool-skill store status, and the fact that `vb-wiki` bootstraps its knowledge store lazily.
 
 ## Validation
 
 ```bash
 # Local project
-ls .vibeRig/project.yaml .vibeRig/requirements/ .worktrees/ AGENTS.md
+ls .vibeRig/project.yaml .vibeRig/context-routes.yaml .vibeRig/environments.yaml .vibeRig/runbooks.yaml .vibeRig/requirements/ .worktrees/ AGENTS.md
+grep 'version: 2' .vibeRig/project.yaml
 grep "language:" .vibeRig/project.yaml
 grep -qxF '.worktrees/' .gitignore && echo "gitignore ok"
 test -L CLAUDE.md && readlink CLAUDE.md | grep -q AGENTS.md && echo "symlink ok"
 test -L .claude/skills && echo "symlink ok"
 ls .agents/skills/insights/ .agents/skills/skill-builder/ .agents/skills/skillos-lite/
 ls .codex/agents/*.toml .claude/agents/*.md .cursor/agents/*.md
+grep -E "coreAgents|conditionalAgents|manifestFingerprint|policyFingerprint" .vibeRig/team-profile.yaml
+grep -E "capability|taskFamily|qualityFloor" .vibeRig/model-routing.yaml
+node <viberig-root>/scripts/validate-rendered-agent-models.mjs \
+  --root . --agents <selected-agent-csv> --platforms codex,claude,cursor
 
 # Global approved tool-skill store
 git -C ~/.vb-skills rev-parse --git-dir && echo "vb-skills git ok"
@@ -166,12 +208,17 @@ test -L ~/.claude/skills/vb \
   && echo "symlink ok" || echo "SYMLINK MISSING"
 ```
 
-- [ ] `.vibeRig/project.yaml` has all required sections including `output.language`; no `workspace` section present.
+- [ ] `.vibeRig/project.yaml` is V2, has document/environment/evidence/tracking contracts and no legacy `docs` or `workspace` section.
+- [ ] Context routes, environment profiles and Runbook index exist, preserve project truth owners and pass their schemas.
 - [ ] Root `AGENTS.md` contains the VibeRig inject block.
 - [ ] `CLAUDE.md` symlinks to `AGENTS.md` (or was already a real file, left untouched).
 - [ ] `.claude/skills` symlinks to `../.agents/skills`.
 - [ ] `insights`, `skill-builder`, `skillos-lite` present in `.agents/skills/`.
-- [ ] Baseline agents present across `.codex/agents/`, `.claude/agents/`, `.cursor/agents/` (or gaps reported).
+- [ ] 七个 core Agents 跨目标平台存在（或 gap 明确报告）。
+- [ ] 每个 conditional Agent 都有 `.vibeRig/team-profile.yaml` 中的正向 evidence；无证据的领域角色未在全新项目中物化。
+- [ ] Codex Agent 文件固定模型符合 manifest；Claude Code/Cursor 未继承 Codex slug。
+- [ ] Luna 处理 research/implementation/普通测试；Terra 处理 Review/QA/Integration/领域设计；Sol 处理独立 backend E2E/Security/Red Team。
+- [ ] `test_engineer` 与 `backend_e2e_engineer` 分离；受保护 Gate 不探索。
 - [ ] `.worktrees/` exists and is listed in `.gitignore`.
 - [ ] `~/.vb-skills` is a git repo with `vb-skill-lock.json`.
 - [ ] `~/.agents/skills/vb` and `~/.claude/skills/vb` both symlink to `~/.vb-skills`.
@@ -184,6 +231,8 @@ test -L ~/.claude/skills/vb \
 - Do not start or register a local VibeRig dashboard.
 - Do not place the Codex symlink at `~/.agents/vb` — it must be `~/.agents/skills/vb`.
 - Do not report full initialization when Linear tools were available but registration was skipped.
+- Do not install all entries in `agents.manifest.json` by default; init materializes core plus evidence-selected conditional Agents.
+- Do not leave Codex Agent models to `inherit`; apply `platformModelDefaults.codex` exactly. Do not copy those slugs to Claude Code/Cursor.
 - Do not make CI mandatory for all projects — record the project's own gate policy.
 - Do not add a `workspace` section or a `worktrees_root` setting to `project.yaml` — the worktree path is always the fixed `.worktrees/`.
 - Do not overwrite an existing real `CLAUDE.md` file with a symlink.

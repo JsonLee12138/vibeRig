@@ -1,0 +1,7 @@
+package invites
+
+var activeBehavior = behavior{
+	enforceAdmin:  true,
+	persistInvite: true,
+	sendMail:      false,
+}

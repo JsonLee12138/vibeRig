@@ -1,0 +1,18 @@
+package e2e
+
+import (
+	"net/http"
+	"os"
+	"testing"
+)
+
+func TestInvitationE2E(t *testing.T) {
+	response, err := http.Get(os.Getenv("BASE_URL") + "/health")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("health status=%d", response.StatusCode)
+	}
+}

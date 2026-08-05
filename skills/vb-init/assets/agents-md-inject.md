@@ -1,4 +1,14 @@
 <!-- inject:viberig:start -->
+## VibeRig Project Context
+
+- Treat this root `AGENTS.md` as a map, not the complete project handbook.
+- Before editing, read `.vibeRig/project.yaml`, the active Work Item, `.vibeRig/context-routes.yaml`, and the nearest directory-level `AGENTS.md` for every path you may change.
+- Load only contracts, ADRs, test guidance and Runbooks selected by matched routes. Do not read the entire `docs/` or `.vibeRig/requirements/` tree.
+- Existing project PRDs, specs, ADRs, task trackers and Runbooks remain authoritative. VibeRig stores references and execution state; do not create a parallel source of truth.
+- Resolve local execution through `.vibeRig/environments.yaml`. Disposable local and configured sandbox credentials may be used without exposing their values; production access remains separately gated.
+- Completion requires current Evidence for every required Verification Graph node. Code generation, low-fidelity substitution or a Subagent completion statement is insufficient.
+- Operational changes must update and exercise the matching `.vibeRig/runbooks.yaml` entry; unaffected work must not create empty Runbooks.
+
 ## VibeRig Output Language
 
 - Read `.vibeRig/project.yaml` before creating or updating VibeRig human-facing records.

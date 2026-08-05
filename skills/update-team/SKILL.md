@@ -5,7 +5,7 @@ description: Analyze the current project and reconcile the agent team plus adapt
 
 # Update Team
 
-分析项目上下文，推理适合的 agent 角色与按任务族划分的模型画像，并通过 [agent-creator](../agent-creator/SKILL.md) 将 Codex（`.codex/agents/`）、Claude Code（`.claude/agents/`）、Cursor（`.cursor/agents/`）三个平台的团队与推理结果对齐。模型路由写入派生的 `.vibeRig/model-routing.yaml`，运行时由 `subagent-routing` 选择，不要求用户手动挑模型。所有操作**幂等**。
+分析项目上下文，先生成“七个核心能力 + 有证据才激活的领域能力”团队画像，再将 Codex（`.codex/agents/`）、Claude Code（`.claude/agents/`）、Cursor（`.cursor/agents/`）三个平台对齐。读取并遵守 [team composition policy](./references/team-composition.md)。Codex Agent 使用 manifest 的固定角色模型，避免依赖父会话猜测分发；Claude Code/Cursor 保持 provider-local `inherit`。模型路由仍写入 `.vibeRig/model-routing.yaml` 记录 capability、mode、risk、fallback 与 Evidence。所有操作**幂等**。
 
 ## Contract
 
@@ -13,15 +13,17 @@ description: Analyze the current project and reconcile the agent team plus adapt
 
 不允许：
 - 手写平台原生文件（TOML/MD）——新建/更新一律经过 `agent-creator`，避免三个平台的团队漂移不一致。
-- 复制插件基线 agents（由 `built-in-agents` 负责）
-- 更新、删除或重新定义 `built-in-agents/agents.manifest.json` 中的基线 agents
+- 自行复制或重写插件 Agent spec（选中的 bundled Agent 由 `built-in-agents` 渲染）
+- 更新、删除或重新定义 `built-in-agents/agents.manifest.json`；本 Skill 只根据 manifest 选择 core/conditional 集合并请求 `built-in-agents` 渲染
 - 操作用户级全局 agents（`~/.codex/agents/`、`~/.claude/agents/`、`~/.cursor/agents/`）
 - 修改 `project.yaml` 的 `subagents` 以外的任何字段
-- 无推理依据地创建 agent
+- 无正向仓库/需求/风险证据地创建 conditional agent
+- 创建 CTO、product manager、white-team、final-QA 或 self-learning Agent
+- 绕过 manifest 随意修改 Codex 固定角色模型，或让普通 `test_engineer` 同时承担需要 Sol 的 backend E2E
 - 把一次任务或一个全局模型分数当成稳定路由结论
 - 把 Codex 模型 slug 写入 Claude Code/Cursor 路由，或反向混用 provider 证据
 - 为追求低成本绕过风险、证据保真、人工验收或交付权限 Gate
-- 在平台支持运行时 model override 时，把实验性模型永久硬编码进 Agent 文件
+- 把 challenger/实验探索模型写入 Codex Agent；固定字段只能来自 manifest 的稳定角色默认值
 - 无用户确认地删除 agent
 - **在 Linear 中定义 agent**——Linear agent = OAuth 应用 + 常驻 webhook 服务，不是可动态创建的实体。本 skill 只同步本地 agents 文件与项目所需的 capability 集合；issue 与 subagent 的匹配由 `task-runner` 执行时经 `subagent-routing` 现场完成
 - 未经用户确认，向共享的 `.cursor/mcp.json` 写入或合并内容
@@ -72,27 +74,41 @@ Linear 不可用时跳过，报告中注明。
 - 价格不可见时保留 token、缓存和耗时，不推测美元或 credits；
 - 读取 [adaptive model routing](../subagent-routing/references/model-routing.md) 的 promotion、demotion 与 exploration 规则。
 
-### 2. 推理所需 agent 角色
+### 2. 形成可审计团队画像
 
-基于以上三个来源综合判断，写出推理结论：
+读取 `built-in-agents/agents.manifest.json` 和 [team composition policy](./references/team-composition.md)：
+
+1. 无条件选择 `researcher`、`implementation`、`test_engineer`、`code_review`、`qa`、`security_auditor`、`integrator` 七个 core Agent。
+2. 只在收集到具体正向证据时激活 conditional Agent；后端 E2E TC/contract 必须激活 `backend_e2e_engineer`，不得交给普通 `test_engineer`。在 `conditionalAgents.<agent>` 下记录 `{evidence[], reason}`。
+3. `architecture_red_team` 只因 L3，或带不可逆/公共契约/安全边界/数据丢失信号的 L2 激活；普通多文件任务不能触发。
+4. 不再需要但已存在或被定制的 Agent 进入 preserved/dormant；未经确认不删除。
+5. 按 [team-profile.schema.json](./assets/team-profile.schema.json) 生成字节稳定的 `.vibeRig/team-profile.yaml`。
+6. `conditionalAgents` 必须是以 manifest Agent name 为 key 的对象，而不是数组；结构上保证一个 capability 只有一个激活记录。
+
+每个 conditional 推荐需说明**依据**（来自哪个来源、对应什么能力）：
 
 - 每个推荐角色需说明**依据**（来自哪个来源、对应什么任务）
 - 示例推理：
-  - requirements 有 DB 迁移文档 + Linear 有数据库相关 issue → 推荐 `db_specialist`
+  - requirements 有 DB 迁移文档 + Linear 有数据库相关 issue → 激活 `data_architect`
   - Linear 有安全类 issue → 推荐 `security_auditor`
-  - 项目有 `frontend/` 目录 + requirements 提及 UI → 推荐 `ui_engineer`
-  - 大量 Bug 类 issue → 推荐 `debugger` + `qa`
-  - 跨模块集成任务 → 推荐 `integrator`
+  - 项目有 `frontend/` 目录 + requirements 提及 UI → 激活 `frontend_architect`；有用户可见交互证据时再激活 `uiux_design`
+  - 大量 Bug 类 issue → 使用 core `implementation` + `qa`，只有现有能力无法覆盖且有重复专项需求时才创建项目特有角色
+  - 跨模块集成任务 → 使用 core `integrator`
 
-### 3. 推理角色 × 模型画像
+### 3. 推理 capability × mode × risk 模型画像
 
-先确定 capability，再为每个平台建立任务族路由：
+先确定 capability 和单次调用 mode，再为每个平台建立任务族路由。至少覆盖：
 
-- `overall/orchestration`
-- `bounded-intake`
-- `deterministic-execute`
-- `acceptance-and-delivery`
-- `complex-escalation`
+- `overall/orchestration`：Terra/low；跨模块歧义升级 Sol/medium；
+- `research/bounded`：Luna/low，多来源综合升级 Terra/low；
+- `implementation/bounded-issue`：Luna/low，跨模块升级 Terra/medium，重复策略失败升级 Sol/medium；
+- `test_engineer/unit-contract-integration`：Luna/low，复杂 fixture/边界升级 Terra/medium；
+- `backend_e2e_engineer/backend-e2e-authoring`：Sol/low，Terra/low 仅作为显式 fallback；
+- `code_review` 和 `qa`：Terra/low，Gate 或冲突证据时 Sol/medium；
+- `integrator`：Terra/medium，契约冲突时 Sol/medium；
+- `security_auditor`：Sol/medium，可信高影响攻击路径时 Sol/high；
+- domain architect：Terra/medium，不可逆/分布式设计升级 Sol/medium；
+- `architecture_red_team`：Sol/high，仅 exploit，不探索。
 
 每条路由写明：默认 model/reasoning、challenger 或 fallback、confidence、accepted sample count、quality floor、探索资格和升级信号。保持锯齿状画像，不生成“最强模型”总榜。
 
@@ -113,17 +129,19 @@ ls .cursor/agents/*.md 2>/dev/null
 - **跳过** — 已存在且推理仍需要（`--force` 则移入待更新）
 - **建议删除** — 某平台已存在该 agent 文件，但推理判断整个团队不再需要这个角色
 
-先读取 `built-in-agents/agents.manifest.json`。manifest 中的基线 Agent 不进入“建议删除”，也不由本 skill 更新；即使当前项目暂时不需要某个基线能力，也保留给 VibeRig 的动态路由。
+先读取 `built-in-agents/agents.manifest.json`。七个 core Agent 永不进入“建议删除”。未被本轮激活的 conditional Agent 不应在全新项目中物化；已经存在的 conditional Agent 进入 preserved/dormant，不自动删除。manifest 外真正的项目 Agent 才由本 Skill 通过 `agent-creator` 创建或更新。
 
 ### 5. 执行变更
 
-**创建/更新**：对每个待创建/待更新的 agent，调用 `agent-creator`，传入：
+**bundled core/conditional 创建或升级**：把团队画像选出的 manifest Agent 精确列表传给 `built-in-agents --only`；不得复制 JSON spec 或手写原生文件。
+
+**项目特有角色创建/更新**：对每个 manifest 外待创建/待更新的 agent，调用 `agent-creator`，传入：
 - agent 名称与职责
 - 读写权限（对应 `sandbox_mode`/`tools`/`readonly`）
 - 项目技术栈与推理依据（用于调优 mission/scope 内容）
 - `targets`：该 agent 在本轮缺失或需要更新的平台列表（不要求 agent-creator 重新渲染已跳过的平台）
 
-Agent spec 默认保留 `model: inherit`，让 `subagent-routing` 按当前任务动态 override。只有目标平台不支持运行时 override、路由已达到 `trusted` 且用户要求固定默认时，才通过 `agent-creator` 写入 provider-specific model；不得把 challenger 写死。
+Bundled portable spec 保留 `model: inherit`，但渲染 Codex 时必须应用 manifest 的 `platformModelDefaults.codex`：Luna 用于 research/implementation/ordinary tests，Terra 用于 review/QA/integration/domain，Sol 用于 backend E2E/security/red-team。Claude Code/Cursor 没有自身 policy 时仍渲染为 `inherit`。不得把 challenger 或 Codex slug 写入其他 provider。
 
 若该 agent 需要 MCP 服务器且目标平台包含 Cursor：先渲染 agent 文件本身（不含 MCP 字段），MCP 服务器是否合并进共享的 `.cursor/mcp.json` 单独询问用户，不在本步骤自动执行。
 
@@ -145,6 +163,8 @@ Agent spec 默认保留 `model: inherit`，让 `subagent-routing` 按当前任�
 - route 只含聚合统计和决策，不复制敏感 prompt、代码或用户数据；
 - source、catalog 或 policy 未变化时保持字节稳定；
 - 出现 invalidation signal 时降低 confidence 或回退到 `inherit`/bundled prior，不静默沿用过期排名。
+- 每条 route 必须显式写 `risk`（单一等级或有界 risk band）；route identity 至少包含 capability、mode/taskFamily、risk 和 reasoningEffort，禁止只有 agent 名称的单维路由。
+- backend E2E authoring 必须路由到独立的 `backend_e2e_engineer`；不得因为 E2E 使用 Sol 而把普通 `test_engineer` 升级到 Sol。
 
 该文件是可重建缓存，不是人工验收、模型可用性或成本事实的权威来源。原始 accepted retrospective observations 才是证据。
 
@@ -156,10 +176,16 @@ Agent spec 默认保留 `model: inherit`，让 `subagent-routing` 按当前任�
   - Linear: 8 个待执行 issue（3 个 UI、2 个 API、1 个安全）
   - 项目结构: Go 后端 + React 前端
 
+团队画像：
+  core               → researcher, implementation, test_engineer, code_review, qa, security_auditor, integrator
+  conditional active → backend_architect, frontend_architect, data_architect, uiux_design
+  conditional absent → backend_e2e_engineer, reliability_engineer, architecture_red_team
+
 Agent 团队变更（按平台）：
-  ui_engineer      → codex: 新建 | claude: 新建 | cursor: 新建（依据：Linear UI issue ×3 + requirements/ui.md）
+  frontend_architect → codex: 新建 | claude: 新建 | cursor: 新建（依据：Linear UI issue ×3 + frontend/）
+  uiux_design        → codex: 新建 | claude: 新建 | cursor: 新建（依据：requirements/ui.md 有用户可见交互）
   security_auditor → codex: 跳过（已存在） | claude: 新建 | cursor: 新建
-  db_specialist    → codex: 新建 | claude: 新建 | cursor: 新建（依据：requirements/db-migration.md）
+  data_architect   → codex: 新建 | claude: 新建 | cursor: 新建（依据：requirements/db-migration.md）
   old_agent_xyz    → 建议删除（无对应任务，请确认 y/n）
 
 汇总：7 个文件新建，1 个跳过，1 个待确认删除
@@ -167,8 +193,11 @@ Agent 团队变更（按平台）：
 模型路由：
   overall             → codex: gpt-5.6-terra/low（provisional，来源：prior + accepted ×4）
   bounded-intake      → codex: gpt-5.6-luna/low（experimental，10% eligible exploration）
-  deterministic-exec → codex: gpt-5.4-mini/low（experimental；跨模块失败时升级）
+  bounded-implement    → codex: gpt-5.6-luna/low（跨模块升级 Terra/medium）
+  unit-contract-test  → codex: gpt-5.6-luna/low
+  backend-e2e-author  → codex/backend_e2e_engineer: gpt-5.6-sol/low（Terra/low explicit fallback）
   accept-deliver      → codex: gpt-5.6-terra/low（exploit only）
+  Codex Agent files   → Luna/ Terra/ Sol fixed by role
   claude/cursor       → inherit（无 provider-specific accepted evidence）
 ```
 
@@ -182,23 +211,38 @@ ls .codex/agents/ .claude/agents/ .cursor/agents/ 2>/dev/null
 grep -En "^\[skills\]|^recommended_skills|^scope\s*=|^inputs\s*=|^boundaries" \
   .codex/agents/*.toml && echo "INVALID FIELDS" || echo "ok"
 
+# Codex: 每个 Agent 的固定模型符合 manifest
+grep -H '^model = ' .codex/agents/*.toml
+
+# 用 VibeRig 自带校验器检查 Codex 固定模型及 Claude/Cursor provider 隔离
+node <viberig-root>/scripts/validate-rendered-agent-models.mjs \
+  --root . --agents <selected-agent-csv> --platforms codex,claude,cursor
+
 # Cursor: 不应出现按 agent 分配的 MCP 字段
 grep -En "^mcp_servers|^mcpServers" .cursor/agents/*.md 2>/dev/null && echo "UNSUPPORTED MCP FIELD" || echo "ok"
 
 # project.yaml subagents 已更新
 grep "subagents" .vibeRig/project.yaml
 
+# 团队画像符合 core/conditional 契约
+grep -E "coreAgents|conditionalAgents|manifestFingerprint|policyFingerprint" .vibeRig/team-profile.yaml
+
 # 模型路由派生文件符合 schema 所需字段
 grep -E "catalogFingerprint|policyFingerprint|taskFamily|qualityFloor" .vibeRig/model-routing.yaml
 ```
 
 - [ ] 每个新建 agent 在其目标平台都有对应文件，且有推理依据
+- [ ] 七个 core Agent 全部存在；conditional Agent 均有正向 evidence，不因猜测创建
+- [ ] `.vibeRig/team-profile.yaml` 通过 schema，记录 manifest/policy fingerprint 和 preserved Agent
 - [ ] 无 agent 被静默删除
 - [ ] `project.yaml` `subagents` 与最终团队一致
 - [ ] 报告包含每个 (agent, 平台) 组合的动作与依据
 - [ ] 涉及 MCP 的 agent 在 Cursor 上未写入不支持字段，`.cursor/mcp.json` 合并仅在用户确认后进行
 - [ ] Linear 不可用时报告中已注明
 - [ ] 模型画像按 provider/platform/task family 分开，没有全局排行榜。
+- [ ] Codex Agent 文件包含 manifest 固定模型；Claude Code/Cursor 保持 provider-local `inherit`。
+- [ ] `test_engineer` 固定 Luna 且拒绝 backend E2E；`backend_e2e_engineer` 独立固定 Sol。
+- [ ] 路由包含 capability + mode/taskFamily + risk；fallback 不静默改写 Agent 文件。
 - [ ] `.vibeRig/model-routing.yaml` 绑定 catalog、policy 与 accepted sources，可由原始 Evidence 重建。
 - [ ] challenger 只用于符合安全条件的低风险探索；accept/security/不可逆操作没有在线探索。
 - [ ] 不可见价格没有被估算或伪造成成本事实。

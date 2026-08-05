@@ -1,0 +1,156 @@
+# AI-Native Harness V2
+
+## 目标
+
+V2 保留 `intake → execute → accept-deliver` 三阶段，把项目上下文、本地环境、测试追踪和 Runbook 从提示词约定提升为可执行契约。目标不是增加流程，而是让简单工作保持轻量，让复杂工作拥有足够 Evidence。
+
+## 核心决策
+
+| ID | 决策 | 理由 |
+|---|---|---|
+| D-01 | 既有项目文档和任务系统继续做唯一 owner | 避免 `.vibeRig` 成为第二套真相源 |
+| D-02 | Project Profile V2 声明文档、环境、命令、Evidence 和 tracker adapter | Agent 不再猜怎样运行项目 |
+| D-03 | Context Router 按路径、风险和能力加载最小上下文 | 降低上下文成本与错误引用 |
+| D-04 | Verification Graph 统一 Outcome—AC—TC—Stage—Evidence | 自动 E2E 与人工 UAT 共享需求定义但证据独立 |
+| D-05 | Environment Driver 优先使用项目真实本地命令 | mock 只覆盖适合替代的边界 |
+| D-06 | Runbook 只由 Operational change 触发，完成条件是实际演练 | 防止空文档与不可执行操作指南 |
+| D-07 | Tracking provider 是 adapter，不阻塞本地工作 | Linear/GitHub 故障不能中断交付 |
+| D-08 | 人确认业务 Oracle 和必要 UI 方向；普通测试由 AI/QA 内部审查 | 保留可靠性，减少人工接力 |
+
+## Project Profile
+
+`.vibeRig/project.yaml` V2 是项目 Harness 索引，不是完整工程手册。它引用：
+
+- 项目架构 owner；
+- 文档发现模式和 Requirement 状态目录；
+- Context Route manifest；
+- Environment manifest 与默认 profile；
+- bootstrap/start/reset/health/test/smoke 命令；
+- Evidence root 与保留策略；
+- tracker adapter；
+- PR、Gate 和 recurring Subagent 偏好。
+
+`documents.mode=discover` 时，VibeRig 读取已有 PRD、spec、ADR、Runbook 和 issue owner，并在 Work Item 中保存引用。只有项目没有合适 owner 时才创建新文档。
+
+## 上下文与规则路由
+
+每个实现增量按照以下顺序形成 Task Context：
+
+1. 根 `AGENTS.md` 与 Project Profile；
+2. 活跃 Work Item / Goal Contract；
+3. 命中的 `context-routes.yaml`；
+4. 每个修改路径最近的目录级 `AGENTS.md`；
+5. 当前 AC/TC、相关 contract/ADR/Runbook；
+6. route 声明的验证命令和 Reviewer。
+
+不得把全部需求、全部研究报告或整个 `docs/` 注入 Subagent。
+
+## 环境与凭据
+
+Environment Driver 先运行项目声明的真实命令；只有仍有缺口时才通过 Test Environment Broker 选择 fake、stub、ephemeral dependency、emulator 或 provider sandbox。
+
+| 凭据类别 | 自治边界 |
+|---|---|
+| Disposable local | 可生成和使用，不输出具体值 |
+| Provider sandbox | 已配置且 profile 允许时使用 |
+| Shared dev | 只使用现有受限凭据 |
+| Production | 默认禁止，写入必须独立授权 |
+
+本地环境必须通过配置或网络拒绝生产端点。Prompt 不是安全边界。
+
+## Verification Graph
+
+复杂 Work Item 形成：
+
+```text
+Outcome → AC → TC → authoritative stage → Evidence
+```
+
+TC 的权威阶段只能是 `issue_local`、`pr_ci`、`milestone`、`owner_uat` 或 `post_release`。每条 TC 声明最低保真度、命令/人工步骤、artifact 和失效条件。
+
+- Issue：定向 unit、contract、integration、可独立局部 E2E；
+- Milestone：跨 Issue E2E、回归和集成；
+- Owner UAT：产品语义、体验和无法自动裁决的结果；
+- Post release：生产 Smoke、观察窗口和真实运行信号。
+
+自动 E2E 与 owner UAT 可以验证同一 AC，但不能互相替代。
+
+## 最少充分拆分
+
+Milestone 按可观察、可演示、可做决策的用户价值划分。Issue 是可独立验收、通常能由一个有意义 PR 交付的垂直单元。
+
+继续拆分只因为：
+
+1. 子项可独立验收或发布；
+2. 可以真正并行；
+3. 有独立验证或回滚风险；
+4. 整体明显超过一个合理 PR。
+
+代码、测试、迁移和文档共同完成一个行为时放入内部 checklist。每个 Milestone 默认 2–6 个 Issue；超过 8 个必须逐项解释独立价值。
+
+`parallelGroup` 表示收益，`conflictSet` 表示不能并发修改的共享契约/迁移/核心文件，`integrationPoints` 定义 join，`rollbackUnit` 定义回退边界。前后端不默认分 Issue；只有契约稳定且能分别验收时才并发。
+
+## 人工 Gate
+
+| Gate | 默认 |
+|---|---|
+| 需求目标、范围、非目标、业务 AC | 必须确认一次 |
+| 新页面/主流程/信息架构/视觉方向 | 合并进需求 Gate 条件确认 |
+| 普通技术方案与测试用例 | AI/QA 内部完成 |
+| 资金、权限、核心不变量、不可逆迁移的测试契约 | 条件人工审查 |
+| 产品/UI UAT | 必须明确结论 |
+| Merge/Release/生产副作用 | 独立明确授权 |
+
+## Runbook
+
+新服务、运行配置、部署、迁移、回填、恢复、监控、外部依赖、Smoke 或回滚变化触发 Runbook。Runbook 必须有 owner、触发条件、诊断/执行/验证/回滚命令和演练 Evidence。
+
+只有 Markdown 文件存在不代表完成；必须在允许的 local、ephemeral 或 staging 环境按当前 commit 实际演练。
+
+## 兼容迁移
+
+V1 项目不会被普通 `viberig init` 静默改写。用户明确运行：
+
+```bash
+viberig init --upgrade --yes
+```
+
+迁移会：
+
+- 将 `version` 更新为 2；
+- 将 `docs.root` 映射到 `documents.requirement_root`；
+- 删除固定 `.worktrees` 的旧 `workspace` 段；
+- 补齐 V2 section；
+- 保留已有已知配置和未知扩展键；
+- 不覆盖已存在的 context/environment/Runbook manifest。
+
+## 非目标
+
+- 不在本阶段实现所有宿主的机械 Hook adapter；
+- 不强制项目采用完整标准 `docs/` 目录；
+- 不把所有 40+ Skills 重写成新入口；
+- 不让 VibeRig 取代现有 issue tracker、CI 或 secrets provider；
+- 不将生产写入权限从本地高自治自动推断出来。
+
+## 扩展行为 A/B
+
+UI 视觉验收、已确认需求到 PR、重复失败恢复、多 Agent 共享契约冲突和声明式真实 E2E 五类场景已加入 `screen` / `full` suite。评测器支持 `--baseline-ref`，避免提交后错误地把候选版本自身作为基线。
+
+2026-08-04 使用 `gpt-5.6-luna/low`、`origin/main` 基线、每类 5 次重复的独立评测中，旧版与 V2 均为 `510/510`。结论是这些成熟工作流保持行为一致且未发现回归；该 suite 没有证明额外分数提升。V2 在这些场景中的价值是把视觉/行为/UAT、恢复策略、交付授权、冲突集成和真实 E2E 保真度变成显式可评分契约。完整校准过程和限制见 `docs/design/evidence/ai-native-harness-v2-expanded-luna-ab-2026-08-04.json`。
+
+## E2E Contract 与 Delivery Plan 加固
+
+规划阶段新增两个机器契约：
+
+- `e2e-contract.json` 将 AC 到 E2E 的流程固化为可运行 RED、独立复核、oracle 锁定、实现和对应 revision 的 PASS；
+- `delivery-plan.json` 使 Milestone/Issue 的用户价值、垂直切片、AC/TC/风险/依赖、完成证据和超过 8 个 Issue 的例外理由可校验。
+
+2026-08-04 的 40 次 `gpt-5.6-luna/low` 新旧对照均成功，主评分同为 `314/325`。已有真实 E2E 执行能力保持 `105/105`；全场景非主评分观察中，candidate 有 `18/20` 次明确采用 RED→复核→锁定，baseline 为 `8/20`。专用场景的提示过于显式，导致基线在新分类器上饱和，因此不宣称主评分提升。Schema 结构、锁定条件及正反例拒绝由确定性契约测试负责。详细证据和限制见 `docs/design/evidence/ai-native-harness-v2-contract-luna-ab-2026-08-04.json`。
+
+## 后端 E2E 编写加固与模型路由
+
+后端 `api_e2e` 不再只声明“使用真实环境”，而是要求从公开协议边界进入真实声明运行时，使用可丢弃的 owned database/cache/broker，且只能在不可控第三方边界使用 sandbox 或协议一致 fake。测试需覆盖响应、持久化状态、外部可观察副作用、风险对应负向路径、唯一 namespace、bounded polling、清理命令和诊断 artifacts。
+
+锁定前还必须完成仓库 grounding：读取现有测试框架、配置和 fixture helper，写入精确测试路径，证明声明命令能够收集该文件，并记录 collection Evidence 与文件 hash。缺少仓库上下文时保持 draft 并先检查，不得编造路径或用伪代码冒充 runnable test。
+
+Terra/Sol 后端 E2E A/B 使用邀请、webhook 幂等和跨租户隔离三个场景。三次重复的初始 36 次有效样本中，Sol 从 `355/399` 提升到 `390/399`，Terra 从 `357/399` 提升到 `375/399`；Sol candidate 的明确路径/命令稳定性高于 Terra，但该指标随后被发现会奖励在仓库上下文不足时编造路径。修正 grounding oracle 后的 12 次校准中，Sol candidate 为 `142/142`、baseline 为 `133/142`；Terra candidate 为 `141/142`、baseline 为 `136/142`。因此 Codex 上暂以 `gpt-5.6-sol/low` 作为实验性后端 E2E authoring prior，Terra 作为低延迟 fallback；真实文件收集、RED 原因和 PASS 仍必须由主 Agent 验证。详细过程见 `docs/design/evidence/backend-e2e-terra-sol-ab-2026-08-04.json`。

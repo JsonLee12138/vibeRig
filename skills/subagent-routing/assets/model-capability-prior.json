@@ -1,8 +1,8 @@
 {
   "$schema": "./model-capability-prior.schema.json",
-  "version": "codex-workflow-2026-07-23-v1",
+  "version": "codex-workflow-2026-08-05-v3",
   "provider": "codex-chatgpt",
-  "measuredAt": "2026-07-23",
+  "measuredAt": "2026-08-04",
   "runner": "codex-cli 0.144.6",
   "evidence": "docs/design/evidence/workflow-model-matrix-2026-07-23.zh-CN.md",
   "pricing": {
@@ -33,12 +33,12 @@
     {
       "taskFamily": "deterministic-execute",
       "phase": "execute",
-      "default": { "model": "gpt-5.4-mini", "reasoningEffort": "low" },
-      "fallback": { "model": "gpt-5.6-luna", "reasoningEffort": "low" },
+      "default": { "model": "gpt-5.6-luna", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-terra", "reasoningEffort": "medium" },
       "quality": { "earned": 22, "total": 22 },
       "durationMs": 30758,
       "confidence": "experimental",
-      "boundary": "Only workflow routing was benchmarked. Use for confirmed, reversible, tightly scoped work; escalate on cross-module ambiguity, repeated failure, or risk."
+      "boundary": "Use for confirmed, reversible, tightly scoped implementation and ordinary test authoring. Escalate cross-module ambiguity to Terra/medium and repeated strategy failure to Sol/medium. GPT-5.4-mini may be sampled only as a non-authoritative challenger after new comparable evidence justifies it."
     },
     {
       "taskFamily": "acceptance-and-delivery",
@@ -49,6 +49,76 @@
       "durationMs": 83434,
       "confidence": "provisional",
       "boundary": "Do not explore in the decision path. A challenger may run read-only in shadow mode but cannot decide acceptance, authority, merge, or release."
+    },
+    {
+      "taskFamily": "backend-e2e-authoring",
+      "phase": "planning",
+      "default": { "model": "gpt-5.6-sol", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+      "quality": { "earned": 142, "total": 142 },
+      "durationMs": 161468,
+      "confidence": "experimental",
+      "evidence": "docs/design/evidence/backend-e2e-terra-sol-ab-2026-08-04.json",
+      "boundary": "Route approved L2/L3 backend API E2E contract and runnable-test authoring to the dedicated backend_e2e_engineer, fixed to Sol in Codex. Terra is an explicit availability fallback only. Synthetic results do not bypass main-agent checks that the exact file is collected, produces a trustworthy RED, and passes against the declared runtime."
+    },
+    {
+      "taskFamily": "independent-code-review",
+      "phase": "review",
+      "default": { "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-sol", "reasoningEffort": "medium" },
+      "quality": null,
+      "durationMs": null,
+      "confidence": "heuristic",
+      "boundary": "Use Terra for ordinary correctness and maintainability review. Escalate high-risk, cross-contract, or contradictory evidence to a read-only Sol review; protected review Gates never explore."
+    },
+    {
+      "taskFamily": "qa-test-design-review",
+      "phase": "planning",
+      "default": { "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+      "fallback": { "model": "gpt-5.6-sol", "reasoningEffort": "medium" },
+      "quality": null,
+      "durationMs": null,
+      "confidence": "heuristic",
+      "boundary": "Use one QA mode per invocation: test_design or test_review. When QA owns a protected Gate, exploit only and require main-agent evidence review."
+    },
+    {
+      "taskFamily": "cross-issue-integration",
+      "phase": "integration",
+      "default": { "model": "gpt-5.6-terra", "reasoningEffort": "medium" },
+      "fallback": { "model": "gpt-5.6-sol", "reasoningEffort": "medium" },
+      "quality": null,
+      "durationMs": null,
+      "confidence": "heuristic",
+      "boundary": "Use for dependency, contract, current-revision evidence, and milestone readiness synthesis. Escalate material contract conflicts to Sol; never delegate merge or acceptance authority."
+    },
+    {
+      "taskFamily": "security-audit",
+      "phase": "review",
+      "default": { "model": "gpt-5.6-sol", "reasoningEffort": "medium" },
+      "fallback": { "model": "gpt-5.6-sol", "reasoningEffort": "high" },
+      "quality": null,
+      "durationMs": null,
+      "confidence": "heuristic",
+      "boundary": "Exploit only. Increase to high reasoning for credible high-impact attack paths, authorization boundaries, or sensitive-data exposure; do not run destructive exploitation."
+    },
+    {
+      "taskFamily": "domain-architecture",
+      "phase": "planning",
+      "default": { "model": "gpt-5.6-terra", "reasoningEffort": "medium" },
+      "fallback": { "model": "gpt-5.6-sol", "reasoningEffort": "medium" },
+      "quality": null,
+      "durationMs": null,
+      "confidence": "heuristic",
+      "boundary": "Use Terra for bounded frontend, backend, data, reliability, or UI/UX architecture. Escalate distributed, irreversible, or unusually ambiguous design to Sol."
+    },
+    {
+      "taskFamily": "architecture-red-team",
+      "phase": "planning",
+      "default": { "model": "gpt-5.6-sol", "reasoningEffort": "high" },
+      "quality": null,
+      "durationMs": null,
+      "confidence": "heuristic",
+      "boundary": "Exploit only on L3 or qualifying L2 risk. Give one adversarial focus, keep the context narrow, and return findings without fixing or approving the design."
     },
     {
       "taskFamily": "complex-escalation",

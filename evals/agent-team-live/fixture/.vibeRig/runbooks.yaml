@@ -1,0 +1,5 @@
+version: 1
+runbooks:
+  - id: invitation-api-rollback
+    trigger: failed invitation API rollout
+    exercise: restore the previous binary and verify additive table compatibility

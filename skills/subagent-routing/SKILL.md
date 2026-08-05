@@ -143,7 +143,7 @@ Subagents must:
 
 Any other need (implementation, test authoring, integration, domain-specific review, architecture, etc.) has no fixed config key — resolve it ad hoc at the point of need: pick the closest matching capability from what's actually available (`.codex/agents/`, `.claude/agents/`, `.cursor/agents/`, or the platform's built-in agent types), and fall back to a generic worker only when nothing closer exists. Record the fallback reason when using a less specific capability.
 
-VibeRig 基线能力优先匹配：实现 → `implementation`；批准的自动化 TC 编写 → `test_engineer`；前端/后端/数据架构调研 → `frontend_architect` / `backend_architect` / `data_architect`；SRE、性能、发布和回滚 → `reliability_engineer`；UI/UX → `uiux_design`；架构攻击 → `architecture_red_team`；跨 Issue 集成就绪 → `integrator`。
+VibeRig 基线能力优先匹配：实现 → `implementation`；unit/contract/integration/regression TC → `test_engineer`；backend E2E public protocol → owned state → `backend_e2e_engineer`；前端/后端/数据架构调研 → `frontend_architect` / `backend_architect` / `data_architect`；SRE、性能、发布和回滚 → `reliability_engineer`；UI/UX → `uiux_design`；架构攻击 → `architecture_red_team`；跨 Issue 集成就绪 → `integrator`。
 
 ## Initial Codex Model Prior
 
@@ -151,8 +151,12 @@ Bundled evidence lives in [model-capability-prior.json](./assets/model-capabilit
 
 - coordinator and accept/delivery → `gpt-5.6-terra/low`;
 - bounded intake → `gpt-5.6-luna/low`;
-- confirmed deterministic execute → `gpt-5.4-mini/low`, escalating to Luna/Terra on ambiguity, cross-module scope, repeated failure, or risk;
+- confirmed bounded implementation and ordinary unit/contract/integration test authoring → `gpt-5.6-luna/low`, escalating cross-module ambiguity to Terra/medium and repeated strategy failure to Sol/medium;
 - open-ended/high-value escalation → `gpt-5.6-sol`, starting low and increasing reasoning only when evidence justifies it.
+- backend API E2E authoring → dedicated `backend_e2e_engineer`, fixed to `gpt-5.6-sol` in Codex with Terra as a recorded availability fallback; the route is valid only when the main agent verifies an exact collected test file and trustworthy RED Evidence.
+- code review and QA → Terra/low; integration and domain architecture → Terra/medium; security audit → Sol/medium; architecture red team → Sol/high. Protected Gates exploit only.
+
+For Codex, bundled Agent files carry these stable role defaults; routing chooses the capability/Agent first and uses fallback only when the fixed model is unavailable. Claude Code/Cursor remain provider-local `inherit` without their own accepted policy.
 
 Use these only when the exact model is available on Codex and no fresher comparable project evidence invalidates the prior. Other platforms remain `inherit` until they have provider-specific observations.
 

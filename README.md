@@ -1,6 +1,6 @@
 # VibeRig
 
-VibeRig is a goal-driven software-development harness. It uses three human stages—requirement discovery and confirmation, an autonomous Execute Goal Loop, and evidence-based human acceptance—to turn natural-language goals into Docs as Code contracts, verified changes, and traceable delivery without making users orchestrate internal skills.
+VibeRig is a goal-driven, project-aware software-development harness. It uses three human stages—requirement discovery and confirmation, an autonomous Execute Goal Loop, and evidence-based human acceptance—to turn natural-language goals into single-owner contracts, verified changes, and traceable delivery. A Context Router, Environment Driver, Verification Graph, and Runbook Contract let agents operate in real local environments without making users orchestrate internal skills.
 
 Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
@@ -34,7 +34,7 @@ flowchart LR
 ## Prerequisites
 
 - An AI coding host with plugin support: [Codex](docs/install/en/codex.md), [Claude Code](docs/install/en/claude.md), or [Cursor](docs/install/en/cursor.md).
-- A Linear workspace VibeRig can connect to. No separate account setup is needed ahead of time — VibeRig ships its own Linear MCP server config (`.mcp.json`) pointing at `https://mcp.linear.app/mcp`, and `vb-init` checks login status before registering a Linear project, triggering the OAuth flow on the spot if you aren't logged in yet.
+- Linear is an optional tracking adapter. When connected, VibeRig ships its own Linear MCP server configuration and can trigger OAuth during registration; unavailable tracking never blocks local Work Items, execution, or Evidence.
 
 ## Install
 
@@ -66,7 +66,10 @@ Project-local files created or used by VibeRig:
 
 ```text
 .vibeRig/
-  project.yaml
+  project.yaml              # V2 Project Profile
+  context-routes.yaml       # path/risk → minimal context, checks, reviewers
+  environments.yaml         # local/sandbox commands and credential boundary
+  runbooks.yaml             # operational triggers and exercise status
   prd/
     <prd-id>/prd.md
     archive/
@@ -87,6 +90,7 @@ Project-local files created or used by VibeRig:
       release-plan.md
       delivery-plan.md
       traceability.json
+      verification-graph.json
       pre-development-review.md
       linear.yaml
     archive/
@@ -94,15 +98,15 @@ Project-local files created or used by VibeRig:
   milestone-<req-id>-<n>/
 ```
 
-Linear is the task and status surface. Local requirement documents are contracts, not issues.
+Existing project PRDs, specs, ADRs, Runbooks, and task systems remain authoritative. VibeRig requirements retain bounded execution state and references instead of creating a second source of truth. Linear may be the task/status surface, but it is not a local execution prerequisite.
 
 ## Built-In Skills And Subagents
 
 ### Core Workflow Skills
 
-- `vb-init`: initializes `.vibeRig/project.yaml`, `.vibeRig/prd/`, `.vibeRig/requirements/` (with archives), `.worktrees/`, Linear container-project registration, gate policy, PR policy, default routing, and builds the project agent team.
+- `vb-init`: initializes the V2 Project Profile, Context Router, environment/Runbook manifests, requirement-state directories, optional tracker, gates, and project agent team; `--upgrade` explicitly migrates a V1 profile.
 - `intake`: unified discovery for features, bugs, small changes, debt, and risks; inspects current reality, builds a complete Work Item, and writes it only after one human confirmation.
-- `execute`: holds the Goal Contract and continuously implements, resolves test environments, verifies, reviews, and reaches the technical delivery target.
+- `execute`: holds the Goal Contract and uses the Context Router, Environment Driver, and Verification Graph to implement, verify, review, and reach the technical target; operational changes update and exercise the authoritative Runbook.
 - `accept-deliver`: audits Evidence, guides human UAT, records explicit acceptance, and performs separately authorized merge or release actions.
 - `pre-development`: internal L2/L3 capability for research, architecture, AC/TC, risk, and delivery planning; it does not add another human approval stage.
 - `prd-brainstorm`: either interviews for a standalone product PRD or synthesizes one internally from confirmed Intake context without repeating owner questions.
@@ -168,10 +172,10 @@ VibeRig uses `subagent-routing` to choose the minimum capability set first, then
 
 ## Workflow
 
-1. Initialize once with `vb-init`; local harness operation does not depend on Linear being available.
+1. Initialize the V2 Project Profile with `vb-init`; it discovers existing documentation owners, project commands, and environment boundaries, while local operation remains independent of Linear.
 2. Describe the goal naturally. `intake` inspects the repository and existing records, discovers a complete Work Item, and asks for one requirement-baseline confirmation before writing `intake.md`, `work-item.json`, and `requirement.yaml`.
 3. L0/L1 work enters `execute` directly. L2/L3 work internally uses `pre-development` for technical planning without creating a new human approval stage.
-4. `execute` loops through Understand → Plan → Implement → Verify → Review → Repair. Missing test configuration is resolved with fixtures, fakes, stubs, ephemeral dependencies, or sandboxes. It pauses only for product decisions, authority boundaries, non-simulatable real environments, or three no-progress attempts.
+4. `execute` loops through Understand → Plan → Implement → Verify → Review → Repair. It loads minimal context by changed path, runs declared real local environments first, then resolves remaining gaps with fixtures, fakes, stubs, ephemeral dependencies, or sandboxes. It pauses only for product decisions, authority boundaries, non-simulatable real environments, or three no-progress attempts.
 5. Once the Completion Oracle is satisfied, `accept-deliver` audits current-commit Evidence and presents the shortest exact human UAT. Rejected work returns to the same Goal Loop.
 6. Explicit acceptance creates an acceptance record. Commit, PR, merge, and release actions follow the requested target and separate authority; merge or release is never inferred from acceptance alone.
 7. Evidence is retained by default. Accepted subagent/model route observations enter the retrospective; `update-team` changes derived routing only with at least five comparable samples, no quality or Critical-safety regression, and a material cost or latency gain. Knowledge compilation and tool-skill promotion keep their separate novelty and explicit-authority gates.

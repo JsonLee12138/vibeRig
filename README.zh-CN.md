@@ -1,6 +1,6 @@
 # VibeRig
 
-VibeRig 是一个目标驱动的软件开发 Harness。它通过“需求脑暴与确认 → Execute Goal Loop → 人工验收与授权交付”三个阶段，把自然语言目标变成 Docs as Code 契约、可验证实现和可追溯 Evidence；用户不需要学习或手工串联内部 Skills。
+VibeRig 是一个目标驱动、项目感知的软件开发 Harness。它通过“需求脑暴与确认 → Execute Goal Loop → 人工验收与授权交付”三个阶段，把自然语言目标变成有唯一 owner 的契约、可验证实现和可追溯 Evidence；Context Router、Environment Driver、Verification Graph 与 Runbook Contract 让 Agent 能在真实本地环境持续推进，而不要求用户手工串联内部 Skills。
 
 英文文档：[README.md](./README.md)
 
@@ -36,7 +36,7 @@ flowchart LR
 ## 前置条件
 
 - 支持 plugin 的 AI 编码宿主：[Codex](docs/install/zh-CN/codex.zh-CN.md)、[Claude Code](docs/install/zh-CN/claude.zh-CN.md) 或 [Cursor](docs/install/zh-CN/cursor.zh-CN.md)。
-- 一个 VibeRig 能连接的 Linear workspace。无需提前单独配置账号——VibeRig 自带 Linear MCP server 配置（`.mcp.json`），指向 `https://mcp.linear.app/mcp`；`vb-init` 在注册 Linear project 之前会先校验登录态，未登录会当场触发 OAuth 授权。
+- Linear 是可选的 tracking adapter。连接时无需提前单独配置账号——VibeRig 自带 Linear MCP server 配置；未连接或不可用时，本地 Work Item、执行和 Evidence 不受阻塞。
 
 ## 安装
 
@@ -68,7 +68,10 @@ VibeRig 会创建或使用这些项目本地文件：
 
 ```text
 .vibeRig/
-  project.yaml
+  project.yaml              # V2 Project Profile
+  context-routes.yaml       # 路径/风险 → 最小上下文、验证、Reviewer
+  environments.yaml         # 本地/sandbox 命令与凭据边界
+  runbooks.yaml             # Operational change → Runbook 与演练状态
   prd/
     <prd-id>/prd.md
     archive/
@@ -89,6 +92,7 @@ VibeRig 会创建或使用这些项目本地文件：
       release-plan.md
       delivery-plan.md
       traceability.json
+      verification-graph.json
       pre-development-review.md
       linear.yaml
     archive/
@@ -96,15 +100,15 @@ VibeRig 会创建或使用这些项目本地文件：
   milestone-<req-id>-<n>/
 ```
 
-Linear 是任务和状态界面。本地 requirement docs 是契约，不是 issues。
+项目已有 PRD、spec、ADR、Runbook 和任务系统继续作为权威 owner；VibeRig Requirement 保存有边界的执行状态和引用，不复制第二套真相。Linear 可作为任务和状态界面，但不是本地执行前置条件。
 
 ## 内置 Skills 和 Subagents
 
 ### 核心流程 Skills
 
-- `vb-init`：初始化 `.vibeRig/project.yaml`、`.vibeRig/prd/`、`.vibeRig/requirements/`（含 archive）、`.worktrees/`、Linear 容器 Project 注册、门禁策略、PR 策略、默认路由，并搭建项目 agent 团队。
+- `vb-init`：初始化 V2 Project Profile、Context Router、Environment/Runbook manifest、需求状态目录、可选 tracker、门禁策略和项目 Agent 团队；`--upgrade` 可显式迁移 V1 profile。
 - `intake`：所有未确认工作（功能、Bug、小改动、技术债和风险）的统一脑暴入口；检查现状并形成完整 Work Item，让用户一次确认后写入文档。
-- `execute`：持有 Goal Contract，持续执行实现、自动测试环境、验证、风险审核和技术交付；可自主解决时不在 Skill 边界中断。
+- `execute`：持有 Goal Contract，通过 Context Router、Environment Driver 和 Verification Graph 持续实现、验证、审核和技术交付；Operational change 同时更新并演练权威 Runbook。
 - `accept-deliver`：Evidence 审计、人工 UAT 和明确验收；merge/release 是验收后的独立授权。
 - `pre-development`：仅为 L2/L3 Work Item 内部补充调研、架构、AC/TC、风险和交付计划；不新增人工审批阶段。
 - `prd-brainstorm`：可独立访谈生成产品级 PRD，也可在开发前流程中从已确认 Intake 自动综合，不重复询问老板。
@@ -170,10 +174,10 @@ VibeRig 通过 `subagent-routing` 先按 capability 选择最小必要阵容，�
 
 ## 运行流程
 
-1. 使用 `vb-init` 初始化项目；Linear 等外部集成不可用时，本地 Harness 仍可工作。
+1. 使用 `vb-init` 初始化 V2 Project Profile；它发现既有文档 owner、项目命令和环境边界，Linear 等外部集成不可用时本地 Harness 仍可工作。
 2. 用户自然描述目标。`intake` 检查代码与现有记录，逐步脑暴完整 Work Item，并在一次人工 Gate 中确认真实需求；确认后才写 `intake.md`、`work-item.json` 和 `requirement.yaml`。
 3. L0/L1 直接进入 `execute`；L2/L3 在内部调用 `pre-development` 补技术计划。技术能力切换不形成新的人工审批。
-4. `execute` 持续运行 Goal Loop：Understand → Plan → Implement → Verify → Review → Repair。缺少测试配置时自动选择 fake、stub、ephemeral dependency 或 sandbox；只有产品决策、权限、不可模拟真实环境或连续三次无进展才暂停。
+4. `execute` 持续运行 Goal Loop：Understand → Plan → Implement → Verify → Review → Repair。它按修改路径加载最小上下文，优先运行项目声明的真实本地环境，再按需选择 fake、stub、ephemeral dependency 或 sandbox；只有产品决策、权限、不可模拟真实环境或连续三次无进展才暂停。
 5. Completion Oracle 满足后进入 `accept-deliver`。系统先审计当前 commit 的 Evidence，再给用户最短可执行 UAT；退回项自动回到同一 Goal Loop。
 6. 用户明确验收通过后记录 acceptance。commit、PR、merge、release 按初始目标和单独 authority 执行；merge/release 不从验收通过自动推断。
 7. Evidence 默认保留；Subagent/model route observation 在人工验收后进入 retrospective。`update-team` 只在至少 5 个可比样本、质量不退化、无 Critical 失败且成本或延迟改善达到阈值时调整派生路由；知识编译与工具 Skill 晋升仍分别受 novelty 和独立授权约束。

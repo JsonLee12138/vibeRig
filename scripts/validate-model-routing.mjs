@@ -21,11 +21,18 @@ const fixtures = readJson('evals/model-routing/fixtures.json');
 check(prior.version && prior.provider && prior.evidence, 'model prior must be versioned and evidence-backed');
 check(prior.routes.length >= 4, 'model prior must cover the main workflow task families');
 check(prior.invalidationSignals.length > 0, 'model prior must define invalidation signals');
+const routeByFamily = new Map(prior.routes.map(route => [route.taskFamily, route]));
+check(routeByFamily.get('deterministic-execute')?.default.model === 'gpt-5.6-luna', 'bounded deterministic execution must default to Luna');
+check(routeByFamily.get('backend-e2e-authoring')?.default.model === 'gpt-5.6-sol', 'backend E2E authoring must route independently to Sol');
+check(routeByFamily.get('security-audit')?.default.model === 'gpt-5.6-sol', 'security audit must default to Sol');
+check(routeByFamily.get('architecture-red-team')?.default.reasoningEffort === 'high', 'architecture red team must use high reasoning');
+check(routeByFamily.get('cross-issue-integration')?.default.model === 'gpt-5.6-terra', 'integration must default to Terra');
 check(priorSchema.$defs?.modelSelection, 'prior schema must define modelSelection');
 check(observationSchema.properties?.prediction, 'route observation must capture prediction');
 check(observationSchema.properties?.outcome, 'route observation must capture outcome');
 check(profileSchema.properties?.catalogFingerprint, 'profile must bind the model catalog');
 check(profileSchema.properties?.policyFingerprint, 'profile must bind the routing policy');
+check(profileSchema.properties?.routes?.items?.required?.includes('risk'), 'model routes must require explicit risk');
 
 for (const fixture of fixtures) {
   const { input, expect, id } = fixture;

@@ -1,9 +1,31 @@
-version: 1
+version: 2
 project:
   name: "vb-plugin"
   root: "."
-docs:
-  root: ".vibeRig/requirements"
+  repo_url: "https://github.com/JsonLee12138/vibeRig.git"
+  architecture: "docs/design/skill-workflow-optimization.zh-CN.md"
+documents:
+  mode: "discover"
+  requirement_root: ".vibeRig/requirements"
+  exec_plan_root: "docs/exec-plans"
+  runbook_index: "docs/runbooks/index.md"
+  context_routes: ".vibeRig/context-routes.yaml"
+environment:
+  manifest: ".vibeRig/environments.yaml"
+  default_profile: "local"
+commands:
+  bootstrap: "pnpm install --frozen-lockfile"
+  start: "pnpm dev"
+  reset: ""
+  health: "pnpm run typecheck"
+  targeted_test: "pnpm test"
+  smoke: "pnpm run build"
+evidence:
+  root: "artifacts/viberig"
+  retention: "accepted_only"
+tracking:
+  provider: "linear"
+  mode: "adapter"
 output:
   language: "zh-CN"
 pull_request:
@@ -17,6 +39,7 @@ linear:
   project_document_id: ""
   project_document_title: "VibeRig Project Registration"
 gate_policy:
+  hooks_enabled: false
   ci_required: "project_decides"
   required_commands: []
   manual_checks: []

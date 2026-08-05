@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T02:06:59.392Z",
+  "purpose": "Expanded pre-PR behavioral A/B coverage for UI acceptance, end-to-end delivery, recovery, multi-agent integration, and declared real E2E",
+  "runner": "scripts/run-workflow-model-matrix.mjs",
+  "command": "node scripts/run-workflow-model-matrix.mjs --suite screen --model gpt-5.6-luna --baseline-ref origin/main --fixtures ui-implementation-visual-acceptance,confirmed-requirement-to-pr,repeated-failure-strategy-recovery,multi-agent-shared-contract-conflict,declared-real-e2e-execution --concurrency 5 --repeat 5",
+  "baselineRef": "origin/main",
+  "model": {
+    "id": "gpt-5.6-luna",
+    "effort": "low"
+  },
+  "suite": "screen",
+  "repeat": 5,
+  "fixtures": [
+    "ui-implementation-visual-acceptance",
+    "confirmed-requirement-to-pr",
+    "repeated-failure-strategy-recovery",
+    "multi-agent-shared-contract-conflict",
+    "declared-real-e2e-execution"
+  ],
+  "calibrationRun": {
+    "baseline": { "earned": 528, "total": 530, "rate": 0.9962264150943396 },
+    "candidate": { "earned": 522, "total": 530, "rate": 0.9849056603773585 },
+    "finding": "The misses were limited to an ambiguous human-acceptance check on technical verified targets and a duplicate continuous-execution check on the UI acceptance boundary.",
+    "rubricCorrection": [
+      "A verified technical target transitions to pending acceptance; it does not require human acceptance to occur inside execute.",
+      "The UI fixture scores continuous authorized delivery through deliveryFlowPolicy and separately scores owner UAT, avoiding a duplicate boundary check."
+    ]
+  },
+  "independentRun": {
+    "baseline": {
+      "runs": 25,
+      "earned": 510,
+      "total": 510,
+      "rate": 1,
+      "durationMs": 599860,
+      "usage": {
+        "input_tokens": 597159,
+        "cached_input_tokens": 295936,
+        "output_tokens": 15870,
+        "reasoning_output_tokens": 6055
+      }
+    },
+    "candidate": {
+      "runs": 25,
+      "earned": 510,
+      "total": 510,
+      "rate": 1,
+      "durationMs": 580231,
+      "usage": {
+        "input_tokens": 622997,
+        "cached_input_tokens": 290560,
+        "output_tokens": 17018,
+        "reasoning_output_tokens": 6775
+      }
+    },
+    "byFixture": [
+      { "id": "ui-implementation-visual-acceptance", "baseline": "90/90", "candidate": "90/90" },
+      { "id": "confirmed-requirement-to-pr", "baseline": "140/140", "candidate": "140/140" },
+      { "id": "repeated-failure-strategy-recovery", "baseline": "70/70", "candidate": "70/70" },
+      { "id": "multi-agent-shared-contract-conflict", "baseline": "105/105", "candidate": "105/105" },
+      { "id": "declared-real-e2e-execution", "baseline": "105/105", "candidate": "105/105" }
+    ]
+  },
+  "conclusion": {
+    "behavior": "parity",
+    "regressionDetected": false,
+    "measurableLiftDetected": false,
+    "interpretation": "Both versions already route these mature workflow scenarios correctly. V2 makes the contracts explicit and machine traceable, but this suite does not demonstrate an additional behavioral score lift.",
+    "timing": "Candidate aggregate duration was 3.27% lower, but per-fixture latency varied and is not treated as a performance claim."
+  },
+  "limitations": [
+    "This is model-judged Skill routing, not execution against a real application repository.",
+    "The five repeats measure consistency but are not a production statistical significance study.",
+    "Real browser, backend, identity-provider, and multi-agent file-conflict execution require a separate executable benchmark."
+  ]
+}

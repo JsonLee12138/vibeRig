@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "generatedAt", "catalogFingerprint", "policyFingerprint", "sources", "routes"],
@@ -23,6 +23,7 @@
           "phase",
           "taskFamily",
           "capability",
+          "risk",
           "default",
           "confidence",
           "sampleCount",
@@ -34,6 +35,7 @@
           "phase": { "type": "string", "minLength": 1 },
           "taskFamily": { "type": "string", "minLength": 1 },
           "capability": { "type": "string", "minLength": 1 },
+          "risk": { "type": "string", "minLength": 1 },
           "default": { "$ref": "#/$defs/modelSelection" },
           "challenger": { "$ref": "#/$defs/modelSelection" },
           "fallback": { "$ref": "#/$defs/modelSelection" },

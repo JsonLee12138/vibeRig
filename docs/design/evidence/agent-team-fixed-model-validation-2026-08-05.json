@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "date": "2026-08-05",
+  "policy": {
+    "codex": {
+      "luna": ["researcher", "implementation", "test_engineer"],
+      "terra": ["code_review", "qa", "integrator", "backend_architect", "frontend_architect", "data_architect", "reliability_engineer", "uiux_design"],
+      "sol": ["backend_e2e_engineer", "security_auditor", "architecture_red_team"]
+    },
+    "claude": "inherit",
+    "cursor": "inherit"
+  },
+  "status": "passed",
+  "staticValidation": {
+    "eslint": "passed",
+    "typecheck": "passed",
+    "harnessContracts": "passed",
+    "modelRouting": "passed",
+    "workflowSkills": "passed",
+    "renderIsolationFixture": "passed; rejects a Codex slug in Claude frontmatter"
+  },
+  "liveAB": {
+    "runner": "node scripts/run-agent-team-live-ab.mjs --repeat 1 --mcp-timeout-ms 900000 --danger-full-access",
+    "transport": "codex mcp-server",
+    "nestedSandbox": "danger-full-access in isolated /tmp fixtures; explicitly authorized by the user",
+    "artifactRoot": "/tmp/viberig-agent-team-live-PlY0MO",
+    "baseline": { "score": 52.4, "agents": 11 },
+    "candidate": { "score": 100, "agents": 12, "mandatoryFailures": [] },
+    "scoreReport": "docs/design/evidence/agent-team-fixed-model-live-ab-2026-08-05.score-report.json",
+    "scoreReportSha256": "7918ab516b5c26aad3a5cfa593f09499e50bd2532c0f4af091bb044eb4a0d63d",
+    "teamProfileSha256": "3460b543d6db970e6d8e2b6c4c0ff6f55d16f476e70eeade5d6f8639ded53a7a",
+    "modelRoutingSha256": "8ed0a8be98183be65f4f574818fe28147984a45bec01d9c3fabfc203477c064d",
+    "e2eTestSha256": "2b62fd84d392cab266b88bb11f180235154b2234a3cc59bfdc47b4913a97b3ab",
+    "reviewResultSha256": "51c9481f6c60ac4668a20a3242de1c4e269a9ca9e9dddde4e8a5188b2d565762"
+  },
+  "roleExecution": {
+    "backendE2E": "Sol backend_e2e_engineer produced a real httptest test through internal/httpapi.Handler and a trustworthy authorization/no-persistence RED.",
+    "review": "Terra code_review returned REQUEST CHANGES and identified the authorization bypass with file, line, impact, and remediation.",
+    "oracle": "status 201, wanted 403; unauthorized invitation persisted",
+    "protectedChanges": []
+  }
+}

@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
+const workflowFixtures = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/fixtures.json'), 'utf8'));
+const workflowOutputSchema = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/output.schema.json'), 'utf8'));
 
 const requiredFiles = [
   'skills/intake/SKILL.md',
@@ -12,9 +14,17 @@ const requiredFiles = [
   'skills/execute/references/contracts.md',
   'skills/execute/references/goal-loop.md',
   'skills/execute/references/test-environment-broker.md',
+  'skills/execute/references/context-router.md',
+  'skills/execute/references/environment-driver.md',
+  'skills/execute/references/verification-graph.md',
+  'skills/execute/references/runbook-contract.md',
+  'skills/execute/references/e2e-test-contract.md',
   'skills/execute/assets/work-item.schema.json',
   'skills/execute/assets/goal-contract.schema.json',
   'skills/execute/assets/evidence-packet.schema.json',
+  'skills/execute/assets/verification-graph.schema.json',
+  'skills/pre-development/assets/delivery-plan.schema.json',
+  'skills/pre-development/assets/e2e-contract.schema.json',
   'skills/accept-deliver/SKILL.md',
   'skills/accept-deliver/references/acceptance-and-delivery.md',
   'skills/subagent-routing/references/model-routing.md',
@@ -22,6 +32,10 @@ const requiredFiles = [
   'skills/subagent-routing/assets/model-capability-prior.schema.json',
   'skills/subagent-routing/assets/route-observation.schema.json',
   'skills/update-team/assets/model-routing-profile.schema.json',
+  'skills/vb-init/assets/project-profile.schema.json',
+  'skills/vb-init/assets/context-routes.schema.json',
+  'skills/vb-init/assets/environment-profile.schema.json',
+  'skills/vb-init/assets/runbook-index.schema.json',
 ];
 
 for (const path of requiredFiles) {
@@ -40,7 +54,7 @@ for (const path of requiredFiles.filter(path => path.endsWith('.json'))) {
 
 const skillExpectations = {
   'skills/intake/SKILL.md': ['统一 Work Item', '人工 Gate 1', 'work-item.json', '自动交接'],
-  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'accept-deliver'],
+  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'Verification Graph', 'Environment Driver', 'accept-deliver'],
   'skills/accept-deliver/SKILL.md': ['人工验收', 'Evidence', '明确授权', 'execute'],
   'skills/record-issue/SKILL.md': ['兼容', 'intake'],
   'skills/bugger/SKILL.md': ['兼容', 'intake', 'execute'],
@@ -98,6 +112,47 @@ for (const phrase of ['intake', 'execute', 'accept-deliver', 'Goal Loop', 'Work 
 
 if (/bugger.*quick.*accept-issue/i.test(readmes))
   failures.push('README still advertises the legacy bugger -> quick -> accept-issue chain');
+
+const requiredEvalFixtures = [
+  'ui-implementation-visual-acceptance',
+  'confirmed-requirement-to-pr',
+  'repeated-failure-strategy-recovery',
+  'multi-agent-shared-contract-conflict',
+  'declared-real-e2e-execution',
+  'locked-e2e-contract-before-implementation',
+  'schema-validated-milestone-issue-plan',
+  'backend-api-invitation-e2e-blueprint',
+  'backend-webhook-idempotency-e2e-blueprint',
+  'backend-tenant-isolation-e2e-blueprint',
+];
+const fixtureIds = workflowFixtures.map(fixture => fixture.id);
+if (new Set(fixtureIds).size !== fixtureIds.length)
+  failures.push('workflow A/B fixture ids must be unique');
+for (const id of requiredEvalFixtures) {
+  if (!fixtureIds.includes(id))
+    failures.push(`missing workflow A/B fixture: ${id}`);
+}
+
+for (const field of [
+  'uiVerificationPolicy',
+  'recoveryPolicy',
+  'deliveryFlowPolicy',
+  'subagentIntegrationPolicy',
+  'e2eExecutionPolicy',
+  'e2eContractPolicy',
+  'deliveryPlanPolicy',
+]) {
+  if (!workflowOutputSchema.required.includes(field) || !workflowOutputSchema.properties[field])
+    failures.push(`workflow A/B output schema missing required field: ${field}`);
+}
+
+if (!workflowOutputSchema.properties.backendE2EBlueprint)
+  failures.push('workflow A/B output schema missing backendE2EBlueprint');
+
+for (const runner of ['scripts/run-workflow-ab.mjs', 'scripts/run-workflow-model-matrix.mjs']) {
+  if (!readFileSync(resolve(root, runner), 'utf8').includes('--baseline-ref'))
+    failures.push(`${runner} does not support an explicit baseline ref`);
+}
 
 if (failures.length > 0) {
   console.error(failures.join('\n'));

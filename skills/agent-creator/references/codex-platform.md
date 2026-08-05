@@ -16,7 +16,9 @@ Render an [agent-spec.template.json](../assets/agent-spec.template.json) into a 
 - `name` → `name`, snake_case, matches filename when practical.
 - `description` → `description`, human-facing, specific about when Codex should pick this agent.
 - `mission` / `scope_allowed` / `scope_not_allowed` / `inputs` / `output` / `stop_conditions` / `escalation` / `skill_dependencies` → assembled into the `developer_instructions` string, same section structure as the template (`## Mission`, `## Scope`, ...).
-- `model` → `model`. Omit the field entirely when the spec value is `"inherit"` — Codex has no `inherit` keyword, it simply falls back to the parent session's model when the key is absent.
+- Resolve the Codex model as `platform_model_overrides.codex ?? model`, then render it as `model`. Omit the field only when the resolved value is `"inherit"` — Codex has no `inherit` keyword, it simply falls back to the parent session's model when the key is absent.
+- In the TOML template, replace `resolved_model` with that resolved value; remove the entire `model` line when it resolves to `inherit`.
+- A Codex model override is provider-local. Do not render that slug into Claude Code or Cursor unless those targets have their own explicit override.
 - `permission` → `sandbox_mode`: `"read-only"` for read-only, `"workspace-write"` for write.
 - `mcp_servers` (non-empty) → one `[mcp_servers.<name>]` table per server, using the fields from the spec entry's `config` (e.g. `command`, `args`, `url`).
 

@@ -39,12 +39,18 @@ L0/L1 使用 Work Item 中的 scope、AC 和测试策略直接进入 `execute`�
 - `architecture.md`
 - `acceptance.json` 与 `acceptance-guide.md`
 - `test-plan.md` 与 `test-cases.json`
+- `e2e-contract.json`（AC 要求 API/UI E2E 时）
 - `risk-register.json`
-- `release-plan.md` / `delivery-plan.md`
+- `release-plan.md` / `delivery-plan.md` / `delivery-plan.json`
 - `traceability.json`
+- `verification-graph.json`（多 AC、跨阶段或 L2/L3 时）
 - `pre-development-review.md`
 
 不要为满足清单创建空洞文档。不适用产物在 review 中写理由。
+
+同时通过 Context Router 识别项目已有 spec、contract、ADR 和 Runbook owner。规划只写回原 owner 或保存引用，不创建平行真相源。涉及运行、迁移、部署、恢复、监控或外部依赖变化时，把 Runbook 更新与演练作为 TC，而不是额外文档阶段。
+
+需要 API/UI E2E 时读取 [E2E Test Contract](../execute/references/e2e-test-contract.md)。在生产实现前生成可运行测试并记录正确 RED；独立 QA/技术负责人检查测试没有把 setup 失败冒充业务 RED。业务 Oracle 与测试锁定结果并入现有规划审批包，不新增逐测试审批流程。跨 Issue E2E 可以先锁定契约、在集成分支首次运行 RED，但必须明确记录尚未执行的边界。
 
 ## 语义漂移
 
@@ -68,3 +74,5 @@ L0/L1 使用 Work Item 中的 scope、AC 和测试策略直接进入 `execute`�
 - [ ] L2 未固定启动完整红白队。
 - [ ] 产品语义漂移已返回 `intake`。
 - [ ] 技术计划已自动交给 `execute`。
+- [ ] Verification Graph 指定了 TC 的权威阶段和最低保真度；Operational change 已映射 Runbook Gate。
+- [ ] 必需 E2E 有 schema-valid contract、测试路径、正确 RED、review/lock revision；跨 Issue E2E 明确首次可运行阶段。

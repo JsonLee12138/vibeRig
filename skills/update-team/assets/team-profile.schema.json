@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "manifestFingerprint", "policyFingerprint", "sources", "coreAgents", "conditionalAgents", "preservedAgents", "platforms"],
+  "properties": {
+    "version": { "const": 1 },
+    "manifestFingerprint": { "type": "string", "minLength": 1 },
+    "policyFingerprint": { "type": "string", "minLength": 1 },
+    "sources": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "coreAgents": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 7,
+      "maxItems": 7,
+      "items": { "enum": ["researcher", "implementation", "test_engineer", "code_review", "qa", "security_auditor", "integrator"] }
+    },
+    "conditionalAgents": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "backend_architect": { "$ref": "#/$defs/conditionalEvidence" },
+        "backend_e2e_engineer": { "$ref": "#/$defs/conditionalEvidence" },
+        "frontend_architect": { "$ref": "#/$defs/conditionalEvidence" },
+        "data_architect": { "$ref": "#/$defs/conditionalEvidence" },
+        "uiux_design": { "$ref": "#/$defs/conditionalEvidence" },
+        "reliability_engineer": { "$ref": "#/$defs/conditionalEvidence" },
+        "architecture_red_team": { "$ref": "#/$defs/conditionalEvidence" }
+      }
+    },
+    "preservedAgents": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "platforms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codex", "claude", "cursor"],
+      "properties": {
+        "codex": { "$ref": "#/$defs/platformStatus" },
+        "claude": { "$ref": "#/$defs/platformStatus" },
+        "cursor": { "$ref": "#/$defs/platformStatus" }
+      }
+    }
+  },
+  "$defs": {
+    "conditionalEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence", "reason"],
+        "properties": {
+          "evidence": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+    },
+    "platformStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "agents"],
+      "properties": {
+        "status": { "enum": ["rendered", "partial", "skipped"] },
+        "agents": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

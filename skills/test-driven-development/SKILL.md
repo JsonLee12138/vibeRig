@@ -53,6 +53,10 @@ See `references/testing-patterns.md` for code examples.
 
 Record the decision and reason. "Looks right" is not evidence.
 
+Human approval applies to the business oracle, not every generated unit test. L0/L1 test semantics are checked by the main agent or QA. Required L2/L3 API/UI E2E follows [E2E Test Contract](../execute/references/e2e-test-contract.md): write a runnable RED test before production implementation, have independent QA or a technical owner review it, and lock the approved contract revision inside the existing planning approval. Require a human owner reviewer for money, authorization, core invariants, irreversible migration, safety/compliance, or another explicitly high-consequence boundary.
+
+Once an E2E contract is locked, the implementation Agent must not delete, skip, weaken or silently rewrite its oracle, fidelity, environment or test path. A semantic change reopens contract review, increments the revision and invalidates dependent Evidence.
+
 Unavailable test infrastructure is not a skip reason. Read `../execute/references/test-environment-broker.md` and automatically resolve fixtures, fake values, protocol stubs, disposable dependencies, emulators, or sandboxes. Ask the user only when the TC requires a real environment that cannot be safely simulated.
 
 ## Test Pyramid
@@ -83,7 +87,9 @@ For detailed code examples and anti-patterns, see `references/testing-patterns.m
 - Skipping tests to make the suite pass
 - Running the same test command twice without an intervening code change
 - Asking the user for test-only secrets that can be generated or simulated
+- Interrupting every implementation to request approval for ordinary failing tests
 - Claiming a mock pass satisfies a sandbox/real TC
+- Changing a locked E2E oracle during GREEN without reopening contract review
 
 ## Verification
 
@@ -96,3 +102,4 @@ After completing any implementation:
 - [ ] No tests were skipped or disabled
 - [ ] Missing configuration was resolved automatically when mockable
 - [ ] Evidence records environment fidelity and uncovered real-world differences
+- [ ] Required E2E records correct RED Evidence and a reviewed, locked contract revision before production implementation.

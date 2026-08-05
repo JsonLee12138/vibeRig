@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://viberig.dev/schemas/delivery-plan.schema.json",
+  "title": "VibeRig Delivery Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "requirementId", "milestones"],
+  "properties": {
+    "version": { "const": 1 },
+    "requirementId": { "type": "string", "minLength": 1 },
+    "milestones": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/milestone" }
+    }
+  },
+  "definitions": {
+    "stringList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "title", "outcome", "scope", "nonGoals", "acIds", "testCaseIds",
+        "riskIds", "contractRefs", "verificationSummary", "size", "dependencies",
+        "checklist", "parallelGroup", "conflictSet", "integrationPoints", "rollbackUnit",
+        "completionEvidence", "indicative"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "outcome": { "type": "string", "minLength": 1 },
+        "scope": { "$ref": "#/definitions/stringList" },
+        "nonGoals": { "$ref": "#/definitions/stringList" },
+        "acIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^AC-[0-9]+$" } },
+        "testCaseIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^(TC|E2E)-[0-9]+$" } },
+        "riskIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^RISK-[0-9]+$" } },
+        "contractRefs": { "$ref": "#/definitions/stringList" },
+        "verificationSummary": { "type": "string", "minLength": 1 },
+        "size": { "enum": ["XS", "S", "M", "L"] },
+        "dependencies": { "$ref": "#/definitions/stringList" },
+        "checklist": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "parallelGroup": { "type": ["string", "null"] },
+        "conflictSet": { "$ref": "#/definitions/stringList" },
+        "integrationPoints": { "$ref": "#/definitions/stringList" },
+        "rollbackUnit": { "type": "string", "minLength": 1 },
+        "completionEvidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "indicative": { "type": "boolean" }
+      }
+    },
+    "milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "title", "userValue", "scope", "nonGoals", "acIds", "testCaseIds",
+        "riskIds", "dependencies", "deliverySignal", "rollbackSignal", "confidence", "issues"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^ms-[0-9]+$" },
+        "title": { "type": "string", "minLength": 1 },
+        "userValue": { "type": "string", "minLength": 1 },
+        "scope": { "$ref": "#/definitions/stringList" },
+        "nonGoals": { "$ref": "#/definitions/stringList" },
+        "acIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^AC-[0-9]+$" } },
+        "testCaseIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^(TC|E2E)-[0-9]+$" } },
+        "riskIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^RISK-[0-9]+$" } },
+        "dependencies": { "$ref": "#/definitions/stringList" },
+        "deliverySignal": { "type": "string", "minLength": 1 },
+        "rollbackSignal": { "type": "string", "minLength": 1 },
+        "confidence": { "enum": ["committed", "indicative"] },
+        "issues": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/issue" } },
+        "overEightIssueRationale": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "issues": { "minItems": 9 } } },
+          "then": { "required": ["overEightIssueRationale"] }
+        }
+      ]
+    }
+  }
+}
