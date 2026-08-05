@@ -1,6 +1,7 @@
 name = "agent_name"
 description = "Use for a narrow, specific subagent responsibility."
 sandbox_mode = "read-only"
+model = "resolved_model"
 
 developer_instructions = """
 ## Mission

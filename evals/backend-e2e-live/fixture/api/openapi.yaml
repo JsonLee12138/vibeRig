@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: Invitation Fixture API
+  version: 1.0.0
+paths:
+  /teams/{teamId}/invitations:
+    post:
+      parameters:
+        - in: path
+          name: teamId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "201": { description: Invitation accepted }
+        "401": { description: Missing or invalid token }
+        "403": { description: Caller is not a team administrator }

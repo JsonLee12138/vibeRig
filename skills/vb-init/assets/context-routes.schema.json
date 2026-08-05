@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VibeRig Context Routes",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "routes"],
+  "properties": {
+    "version": { "const": 1 },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "match", "read", "verify", "reviewers"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "match": {
+            "type": "object",
+            "required": ["paths"],
+            "properties": {
+              "paths": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+              "risks": { "type": "array", "items": { "enum": ["L0", "L1", "L2", "L3"] } },
+              "capabilities": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "read": { "type": "array", "items": { "type": "string" } },
+          "verify": { "type": "array", "items": { "type": "string" } },
+          "reviewers": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

@@ -20,6 +20,10 @@ Before creating a new UI design, materially changing an existing UI, producing i
 
 This gate does not block critique, accessibility review, visual QA of an existing artifact, UX copy, user research, or research synthesis when the user is not asking to create or change UI.
 
+Within an approved VibeRig Work Item, `UIFLOW.md` and `DESIGN.md` may be authoritative project documents referenced by a requirement rather than copied into it. New pages, primary flows, information architecture and material visual direction require owner confirmation; reuse of an approved design system, bounded bug fixes and implementation details remain inside the Goal Loop.
+
+For implementation, map user journeys, state/viewport/accessibility checks, browser E2E, visual artifacts and owner UAT to the same ACs in `verification-graph.json`. Automated browser behavior, screenshot/visual comparison and human experience acceptance are distinct Evidence nodes, not duplicate requirement definitions.
+
 ## Tool selection rules
 1. If the user explicitly chooses a tool, lock to that tool and do not fall back automatically.
 2. If the user specifies Figma or Pencil, execute design operations through the Pencil MCP toolchain.

@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VibeRig Environment Profiles",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "profiles"],
+  "properties": {
+    "version": { "const": 1 },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["autonomy", "disposable", "production_network", "commands", "credentials"],
+        "properties": {
+          "autonomy": { "enum": ["full", "bounded", "read_only"] },
+          "disposable": { "type": "boolean" },
+          "production_network": { "enum": ["denied", "read_only", "approval_required"] },
+          "commands": {
+            "type": "object",
+            "properties": {
+              "bootstrap": { "type": "string" },
+              "start": { "type": "string" },
+              "reset": { "type": "string" },
+              "health": { "type": "string" }
+            }
+          },
+          "credentials": {
+            "type": "object",
+            "required": ["disposable_local", "provider_sandbox", "shared_dev", "production"],
+            "properties": {
+              "disposable_local": { "enum": ["autonomous", "forbidden"] },
+              "provider_sandbox": { "enum": ["autonomous_if_present", "approval_required", "forbidden"] },
+              "shared_dev": { "enum": ["require_existing", "approval_required", "forbidden"] },
+              "production": { "enum": ["approval_required", "forbidden"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -30,28 +30,33 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsx src/cli/index.ts",
-    "lint": "eslint src scripts/*.mjs eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml",
-    "lint:fix": "eslint src scripts/*.mjs eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml --fix",
+    "lint": "eslint src scripts/*.mjs scripts/*.ts eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml",
+    "lint:fix": "eslint src scripts/*.mjs scripts/*.ts eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml --fix",
     "typecheck": "tsc --noEmit",
     "test:learning-flow": "node scripts/validate-learning-flow.mjs",
     "test:model-routing": "node scripts/validate-model-routing.mjs",
-    "test:workflow-runtime": "node scripts/validate-workflow-runtime.mjs",
     "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
+    "test:harness-contracts": "node --import tsx scripts/validate-harness-contracts.ts",
+    "test:backend-e2e-live-fixture": "node scripts/run-backend-e2e-live-ab.mjs --self-test",
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
-    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
+    "eval:backend-e2e-live": "node scripts/run-backend-e2e-live-ab.mjs",
+    "eval:agent-team-live": "node scripts/run-agent-team-live-ab.mjs",
+    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:workflow-skills && pnpm run test:harness-contracts && pnpm run test:backend-e2e-live-fixture"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "citty": "^0.1.6",
     "consola": "^3.4.2",
     "fs-extra": "^11.3.0",
+    "yaml": "^2.8.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.1.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.0.10",
+    "ajv": "^6.15.0",
     "eslint": "^10.6.0",
     "eslint-plugin-format": "^2.0.1",
     "tsdown": "^0.13.0",

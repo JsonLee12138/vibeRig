@@ -15,11 +15,21 @@
     "mayClaimTargetNow",
     "invalidatesStaleEvidence",
     "externalWritePolicy",
-    "planProjectionTiming",
-    "linearTransitions",
-    "technicalReadyIsTerminal",
-    "requiresDispatchReceipt",
-    "independentGateFailure",
+    "usesContextRouter",
+    "preservesTruthOwners",
+    "usesExecutableEnvironment",
+    "usesVerificationGraph",
+    "requiresRunbookExercise",
+    "taskSplitPolicy",
+    "parallelPolicy",
+    "uiVerificationPolicy",
+    "recoveryPolicy",
+    "deliveryFlowPolicy",
+    "subagentIntegrationPolicy",
+    "e2eExecutionPolicy",
+    "e2eContractPolicy",
+    "deliveryPlanPolicy",
+    "backendE2EBlueprint",
     "notes"
   ],
   "properties": {
@@ -37,7 +47,6 @@
         "type": "string",
         "enum": [
           "requirement_confirmation",
-          "plan_confirmation",
           "blocker_decision",
           "human_acceptance",
           "delivery_authorization",
@@ -81,34 +90,88 @@
       "type": "string",
       "enum": ["respects_authority", "writes_before_confirmation", "unclear"]
     },
-    "planProjectionTiming": {
+    "usesContextRouter": { "type": "boolean" },
+    "preservesTruthOwners": { "type": "boolean" },
+    "usesExecutableEnvironment": { "type": "boolean" },
+    "usesVerificationGraph": { "type": "boolean" },
+    "requiresRunbookExercise": { "type": "boolean" },
+    "taskSplitPolicy": {
       "type": "string",
-      "enum": [
-        "after_requirement_before_plan_confirmation",
-        "after_plan_confirmation",
-        "before_requirement_confirmation",
-        "not_applicable",
-        "unclear"
-      ]
+      "enum": ["vertical_minimal", "technical_layers", "not_applicable", "unclear"]
     },
-    "linearTransitions": {
-      "type": "array",
-      "items": {
-        "enum": [
-          "plan_draft_visible",
-          "ready_for_development",
-          "execution_started",
-          "review_started",
-          "technically_ready",
-          "accepted_delivery_pending",
-          "done"
-        ]
+    "parallelPolicy": {
+      "type": "string",
+      "enum": ["contract_locked", "unbounded", "serial_or_not_applicable", "unclear"]
+    },
+    "uiVerificationPolicy": {
+      "type": "string",
+      "enum": ["behavior_visual_owner_uat", "behavior_only", "visual_only", "not_applicable", "unclear"]
+    },
+    "recoveryPolicy": {
+      "type": "string",
+      "enum": ["change_strategy_then_block_after_no_progress", "repeat_same_strategy", "ask_user_early", "not_applicable", "unclear"]
+    },
+    "deliveryFlowPolicy": {
+      "type": "string",
+      "enum": ["continuous_to_authorized_target", "manual_stage_handoffs", "not_applicable", "unclear"]
+    },
+    "subagentIntegrationPolicy": {
+      "type": "string",
+      "enum": ["conflict_aware_main_agent", "agents_write_shared_scope", "unbounded_fanout", "not_applicable", "unclear"]
+    },
+    "e2eExecutionPolicy": {
+      "type": "string",
+      "enum": ["real_or_declared_fidelity", "mock_substitution", "planning_only", "not_applicable", "unclear"]
+    },
+    "e2eContractPolicy": {
+      "type": "string",
+      "enum": ["red_review_locked", "test_after_implementation", "oracle_unlocked", "not_applicable", "unclear"]
+    },
+    "deliveryPlanPolicy": {
+      "type": "string",
+      "enum": ["schema_validated_vertical", "prose_only", "technical_layers", "not_applicable", "unclear"]
+    },
+    "backendE2EBlueprint": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "boundary", "transport", "sutRuntime", "realComponents", "substitutedComponents",
+        "setupSteps", "repositoryGrounding", "testArtifact", "testPath", "command", "assertionKinds",
+        "negativePathKinds", "asyncWait", "cleanupSteps", "artifactKinds", "redCauseCheck"
+      ],
+      "properties": {
+        "boundary": { "enum": ["public_protocol_to_owned_state", "in_process_or_mocked_sut", "not_applicable", "unclear"] },
+        "transport": { "enum": ["http", "grpc", "graphql", "message", "not_applicable", "unclear"] },
+        "sutRuntime": { "enum": ["declared_runtime", "mocked", "not_applicable", "unclear"] },
+        "realComponents": {
+          "type": "array",
+          "items": { "enum": ["service_runtime", "database", "cache", "broker", "object_store"] }
+        },
+        "substitutedComponents": {
+          "type": "array",
+          "items": { "enum": ["external_sandbox", "external_protocol_fake", "sut", "owned_persistence"] }
+        },
+        "setupSteps": { "type": "array", "items": { "type": "string" } },
+        "repositoryGrounding": { "enum": ["exact_collected_file", "inspect_before_lock", "fabricated_or_placeholder", "not_applicable", "unclear"] },
+        "testArtifact": { "enum": ["runnable_test", "pseudocode", "prose_procedure", "not_applicable", "unclear"] },
+        "testPath": { "type": ["string", "null"] },
+        "command": { "type": ["string", "null"] },
+        "assertionKinds": {
+          "type": "array",
+          "items": { "enum": ["response", "durable_state", "side_effect", "absence", "authorization_boundary"] }
+        },
+        "negativePathKinds": {
+          "type": "array",
+          "items": { "enum": ["authentication", "authorization", "validation", "tenant_isolation", "idempotency", "rollback", "concurrency"] }
+        },
+        "asyncWait": { "enum": ["bounded_polling", "no_async", "fixed_sleep", "not_applicable", "unclear"] },
+        "cleanupSteps": { "type": "array", "items": { "type": "string" } },
+        "artifactKinds": {
+          "type": "array",
+          "items": { "enum": ["test_report", "service_logs", "protocol_trace", "database_snapshot", "message_trace"] }
+        },
+        "redCauseCheck": { "enum": ["setup_healthy_then_business_assertion", "setup_failure", "not_applicable", "unclear"] }
       }
-    },
-    "technicalReadyIsTerminal": { "type": "boolean" },
-    "requiresDispatchReceipt": { "type": "boolean" },
-    "independentGateFailure": {
-      "enum": ["blocks", "downgrades", "ignored", "not_applicable"]
     },
     "notes": {
       "type": "array",

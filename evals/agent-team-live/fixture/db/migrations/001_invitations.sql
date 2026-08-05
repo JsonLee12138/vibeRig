@@ -1,0 +1,1 @@
+CREATE TABLE invitations (id TEXT PRIMARY KEY, email TEXT NOT NULL);

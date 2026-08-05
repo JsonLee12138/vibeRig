@@ -78,6 +78,19 @@ Evidence 使用 [evidence-packet.schema.json](../assets/evidence-packet.schema.j
 
 commit、相关代码、测试、fixture、配置或要求环境变化时，只使受影响证据失效。不要无差别重跑全部 Gate。
 
+## Verification Graph
+
+复杂 Work Item 使用 `verification-graph.json` 连接 Outcome、AC、TC、唯一权威执行阶段和 Evidence。每个 TC 声明最低保真度、命令/人工 procedure、artifact 与 `invalidatedBy`。自动 E2E 和 owner UAT 可以覆盖同一 AC，但必须是不同节点，不能互相冒充。
+
+## Project Harness Contracts
+
+- `project.yaml`：项目 owner、文档发现模式、命令、Evidence 和 tracker adapter；
+- `context-routes.yaml`：路径/风险到最小上下文、验证和 Reviewer；
+- `environments.yaml`：环境命令、自治级别、网络和凭据类别；
+- `runbooks.yaml`：Operational change 的权威 Runbook、命令和演练状态。
+
+这些契约引用项目已有真相源，不复制其正文。Tracking provider 不得成为本地执行的前置条件。
+
 ## 状态与兼容
 
 运行态使用 [workflow-state.schema.json](../assets/workflow-state.schema.json)，将四个互不替代的轴分开：

@@ -1424,3 +1424,23 @@ flowchart LR
 - model/catalog、Skill/policy、Oracle 或证据保真变化会使旧画像降级或失效。
 
 当前 Codex prior 来自 [多模型 A/B Evidence](./evidence/workflow-model-matrix-2026-07-23.zh-CN.md)：overall/accept 默认 `gpt-5.6-terra/low`，bounded intake 默认 `gpt-5.6-luna/low`，确定性 execute 暂用 `gpt-5.4-mini/low`，复杂开放问题升级 `gpt-5.6-sol`。这些都是版本化先验，不是永久排行榜；Claude Code 和 Cursor 在没有各自 provider-specific accepted evidence 时保持 `inherit`。
+
+## 37. 真实后端 Fixture 与 Codex MCP A/B
+
+为避免结构化 blueprint 高分但无法运行，本轮增加了一个可执行 Go 后端仓库 Fixture：真实 HTTP 进程、文件持久化 owned state、沙箱邮件 capture state、管理员邀请成功路径和成员权限负路径。模型唯一允许交付 `e2e/invitations_test.go`；宿主 mutation oracle 分别替换业务行为并验证 RED/GREEN。
+
+调用层改为 `codex mcp-server` 的 stdio `codex` 工具。每个样本使用独立 thread、`gpt-5.6-sol/low`、`workspace-write` 和相同 Fixture；评分只依据锁定测试文件及真实 HTTP 行为，不依据模型自述。canonical 强测试为 32/32，弱健康测试为 16/32。
+
+首轮六次调用在原三 mutant oracle 下 baseline/candidate 都是 84/84。代码审计发现 candidate 只有 1/3 对“403 后无异步副作用”做有界稳定观察；新增 delayed-forbidden-side-effects mutant 后，结果校准为：
+
+| 版本 | 校准分数 | 延迟副作用捕获 | MCP 正常收尾 |
+|---|---:|---:|---:|
+| Baseline | 96/96 | 3/3 | 2/3；第三次生成物有效但会话超时 |
+| 初始 Candidate | 88/96 | 1/3 | 3/3 |
+| 优化 Candidate | 96/96 | 3/3 | 3/3 |
+
+根因不是模型不会写轮询，而是 E2E contract 只明确了“异步结果要有界轮询”，没有明确“异步副作用的缺失也需要稳定窗口”。新增规则后，三个新 candidate 样本全部使用 bounded stability observation，均杀死四个业务 mutant 并在 reference 上 GREEN。
+
+优化 candidate 三次累计 528.4 秒，baseline 累计 641.9 秒；baseline 含一次 240 秒超时，且样本量过小，因此只记录为描述性延迟，不宣称稳定提速。该结果支持保留“异步 absence 稳定窗口”规则和真实 mutation benchmark，但不支持从单一 Fixture 推导通用后端 E2E 胜率。
+
+完整蒸馏 Evidence 位于 [backend-e2e-live-sol-mcp-ab-2026-08-04.json](./evidence/backend-e2e-live-sol-mcp-ab-2026-08-04.json)。

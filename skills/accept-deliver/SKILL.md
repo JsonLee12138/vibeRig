@@ -14,6 +14,7 @@ description: 对已完成技术验证的 VibeRig 工作执行证据审计、人�
 - `.vibeRig/project.yaml` 的语言、PR 和 Gate 策略；
 - 已确认 Work Item、需求基线和验收指南；
 - Goal Contract、Evidence Packet、当前 diff/commit、CI 和 PR；
+- Verification Graph、目标环境 profile，以及命中的 Runbook 演练 Evidence；
 - Issue 或 Milestone 的已有验收、交付和知识状态；
 - 用户指定的验收范围。
 
@@ -33,12 +34,14 @@ description: 对已完成技术验证的 VibeRig 工作执行证据审计、人�
 
 1. 解析 Work Item、scope、AC/TC、风险和交付目标；
 2. `git fetch` 或读取 provider 状态，确认 Evidence、CI、PR head 与当前 commit 一致；
-3. 检查 Required Evidence 的环境和保真度；
-4. 复用仍有效的证据，只重跑失效或聚合层 Gate；
-5. 汇总 blocking finding、SKIP/BLOCKED 和残余风险；
-6. 生成用户可执行的最短 UAT 清单。
+3. 检查 Verification Graph required 节点的环境、权威阶段和保真度；
+4. 必需 E2E 检查 contract revision、oracle approval、review/lock、RED/PASS Evidence 与当前测试路径一致；锁定后被静默改写视为 blocking finding；
+5. 复用仍有效的证据，只重跑失效或聚合层 Gate；
+6. 汇总 blocking finding、SKIP/BLOCKED 和残余风险；
+7. 生成用户可执行的最短 UAT 清单。
 
 Mock、fake 或 local pass 不能满足要求 sandbox、real、owner UAT 或 post-release 的条件。
+自动 E2E 与 owner UAT 可以验证同一 AC，但不能互相替代。Operational change 没有当前 Runbook 演练证据时不得宣称 release-ready。
 
 ## 阶段 2：人工验收 Gate
 
@@ -112,6 +115,7 @@ Provider 已显示 `MERGED` 时不得再次调用 merge。使用 immutable PR id
 
 - [ ] Evidence、CI、PR 与当前 commit 对齐。
 - [ ] Required Evidence 的保真度满足 AC/TC。
+- [ ] Verification Graph required 节点闭合；命中的 Runbook 已在允许环境演练。
 - [ ] 用户看到了可执行 UAT、失败信号和残余风险。
 - [ ] 仅在用户明确表示通过后记录 acceptance。
 - [ ] 验收与 merge/release 授权被分别记录。

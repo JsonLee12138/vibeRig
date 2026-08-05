@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VibeRig Verification Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "workItemId", "nodes", "edges"],
+  "properties": {
+    "version": { "const": 1 },
+    "workItemId": { "type": "string", "minLength": 1 },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/outcomeNode" },
+          { "$ref": "#/definitions/acNode" },
+          { "$ref": "#/definitions/tcNode" },
+          { "$ref": "#/definitions/stageNode" },
+          { "$ref": "#/definitions/evidenceNode" }
+        ]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "relation"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "relation": { "enum": ["defines", "verifies", "executes_at", "produces"] }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "baseNode": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["outcome", "ac", "tc", "stage", "evidence"] }
+      }
+    },
+    "outcomeNode": {
+      "allOf": [
+        { "$ref": "#/definitions/baseNode" },
+        { "type": "object", "additionalProperties": false, "required": ["id", "kind"], "properties": { "id": { "type": "string", "minLength": 1 }, "kind": { "const": "outcome" } } }
+      ]
+    },
+    "acNode": {
+      "allOf": [
+        { "$ref": "#/definitions/baseNode" },
+        { "type": "object", "additionalProperties": false, "required": ["id", "kind"], "properties": { "id": { "type": "string", "pattern": "^AC-[0-9]+$" }, "kind": { "const": "ac" } } }
+      ]
+    },
+    "tcNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "testType", "authoritativeStage", "requiredFidelity", "artifacts", "invalidatedBy"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^(TC|E2E)-[0-9]+$" },
+        "kind": { "const": "tc" },
+        "testType": { "enum": ["unit", "contract", "integration", "api_e2e", "ui_e2e", "visual", "security", "performance", "smoke", "owner_uat", "post_release"] },
+        "authoritativeStage": { "enum": ["issue_local", "pr_ci", "milestone", "owner_uat", "post_release"] },
+        "requiredFidelity": { "enum": ["mock", "fake", "stub", "ephemeral", "sandbox", "real", "real_browser"] },
+        "command": { "type": "string", "minLength": 1 },
+        "procedure": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "artifacts": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "invalidatedBy": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      },
+      "oneOf": [
+        { "required": ["command"] },
+        { "required": ["procedure"] }
+      ]
+    },
+    "stageNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "authoritativeStage"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "const": "stage" },
+        "authoritativeStage": { "enum": ["issue_local", "pr_ci", "milestone", "owner_uat", "post_release"] }
+      }
+    },
+    "evidenceNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "artifacts"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "const": "evidence" },
+        "artifacts": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

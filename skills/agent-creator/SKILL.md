@@ -44,7 +44,8 @@ Resolve these inputs from the user request or nearby repository conventions:
 - Target path, defaulting to the project-level directory for each target (see the Capability Matrix above); use the user-level directory only when the user asks for a global agent.
 - Whether the task is create, update, review, or port-to-another-platform.
 - Permission boundary: read-only versus write/edit.
-- Model preference, defaulting to `inherit`.
+- Portable model preference, defaulting to `inherit`.
+- Optional provider-specific `platform_model_overrides` supplied by an authoritative project/team policy. Apply only to the named target; never copy a Codex slug into Claude Code or Cursor.
 - Useful preferred skills, if the agent's job has repeatable capabilities.
 - MCP servers the agent needs, if any (renders directly for Codex and Claude Code; for Cursor, renders into `.cursor/mcp.json` instead — see [cursor-platform.md](./references/cursor-platform.md)).
 
@@ -68,9 +69,9 @@ Do not claim completion unless every rendered file uses only that platform's sup
 
 1. **Clarify the job.** Get the agent's mission, scope boundary, permission level, model, and any MCP/skill needs from the user.
 2. **Resolve target platform(s).** Check the request for explicit signals (a named platform, a `.codex/agents/`, `.claude/agents/`, or `.cursor/agents/` path, or a caller convention like `update-team`'s Codex-only usage). If none of these resolve it and more than one platform's agent directory already exists in the repo, ask which target(s) to render. Default to Codex only when the repo already has `.codex/agents/` and no other agent directory, and the request gives no other signal.
-3. **Write the intermediate spec.** Copy [agent-spec.template.json](./assets/agent-spec.template.json) to a scratch path, fill every field from step 1, and set `targets` to the resolved platform list. This JSON is the single source of truth — do not diverge between platform files after this point.
+3. **Write the intermediate spec.** Copy [agent-spec.template.json](./assets/agent-spec.template.json) to a scratch path, fill every field from step 1, and set `targets` to the resolved platform list. When the caller supplies an authoritative provider policy, record it in `platform_model_overrides`; otherwise keep the object empty. This JSON plus the explicitly recorded provider override is the rendering source of truth — do not make unrecorded native-file edits.
 4. **Use `find-skills`** to identify useful skills when skill dependencies are relevant, and confirm selections with the user before adding them to `skill_dependencies`.
-5. **Render each target** from the spec using its dedicated template and reference file:
+5. **Render each target** from the spec using its dedicated template and reference file. Resolve model as `platform_model_overrides[target] ?? model`:
    - Codex → [codex-agent-template.toml](./assets/codex-agent-template.toml) + [codex-platform.md](./references/codex-platform.md)
    - Claude Code → [claude-agent-template.md](./assets/claude-agent-template.md) + [claude-platform.md](./references/claude-platform.md)
    - Cursor → [cursor-agent-template.md](./assets/cursor-agent-template.md) + [cursor-platform.md](./references/cursor-platform.md) — if `mcp_servers` is non-empty, this also means merging entries into `.cursor/mcp.json` (confirm with the user first; see Contract).
@@ -84,6 +85,7 @@ Do not claim completion unless every rendered file uses only that platform's sup
 - Every `Scope` must have a `Not allowed:` list. This is the boundary enforcement; without it any adjacent task can bleed into the role at runtime.
 - Use `extra_sections` (optional) only for domain content that doesn't fit Mission/Scope/Inputs/Output — a review framework, severity table, or fixed workflow steps. Render each entry as its own `##` heading between `Scope` and `Inputs`, identically across all rendered targets. Omit the field when the role needs nothing beyond the standard sections.
 - Set read-only permission for exploration, review, or analysis-only agents; write/edit permission only when the agent is expected to modify files.
+- Use provider-specific fixed defaults only when the user or an authoritative project/team policy explicitly requests them. A Codex override affects only Codex rendering; other targets keep their own override or the portable `model` value.
 - Do not raise global settings (Codex `[agents]` `max_depth`, etc.) unless the user explicitly asks.
 - Do not add custom/unsupported fields to any platform file — see the Capability Matrix and each platform's reference file for what it actually accepts.
 
@@ -135,6 +137,6 @@ python3 -c "import json; json.load(open('.cursor/mcp.json'))" 2>/dev/null && ech
 - The intermediate JSON spec exists and every rendered file traces back to it (no hand-written divergence).
 - The agent has one clear job (Mission is ≤2 sentences) on every target it was rendered to.
 - Read-only agents have no file-edit instructions in the body; editing agents have explicit path exclusions in `Not allowed:`.
-- `model` is set consistently with the spec across all rendered targets (or correctly omitted where the platform default already matches).
+- `model` is set consistently with `platform_model_overrides[target] ?? model` (or correctly omitted when the resolved value is `inherit`).
 - MCP servers render as native fields for Codex/Claude Code; for Cursor they're merged into `.cursor/mcp.json` (with user confirmation) and referenced from the agent body instead.
 - Every listed skill dependency was confirmed by the user before being added.

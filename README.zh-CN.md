@@ -1,6 +1,6 @@
 # VibeRig
 
-VibeRig 是一个目标驱动的软件开发 Harness。它通过“需求脑暴与确认 → Execute Goal Loop → 人工验收与授权交付”三个阶段，把自然语言目标变成 Docs as Code 契约、可验证实现和可追溯 Evidence；用户不需要学习或手工串联内部 Skills。
+VibeRig 是一个目标驱动、项目感知的软件开发 Harness。它通过“需求脑暴与确认 → Execute Goal Loop → 人工验收与授权交付”三个阶段，把自然语言目标变成有唯一 owner 的契约、可验证实现和可追溯 Evidence；Context Router、Environment Driver、Verification Graph 与 Runbook Contract 让 Agent 能在真实本地环境持续推进，而不要求用户手工串联内部 Skills。
 
 英文文档：[README.md](./README.md)
 
@@ -36,7 +36,7 @@ flowchart LR
 ## 前置条件
 
 - 支持 plugin 的 AI 编码宿主：[Codex](docs/install/zh-CN/codex.zh-CN.md)、[Claude Code](docs/install/zh-CN/claude.zh-CN.md) 或 [Cursor](docs/install/zh-CN/cursor.zh-CN.md)。
-- 一个 VibeRig 能连接的 Linear workspace。无需提前单独配置账号——VibeRig 自带 Linear MCP server 配置（`.mcp.json`），指向 `https://mcp.linear.app/mcp`；`vb-init` 在注册 Linear project 之前会先校验登录态，未登录会当场触发 OAuth 授权。
+- Linear 是可选的 tracking adapter。连接时无需提前单独配置账号——VibeRig 自带 Linear MCP server 配置；未连接或不可用时，本地 Work Item、执行和 Evidence 不受阻塞。
 
 ## 安装
 
@@ -68,7 +68,10 @@ VibeRig 会创建或使用这些项目本地文件：
 
 ```text
 .vibeRig/
-  project.yaml
+  project.yaml              # V2 Project Profile
+  context-routes.yaml       # 路径/风险 → 最小上下文、验证、Reviewer
+  environments.yaml         # 本地/sandbox 命令与凭据边界
+  runbooks.yaml             # Operational change → Runbook 与演练状态
   prd/
     <prd-id>/prd.md
     archive/
@@ -89,35 +92,31 @@ VibeRig 会创建或使用这些项目本地文件：
       release-plan.md
       delivery-plan.md
       traceability.json
+      verification-graph.json
       pre-development-review.md
       linear.yaml
     archive/
-  runs/
-    <work-item-id>/
-      state.json         # planning / execution / acceptance / delivery 四轴状态
-      events.jsonl       # append-only 生命周期事件
-      outbox/            # 待同步 Linear 动作
 .worktrees/
   milestone-<req-id>-<n>/
 ```
 
-Linear 是任务和状态界面。本地 requirement docs 是契约，不是 issues。
+项目已有 PRD、spec、ADR、Runbook 和任务系统继续作为权威 owner；VibeRig Requirement 保存有边界的执行状态和引用，不复制第二套真相。Linear 可作为任务和状态界面，但不是本地执行前置条件。
 
 ## 内置 Skills 和 Subagents
 
 ### 核心流程 Skills
 
-- `vb-init`：初始化 `.vibeRig/project.yaml`、`.vibeRig/prd/`、`.vibeRig/requirements/`（含 archive）、`.worktrees/`、Linear 容器 Project 注册、门禁策略、PR 策略、默认路由，并搭建项目 agent 团队。
+- `vb-init`：初始化 V2 Project Profile、Context Router、Environment/Runbook manifest、需求状态目录、可选 tracker、门禁策略和项目 Agent 团队；`--upgrade` 可显式迁移 V1 profile。
 - `intake`：所有未确认工作（功能、Bug、小改动、技术债和风险）的统一脑暴入口；检查现状并形成完整 Work Item，让用户一次确认后写入文档。
-- `execute`：持有 Goal Contract，持续执行实现、自动测试环境、验证、风险审核和技术交付；可自主解决时不在 Skill 边界中断。
+- `execute`：持有 Goal Contract，通过 Context Router、Environment Driver 和 Verification Graph 持续实现、验证、审核和技术交付；Operational change 同时更新并演练权威 Runbook。
 - `accept-deliver`：Evidence 审计、人工 UAT 和明确验收；merge/release 是验收后的独立授权。
-- `pre-development`：为 L2/L3 Work Item 补充调研、架构、AC/TC、风险和交付计划；先把 Milestone / Issue 草案写入 Linear，再请求一次整体计划确认。
+- `pre-development`：仅为 L2/L3 Work Item 内部补充调研、架构、AC/TC、风险和交付计划；不新增人工审批阶段。
 - `prd-brainstorm`：可独立访谈生成产品级 PRD，也可在开发前流程中从已确认 Intake 自动综合，不重复询问老板。
 - `tech-research`：开发前内部领域调研协议；不同 subagent 分别研究前端、后端、数据、安全、运维、QA 等维度，主 agent 统一落盘。
 - `architecture-design`：CTO 综合领域证据，完成端到端架构及红队攻击、白队回应和最终裁决。
 - `define-acceptance`：生成结构化 AC、工程验证和老板可照做的 `acceptance-guide.md`；随完整方案一次审批。
-- `split-milestones`：按可验收用户价值生成草案，先幂等写入 Linear Proposal，人工确认后才激活。
-- `split-issues`：把近期详细、远期 indicative 的全部 Issue 草案先写入 Linear；批准后按 Rolling Wave 激活近期切片，不指派、不选 subagent。
+- `split-milestones`：审批前按可验收用户价值生成本地草案；批准后才将相同计划写入 Linear。
+- `split-issues`：审批前生成全局 Issue 草案；批准后按 Rolling Wave 只正式创建下一个里程碑的垂直切片，不指派、不选 subagent。
 - `record-issue`、`bugger`：旧入口兼容层，统一转入 `intake`；不再维护“小需求”和“Bug”两套问题建模。
 - `quick`、`task-runner`、`blocker-resume`：旧执行入口兼容层，统一恢复或创建 Goal Contract 后转入 `execute`。
 - `accept-issue`、`accept-milestone`、`merge-issue`：旧验收/交付入口兼容层，只选择 `accept-deliver` 的范围或模式。
@@ -148,7 +147,7 @@ Linear 是任务和状态界面。本地 requirement docs 是契约，不是 iss
 
 ### 路由与 Agent Skills
 
-- `subagent-routing`：选择并 brief 专用 subagent，区分 required/recommended/optional Gate，并为真实派发生成 dispatch receipt；Linear 更新和最终决策仍只在主 agent。
+- `subagent-routing`：选择并 brief 专用 subagent，同时保证 Linear 更新和最终流程决策只在主 agent 中发生。
 - `agent-creator`：帮助创建或更新项目本地 Codex custom subagents。
 
 ### 跨 Agent 工具 Skills
@@ -171,16 +170,14 @@ Linear 是任务和状态界面。本地 requirement docs 是契约，不是 iss
 - `code_review`：独立审核正确性、可维护性、架构符合性和证据质量。
 - `integrator`：审核跨 Issue 依赖、契约、当前 commit 证据和里程碑集成就绪度。
 
-VibeRig 通过 `subagent-routing` 先按 capability 选择最小必要阵容，再按 provider、任务族、风险和 accepted observations 动态选择 model/reasoning；L0 默认不启动 Subagent。required 独立 Gate 必须有真实 dispatch receipt，缺少 capability 时阻塞而不是由主 Agent 冒充。低风险、可逆且有确定性 Oracle 的任务最多用 10% 稳定采样探索 challenger，accept/security/merge/release 等保护路径只 exploit。所有 Subagent 都不应更新 Linear、写 Proof Packet 或作最终验收判断。
+VibeRig 通过 `subagent-routing` 先按 capability 选择最小必要阵容，再按 provider、任务族、风险和 accepted observations 动态选择 model/reasoning；L0 默认不启动 Subagent。低风险、可逆且有确定性 Oracle 的任务最多用 10% 稳定采样探索 challenger，accept/security/merge/release 等保护路径只 exploit。所有 Subagent 都不应更新 Linear、写 Proof Packet 或作最终验收判断。验收后 `insights` 保留模型/Agent 路由观察并做可比组分析，只有 novelty 或批量阈值触发 `insights → vb-wiki`；只有用户另行明确授权时才进入 `vb-learn`。
 
 ## 运行流程
 
-1. 使用 `vb-init` 初始化项目；Linear 等外部集成不可用时，本地 Harness 仍可工作。
+1. 使用 `vb-init` 初始化 V2 Project Profile；它发现既有文档 owner、项目命令和环境边界，Linear 等外部集成不可用时本地 Harness 仍可工作。
 2. 用户自然描述目标。`intake` 检查代码与现有记录，逐步脑暴完整 Work Item，并在一次人工 Gate 中确认真实需求；确认后才写 `intake.md`、`work-item.json` 和 `requirement.yaml`。
-3. L0/L1 直接进入 `execute`；L2/L3 内部完成 research、架构、红白对抗和交付拆分。required 独立阶段都保存 dispatch receipt。
-4. 主 Agent 先把全部 Milestone / Issue 作为不可执行 Proposal 写入 Linear，read-back 成功后让用户基于真实链接一次确认计划。修订复用原对象；批准绑定 plan fingerprint。
-5. `execute` 启动时把 Linear 写为 In Progress，持续运行 Goal Loop。技术 Gate 完成后只写 In Review / Ready for Milestone / Pending Acceptance 等非终态。
-6. Completion Oracle 产生 `target_reached / technically_ready`，然后进入 `accept-deliver`；它永远不产生业务 Done。
-7. 用户明确验收通过后记录 acceptance；未达到要求的 merge/release 时保持 Accepted / Ready to Deliver 非终态。
-8. 只有 acceptance 覆盖当前交付且 required delivery target 已达到，主 Agent 才把 Linear 投影为 Done。所有 Linear 写入都有 journal/outbox 和幂等恢复。
-9. Evidence 默认保留；Subagent/model route observation 在人工验收后进入 retrospective，知识编译与工具 Skill 晋升仍分别受 novelty 和独立授权约束。
+3. L0/L1 直接进入 `execute`；L2/L3 在内部调用 `pre-development` 补技术计划。技术能力切换不形成新的人工审批。
+4. `execute` 持续运行 Goal Loop：Understand → Plan → Implement → Verify → Review → Repair。它按修改路径加载最小上下文，优先运行项目声明的真实本地环境，再按需选择 fake、stub、ephemeral dependency 或 sandbox；只有产品决策、权限、不可模拟真实环境或连续三次无进展才暂停。
+5. Completion Oracle 满足后进入 `accept-deliver`。系统先审计当前 commit 的 Evidence，再给用户最短可执行 UAT；退回项自动回到同一 Goal Loop。
+6. 用户明确验收通过后记录 acceptance。commit、PR、merge、release 按初始目标和单独 authority 执行；merge/release 不从验收通过自动推断。
+7. Evidence 默认保留；Subagent/model route observation 在人工验收后进入 retrospective。`update-team` 只在至少 5 个可比样本、质量不退化、无 Critical 失败且成本或延迟改善达到阈值时调整派生路由；知识编译与工具 Skill 晋升仍分别受 novelty 和独立授权约束。

@@ -1,11 +1,12 @@
-import { appendFile, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { confirm, intro, isCancel, outro, text } from '@clack/prompts';
 import { defineCommand } from 'citty';
 import { consola } from 'consola';
 import { ensureDir, pathExists } from 'fs-extra/esm';
 
-import { projectYaml } from '../utils/project-yaml.js';
+import { contextRoutesYaml, environmentsYaml, runbooksYaml } from '../utils/harness-files.js';
+import { projectProfileVersion, projectYaml, reconcileProjectYaml } from '../utils/project-yaml.js';
 import { cancelPrompt } from '../utils/prompts.js';
 
 export const initCommand = defineCommand({
@@ -29,10 +30,10 @@ export const initCommand = defineCommand({
       description: 'Skip interactive confirmation.',
       default: false,
     },
-    language: {
-      type: 'string',
-      description: 'BCP 47 output language written to .vibeRig/project.yaml.',
-      default: 'zh-CN',
+    upgrade: {
+      type: 'boolean',
+      description: 'Reconcile an existing project.yaml to the V2 project profile.',
+      default: false,
     },
   },
   async run({ args }) {
@@ -74,39 +75,58 @@ export const initCommand = defineCommand({
     }
 
     const docsRoot = resolve(root, '.vibeRig/requirements');
-    const requirementsArchiveRoot = resolve(docsRoot, 'archive');
     const prdRoot = resolve(root, '.vibeRig/prd');
-    const prdArchiveRoot = resolve(prdRoot, 'archive');
-    const runsRoot = resolve(root, '.vibeRig/runs');
     const worktreesRoot = resolve(root, '.worktrees');
     const projectYamlPath = resolve(root, '.vibeRig/project.yaml');
-    const gitignorePath = resolve(root, '.gitignore');
 
-    await ensureDir(requirementsArchiveRoot);
-    await ensureDir(prdArchiveRoot);
-    await ensureDir(runsRoot);
+    await ensureDir(resolve(docsRoot, 'archive'));
+    await ensureDir(resolve(prdRoot, 'archive'));
     await ensureDir(worktreesRoot);
-    await ensureDir(resolve(root, '.agents/skills'));
-    await ensureDir(resolve(root, '.codex/agents'));
-    await ensureDir(resolve(root, '.claude/agents'));
-    await ensureDir(resolve(root, '.cursor/agents'));
 
     if (await pathExists(projectYamlPath)) {
-      consola.warn(`${projectYamlPath} already exists; leaving it unchanged.`);
+      const current = await readFile(projectYamlPath, 'utf8');
+      if (args.upgrade) {
+        const reconciled = reconcileProjectYaml(current, { projectName });
+        if (current === reconciled) {
+          consola.info(`${projectYamlPath} is already reconciled.`);
+        }
+        else {
+          await writeFile(projectYamlPath, reconciled, 'utf8');
+          consola.success(`Reconciled ${projectYamlPath} to V2.`);
+        }
+      }
+      else if (projectProfileVersion(current) === 2) {
+        consola.info(`${projectYamlPath} is already V2; leaving it unchanged.`);
+      }
+      else {
+        consola.warn(`${projectYamlPath} already exists; use --upgrade to reconcile it.`);
+      }
     }
     else {
       await ensureDir(resolve(root, '.vibeRig'));
-      await writeFile(projectYamlPath, projectYaml({ projectName, outputLanguage: args.language }), 'utf8');
+      await writeFile(projectYamlPath, projectYaml({ projectName }), 'utf8');
       consola.success(`Created ${projectYamlPath}`);
     }
 
-    const gitignore = await pathExists(gitignorePath) ? await readFile(gitignorePath, 'utf8') : '';
-    if (!gitignore.split(/\r?\n/).includes('.worktrees/'))
-      await appendFile(gitignorePath, `${gitignore && !gitignore.endsWith('\n') ? '\n' : ''}.worktrees/\n`, 'utf8');
+    const harnessFiles = [
+      ['context-routes.yaml', contextRoutesYaml()],
+      ['environments.yaml', environmentsYaml()],
+      ['runbooks.yaml', runbooksYaml()],
+    ] as const;
+
+    for (const [name, content] of harnessFiles) {
+      const path = resolve(root, '.vibeRig', name);
+      if (await pathExists(path)) {
+        consola.info(`${path} already exists; leaving it unchanged.`);
+      }
+      else {
+        await writeFile(path, content, 'utf8');
+        consola.success(`Created ${path}`);
+      }
+    }
 
     consola.info(`Ensured ${docsRoot}`);
     consola.info(`Ensured ${prdRoot}`);
-    consola.info(`Ensured ${runsRoot}`);
     consola.info(`Ensured ${worktreesRoot}`);
     outro('VibeRig project scaffold is ready.');
   },

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-04T06:57:06.595Z",
+  "purpose": "Evaluate locked E2E test contracts and schema-validated milestone/issue plans while retaining existing split and real-E2E behavior.",
+  "runner": "codex exec --json",
+  "command": "node scripts/run-workflow-model-matrix.mjs --suite screen --model gpt-5.6-luna --baseline-ref origin/main --fixtures locked-e2e-contract-before-implementation,schema-validated-milestone-issue-plan,minimal-fullstack-split,declared-real-e2e-execution --concurrency 5 --repeat 5",
+  "model": "gpt-5.6-luna",
+  "effort": "low",
+  "baselineRef": "origin/main",
+  "repeat": 5,
+  "runs": {
+    "requested": 40,
+    "passed": 40,
+    "failed": 0
+  },
+  "summary": {
+    "baseline": {
+      "earned": 314,
+      "total": 325,
+      "rate": 0.9661538461538461,
+      "durationMs": 767110,
+      "inputTokens": 444319,
+      "outputTokens": 15120,
+      "reasoningOutputTokens": 6840
+    },
+    "candidate": {
+      "earned": 314,
+      "total": 325,
+      "rate": 0.9661538461538461,
+      "durationMs": 648597,
+      "inputTokens": 477567,
+      "outputTokens": 15627,
+      "reasoningOutputTokens": 7060
+    }
+  },
+  "fixtureScores": [
+    {
+      "id": "minimal-fullstack-split",
+      "baseline": "64/65",
+      "candidate": "62/65",
+      "interpretation": "Both variants preserved vertical-minimal and contract-locked splitting in all runs. The difference came from a one-point redundant-requirement-gate classifier: one baseline run versus three candidate runs."
+    },
+    {
+      "id": "declared-real-e2e-execution",
+      "baseline": "105/105",
+      "candidate": "105/105",
+      "interpretation": "No regression in declared real-E2E execution, fidelity, environment selection, or verification-graph behavior."
+    },
+    {
+      "id": "locked-e2e-contract-before-implementation",
+      "baseline": "75/85",
+      "candidate": "77/85",
+      "interpretation": "The prompt named the desired review-and-lock behavior, so both variants saturated the E2E-contract classifier. The two-point difference is target-mode classification, not the contract policy itself."
+    },
+    {
+      "id": "schema-validated-milestone-issue-plan",
+      "baseline": "70/70",
+      "candidate": "70/70",
+      "interpretation": "The self-reported policy classifier saturated. Exact schema structure and negative rejection are therefore covered by deterministic contract tests instead of treated as a behavioral lift."
+    }
+  ],
+  "exploratorySignals": {
+    "redReviewLockedE2E": {
+      "baseline": "8/20",
+      "candidate": "18/20",
+      "status": "exploratory",
+      "interpretation": "Across all four fixtures, candidate outputs selected the RED-review-lock policy more consistently. This field was not scored for every fixture, so it is not included as a post-hoc primary score claim."
+    },
+    "duration": {
+      "candidateChange": "-15.45%",
+      "status": "informational",
+      "interpretation": "Latency is noisy and is not treated as a performance guarantee."
+    }
+  },
+  "deterministicEvidence": {
+    "schemasCompiled": 7,
+    "deliveryPlan": "Positive contract accepted; missing completion evidence and over-eight issue plans without rationale rejected.",
+    "e2eContract": "Locked and passing revisions require approved oracle review, implementation review, lock state, and RED/PASS evidence.",
+    "verificationGraph": "Test-case, stage, acceptance-criterion, and evidence nodes now have discriminated required fields."
+  },
+  "conclusion": {
+    "behavior": "parity_with_exploratory_e2e_consistency_lift",
+    "regressionDetected": false,
+    "measurablePrimaryScoreLiftDetected": false,
+    "interpretation": "The primary score is unchanged. Existing real-E2E and vertical-split behavior remains intact; the candidate adds machine-enforced contracts that the prose classifier cannot measure reliably, and shows a non-primary consistency signal for locked E2E policy."
+  },
+  "limitations": [
+    "The dedicated new prompts reveal too much of the desired answer and saturate the baseline classifier.",
+    "Policy enums are model self-reports; machine-contract correctness is established by deterministic positive and negative validation.",
+    "Five repeats characterize consistency but do not establish statistical significance.",
+    "This benchmark evaluates supplied harness instructions, not execution against a real product repository."
+  ]
+}

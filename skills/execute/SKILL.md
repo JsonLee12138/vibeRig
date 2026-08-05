@@ -22,14 +22,15 @@ description: 在需求基线已确认后，以 Goal Loop 持续完成软件开�
 优先读取：
 
 - `.vibeRig/project.yaml`；
+- `.vibeRig/context-routes.yaml` 命中的项目规则、文档 owner、验证命令与 Reviewer；
+- `.vibeRig/environments.yaml` 的目标环境 profile；
 - 已确认的 `work-item.json`、`intake.md`、`requirement.yaml`；
-- `.vibeRig/runs/<work-item-id>/` 中的 workflow state、event journal 与 outbox；
 - 存在时读取架构、AC、TC、风险、Issue、PR 和历史 Evidence；
 - 当前仓库状态、用户未提交改动和项目 Gate。
 
 将输入归一化为 [共享契约](./references/contracts.md) 中的 `WorkItem` 与 `GoalContract`。缺少非关键字段时从代码和现状补全；只有缺失信息会改变产品语义、扩大风险或越过权限时才询问用户。
 
-L2/L3 计划型工作必须满足 `planningState=approved`，并且当前 `plan_fingerprint` 与批准记录一致。旧 Issue 没有 VibeRig 计划时可明确记录 `planningState=not_required` 进入 legacy mode；不得把未知状态默认为已批准。
+按 [Context Router](./references/context-router.md) 生成最小 Task Context。项目已有 PRD、spec、ADR、测试指南、任务系统和 Runbook 是权威 owner；不要为了 VibeRig 再复制一份。
 
 ## 目标模式
 
@@ -55,8 +56,8 @@ L2/L3 计划型工作必须满足 `planningState=approved`，并且当前 `plan_
 1. **Understand**：检查 Work Item、代码、现有证据和上轮失败，区分事实、假设与未知；
 2. **Plan**：选择最小可验证增量，确定风险、测试保真度、审核与交付动作；
 3. **Implement**：在授权范围内修改，保护无关用户改动，不做顺手重构；
-4. **Verify**：运行受影响测试和 Gate，记录与当前工作区或 commit 绑定的 Evidence；
-5. **Review**：按 `agent-sop` 判断 requiredness；非简单代码至少独立 Code Review，L2/L3 实现与 Review 分离，高风险增加专业 Gate；
+4. **Verify**：按 Verification Graph 运行受影响测试和 Gate，记录与当前工作区或 commit 绑定的 Evidence；
+5. **Review**：按风险和信息增益决定主 Agent 检查或独立 Reviewer；
 6. **Decide**：检查 Completion Oracle；未满足且仍可推进时进入下一轮；
 7. **Deliver**：只执行 `targetMode` 与 authority 允许的动作。
 
@@ -73,7 +74,7 @@ L2/L3 计划型工作必须满足 `planningState=approved`，并且当前 `plan_
 - Linear、知识库或其他记录系统暂时不可用；
 - 可逆且不改变产品语义的技术选择。
 
-测试环境缺失时读取 [test-environment-broker.md](./references/test-environment-broker.md)，自动选择 fixture、fake、stub、ephemeral dependency 或 sandbox。不要向用户索取仅供本地测试使用的凭证。
+先通过 [Environment Driver](./references/environment-driver.md) 运行项目声明的 bootstrap/start/health/reset；缺少充分环境时再读取 [test-environment-broker.md](./references/test-environment-broker.md)，自动选择 fixture、fake、stub、ephemeral dependency 或 sandbox。不要向用户索取可生成的测试凭证，也不得输出已提供的凭据值。
 
 ## 允许暂停的 Gate
 
@@ -99,11 +100,15 @@ L2/L3 计划型工作必须满足 `planningState=approved`，并且当前 `plan_
 
 调用 `subagent-routing` 时按专业价值、独立性和并行收益选择能力，不因任务来自 Linear 就强制委派。Subagent 返回的是证据，不是完成声明。
 
-所有声称“独立”的 research、implementation、red-team、white-team、review、QA 或 security 阶段都必须有真实 `dispatch_receipt`。required Gate 缺失或 receipt 与当前 artifact fingerprint 不一致时，Completion Oracle 必须失败。
-
 模型选择由 `subagent-routing` 按 provider、任务族、风险和 accepted observations 动态完成。使用 challenger 时必须满足低风险、可逆、Completion Oracle 可判定和主 Agent 可独立验证；accept/security/不可逆副作用不做在线探索。每次委派把 `route_observation` 附到 Evidence Packet。
 
-## Evidence 与完成
+## Verification Graph、Runbook 与完成
+
+L2/L3 或含多个 AC/执行阶段的工作使用 [Verification Graph](./references/verification-graph.md) 将 Outcome、AC、TC、权威阶段和 Evidence 连接起来。L0/L1 可把等价最小映射内嵌在 Goal Contract，不能因此省略完成判据。
+
+必需 API/UI E2E 同时读取 [E2E Test Contract](./references/e2e-test-contract.md)。开始生产实现前确认当前 contract revision 已有正确 RED Evidence 和所需 review/lock；实现循环不得自行弱化锁定测试。Milestone E2E 在集成阶段运行，Issue Agent 只交接该节点。
+
+每轮 Plan 检查 [Runbook Contract](./references/runbook-contract.md) 的触发条件。只有运行、部署、迁移、恢复、外部依赖、监控或 Smoke 行为变化时更新权威 Runbook，并在允许环境实际演练；未触发时记录 `not_applicable`，不创建空文档。
 
 使用 [evidence-packet.schema.json](./assets/evidence-packet.schema.json) 组织证据。每条 Evidence 必须记录：
 
@@ -124,22 +129,13 @@ AND 没有 blocking finding
 AND Evidence、CI、PR 与当前 commit 对齐
 ```
 
-达到 `verified`、`committed` 或 `pr_ready` 后：
-
-1. 将 Goal Loop 置为 `target_reached`、执行轴置为 `technically_ready`；
-2. 在 event journal 写 transition，并为 Linear 非终态投影创建 outbox；
-3. 主 Agent 请 `vb-linear` 投影到 `In Review`、`Ready for Milestone` 或 `Pending Acceptance` 的实际非终态并 read-back/ack；
-4. Work Item 置为 `pending_acceptance`，进入 `accept-deliver`。
-
-自动化测试不能代替业务验收。`execute` 永远不得写 `Accepted` 或 `Done`。
+达到 `verified`、`committed` 或 `pr_ready` 后，将 Work Item 置为 `pending_acceptance` 并进入 `accept-deliver`。自动化测试不能代替业务验收。
 
 ## 外部记录
 
 - 用户仅要求分析或 Review 时，不写 Linear、不改代码、不创建 PR；
-- 开始执行前先记录 `execution_started` transition，请 `vb-linear` 投影 `In Progress`；
-- 实现完成但审核未结束时投影 `In Review`；技术 Gate 完成后投影非终态 `technically_ready`；
-- 用户要求记录时，使用 `intake` 形成并确认完整 Work Item；Milestone/Issue 拆分按 pre-development 先写 Linear Proposal 再人工确认；
-- Linear 暂不可用时保留 durable outbox，不阻塞已获授权的代码执行；最终报告必须明确“Linear 同步待处理”；
+- 用户要求记录时，使用 `intake` 形成并确认完整 Work Item，再一次性写入；
+- Linear 暂不可用时保留本地权威记录和待同步动作，不阻塞代码执行；
 - 主 Agent 负责 Linear、PR、Proof Packet 和状态写入；Subagent 不执行这些副作用。
 
 ## 完成检查
@@ -148,9 +144,10 @@ AND Evidence、CI、PR 与当前 commit 对齐
 - [ ] 未在 Skill 边界或可模拟配置缺失处打断用户。
 - [ ] 失败后进行了定向修复；重复失败时改变了策略。
 - [ ] Required Evidence 保真度满足对应 AC/TC。
+- [ ] 修改路径已通过 Context Router 加载最小权威上下文和验证命令。
+- [ ] Environment Driver 已证明目标环境健康，或诚实记录更低保真边界。
+- [ ] Verification Graph 的 required 节点闭合，Operational change 的 Runbook 已实际演练。
 - [ ] 主 Agent 已检查 diff、真实输出和当前 commit。
-- [ ] 执行开始与技术就绪 transition 已投影 Linear 或有 durable outbox，未静默丢失。
-- [ ] required 独立 Gate 均有与当前 artifact 对齐的 dispatch receipt。
 - [ ] 每次 Subagent 委派记录了 capability、model/reasoning、policy action、实际质量/返工/耗时/token 与 confounders。
 - [ ] Completion Oracle 已满足，或只剩一个真实 Gate。
-- [ ] 需要业务验收时已进入 `accept-deliver`，未写 Accepted/Done。
+- [ ] 需要业务验收时已进入 `accept-deliver`，未自行宣称验收通过。
