@@ -4,7 +4,11 @@ import { defineCommand } from 'citty';
 import { consola } from 'consola';
 
 import { doctorPiCompany, findPackageRoot, initPiCompany, loadPiCompanyConfig } from '../lib/pi-company.js';
-import { PlaneGateway } from '../lib/plane-gateway.js';
+import {
+  PLANE_MCP_ENVIRONMENT_VARIABLES,
+  PLANE_MCP_PACKAGE,
+  PLANE_MCP_SERVER_NAME,
+} from '../lib/plane-mcp.js';
 
 const initPiCommand = defineCommand({
   meta: {
@@ -112,7 +116,7 @@ const doctorCommand = defineCommand({
 const planeProbeCommand = defineCommand({
   meta: {
     name: 'plane-probe',
-    description: 'Probe the configured self-hosted Plane instance without mutating it.',
+    description: 'Validate the official Plane MCP project config and required environment without mutating Plane.',
   },
   args: {
     cwd: {
@@ -127,20 +131,43 @@ const planeProbeCommand = defineCommand({
     },
   },
   async run({ args }) {
-    const config = await loadPiCompanyConfig(resolve(args.cwd));
+    const root = resolve(args.cwd);
+    const config = await loadPiCompanyConfig(root);
     if (!config.plane.enabled)
       throw new Error('Plane is disabled in .pi/viberig.yaml');
-    const result = await new PlaneGateway(config.plane).probe();
+    const doctor = await doctorPiCompany(root);
+    const environment = Object.fromEntries(
+      PLANE_MCP_ENVIRONMENT_VARIABLES.map(name => [name, Boolean(process.env[name])]),
+    );
+    const missingEnvironment = Object.entries(environment)
+      .filter(([, present]) => !present)
+      .map(([name]) => name);
+    const result = {
+      ok: doctor.ok && missingEnvironment.length === 0,
+      transport: 'stdio',
+      server: PLANE_MCP_SERVER_NAME,
+      package: PLANE_MCP_PACKAGE,
+      projectId: config.plane.project_id,
+      environment,
+      writesEnabled: config.plane.writes_enabled,
+      allowHeadlessWrites: config.plane.allow_headless_writes,
+      knowledgeBackend: config.knowledge.backend,
+      pagesAutomation: 'disabled-by-policy',
+      errors: doctor.errors,
+      missingEnvironment,
+      next: `Start Pi, run mcp({ connect: "${PLANE_MCP_SERVER_NAME}" }), then call the project-bound retrieve_project tool.`,
+    };
     if (args.json) {
       console.log(JSON.stringify(result, null, 2));
     }
     else {
-      for (const capability of result.capabilities) {
-        const mark = capability.supported ? '✓' : capability.required ? '✗' : '○';
-        consola.info(`${mark} ${capability.name}: ${capability.detail}`);
-      }
+      consola.info(`MCP server: ${result.server} (${result.package}, ${result.transport})`);
+      consola.info(`Project binding: ${result.projectId || '(missing)'}`);
+      for (const [name, present] of Object.entries(result.environment))
+        consola.info(`${present ? '✓' : '✗'} ${name}`);
       consola.info(`Knowledge backend: ${result.knowledgeBackend}`);
       consola.info(`Pages automation: ${result.pagesAutomation}`);
+      consola.info(result.next);
     }
     if (!result.ok)
       process.exitCode = 1;

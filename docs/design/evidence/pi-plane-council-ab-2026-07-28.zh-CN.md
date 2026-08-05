@@ -91,10 +91,10 @@ Council advisor 只提供不超过 600 Token 的角色证据；aggregator 必须
 
 Plane 只承担：
 
-- Work Item 的 list/search/read；
-- states/modules/cycles 的项目结构；
-- 幂等进度评论；
-- 非终态生命周期投影；
+- 官方 MCP 白名单内的项目级 Work Item list/read；
+- states/labels/modules/cycles/milestones 的项目结构；
+- 经交互确认的 Work Item、评论和 Milestone 写入；
+- 固定 project ID 下的非终态生命周期投影；
 - 人工验收前的可见进度。
 
 `vb-wiki` 承担：
@@ -107,6 +107,12 @@ Plane 只承担：
 Plane Pages 自动化固定关闭；`knowledge_curator` 只输出候选账本，父级在人工
 验收后才可调用 `vb-wiki`。完整配置和 Linear 映射见
 [Pi Agent + Plane 私有化接入](../../install/zh-CN/pi-plane.md)。
+
+2026-07-29 起，Plane 传输层由自建 REST `PlaneGateway` 改为官方
+`plane-mcp-server` + `pi-mcp-adapter`。VibeRig 只维护工具白名单、固定
+`project_id`、写入确认和子 Agent 禁用 extensions 的策略。
+`vb-init` 在未绑定时临时只开放 `list_projects/create_project`，先查重、
+没有匹配才经人工确认创建；绑定后 reload 为固定项目白名单。
 
 ## 实验方法
 
@@ -172,9 +178,10 @@ MiMo 纯开发在不同轮次存在明显采样波动，因此本实验只能作
 
 `http://47.108.174.41:18090/` 当前可访问，公开实例信息显示 self-managed
 Plane Community 1.3.1，且已有 workspace。由于缺少 API Key、workspace slug
-和 project ID，本次未对真实项目执行鉴权 API 或写入；Plane 网关通过 mock
-contract tests 验证了鉴权头、Work Items/States/Modules/Cycles 路径、HTML
-转义、幂等评论、PATCH read-back 和禁止 completed 状态。
+和 project ID，本次未对真实项目执行鉴权 MCP 调用或写入。自动化测试验证了
+package 内置 `pi-mcp-adapter` 配置、环境变量占位符、官方工具白名单、固定
+project 注入、跨 project 阻断、写入开关、项目 `.mcp.json` 零修改以及
+delete/Pages 禁止策略。
 
 ## 验证命令
 
@@ -189,9 +196,6 @@ node scripts/run-pi-council-ab.mjs \
 
 ## 参考资料
 
-- [Plane API Introduction](https://developers.plane.so/api-reference/introduction)
-- [Work Items 与旧 Issues API 退役](https://developers.plane.so/api-reference/issue/list-issues)
-- [更新 Work Item](https://developers.plane.so/api-reference/issue/update-issue-detail)
-- [Work Item Comments](https://developers.plane.so/api-reference/issue-comment/add-issue-comment)
-- [States](https://developers.plane.so/api-reference/state/list-states)
+- [Plane 官方 MCP Server](https://github.com/makeplane/plane-mcp-server)
+- [pi-mcp-adapter](https://pi.dev/packages/pi-mcp-adapter)
 - [自托管 Pages API 问题](https://github.com/makeplane/plane/issues/8986)

@@ -37,7 +37,4 @@ plane:
   enabled: false
   writes_enabled: false
   allow_headless_writes: false
-  base_url: ""
-  workspace_slug: ""
   project_id: ""
-  api_key_env: PLANE_API_KEY

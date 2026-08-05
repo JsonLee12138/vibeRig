@@ -29,7 +29,8 @@
     "README.md",
     "README.zh-CN.md",
     "dist",
-    "pi"
+    "pi",
+    "skills"
   ],
   "pi": {
     "extensions": [
@@ -37,7 +38,9 @@
       "./node_modules/@tintinweb/pi-subagents/src/index.ts"
     ],
     "skills": [
-      "./pi/skills"
+      "./skills/vb-init",
+      "./skills/vb-company",
+      "./skills/vb-wiki"
     ]
   },
   "engines": {
@@ -49,19 +52,13 @@
     "lint": "eslint src scripts/*.mjs eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml",
     "lint:fix": "eslint src scripts/*.mjs eslint.config.js tsdown.config.ts package.json tsconfig.json .github/workflows/*.yml --fix",
     "typecheck": "tsc --noEmit",
-    "test:learning-flow": "node scripts/validate-learning-flow.mjs",
-    "test:model-routing": "node scripts/validate-model-routing.mjs",
     "test:pi-company": "node scripts/validate-pi-company.mjs",
     "test:pi-development-ab": "node scripts/validate-pi-development-ab.mjs",
     "test:pi-package-load": "node scripts/validate-pi-package-load.mjs",
-    "test:workflow-runtime": "node scripts/validate-workflow-runtime.mjs",
-    "test:workflow-skills": "node scripts/validate-workflow-skills.mjs",
-    "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
     "eval:pi-company-ab": "node scripts/run-pi-company-ab.mjs",
     "eval:pi-council-ab": "node scripts/run-pi-council-ab.mjs",
     "eval:pi-development-ab": "node scripts/run-pi-development-ab.mjs",
-    "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
-    "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:pi-company && pnpm run test:pi-development-ab && pnpm run test:workflow-runtime && pnpm run test:workflow-skills"
+    "test": "pnpm run typecheck && pnpm run test:pi-company && pnpm run test:pi-development-ab"
   },
   "peerDependencies": {
     "@earendil-works/pi-ai": ">=0.80.0",
@@ -73,6 +70,7 @@
     "citty": "^0.1.6",
     "consola": "^3.4.2",
     "fs-extra": "^11.3.0",
+    "pi-mcp-adapter": "2.15.0",
     "yaml": "2.8.1",
     "zod": "^4.4.3"
   },
@@ -87,6 +85,7 @@
     "typescript": "^5.8.3"
   },
   "bundledDependencies": [
-    "@tintinweb/pi-subagents"
+    "@tintinweb/pi-subagents",
+    "pi-mcp-adapter"
   ]
 }

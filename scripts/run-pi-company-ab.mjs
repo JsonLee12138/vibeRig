@@ -154,7 +154,7 @@ function runPiVariant(fixture, variant) {
       '--extension',
       usageProbePath,
       '--tools',
-      'read,grep,find,ls,Agent,get_subagent_result,viberig_company_status,viberig_plane_capabilities,viberig_plane_read_work_item',
+      'read,grep,find,ls,Agent,get_subagent_result,vb_company_status,mcp',
     );
   }
   args.push(evaluatorPrompt(fixture, variant));

@@ -7,13 +7,15 @@ import { copy, ensureDir, pathExists } from 'fs-extra/esm';
 import { parse, stringify } from 'yaml';
 import { z } from 'zod';
 
+import { PLANE_MCP_ENVIRONMENT_VARIABLES } from './plane-mcp.js';
+
 const thinkingLevels = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 
 export const roleDefinitions = {
   project_analyst: {
     description: '分析仓库、构建、部署和测试事实，生成有证据的项目画像；不修改代码。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-project-analysis'],
+    skills: ['vb-company-context', 'vb-project-analysis'],
     thinking: 'medium',
     maxTurns: 16,
     prompt: '只报告可由仓库证据支持的事实、置信度和知识缺口。不要把 README 声明当作运行事实。',
@@ -21,7 +23,7 @@ export const roleDefinitions = {
   architect: {
     description: '负责跨模块架构、接口、数据流和约束设计；不实现、不批准自己的方案。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-architecture'],
+    skills: ['vb-company-context', 'vb-architecture'],
     thinking: 'high',
     maxTurns: 20,
     prompt: '输出边界、契约、替代方案、失败模式和验证策略。实现权和最终批准权属于其他角色。',
@@ -29,7 +31,7 @@ export const roleDefinitions = {
   frontend_engineer: {
     description: '实现前端交互、状态、可访问性与前端测试；只修改被明确分配的前端边界。',
     tools: 'read, grep, find, ls, bash, edit, write',
-    skills: ['viberig-company-context', 'viberig-implementation', 'viberig-frontend'],
+    skills: ['vb-company-context', 'vb-implementation', 'vb-frontend'],
     thinking: 'medium',
     maxTurns: 28,
     prompt: '在隔离 worktree 内实现前端任务，遵守已批准的接口与验收条件，并返回变更与测试证据。',
@@ -38,7 +40,7 @@ export const roleDefinitions = {
   backend_engineer: {
     description: '实现后端服务、API、数据访问和后端测试；只修改被明确分配的后端边界。',
     tools: 'read, grep, find, ls, bash, edit, write',
-    skills: ['viberig-company-context', 'viberig-implementation', 'viberig-backend'],
+    skills: ['vb-company-context', 'vb-implementation', 'vb-backend'],
     thinking: 'medium',
     maxTurns: 28,
     prompt: '在隔离 worktree 内实现后端任务，保持接口、数据迁移和错误语义一致，并返回可复验的证据。',
@@ -47,7 +49,7 @@ export const roleDefinitions = {
   implementer: {
     description: '处理不需要领域专员的通用实现，或依据 debugger 的根因报告完成修复。',
     tools: 'read, grep, find, ls, bash, edit, write',
-    skills: ['viberig-company-context', 'viberig-implementation'],
+    skills: ['vb-company-context', 'vb-implementation'],
     thinking: 'medium',
     maxTurns: 28,
     prompt: '只实现已经批准且边界明确的任务。在隔离 worktree 内工作，不改变验收条件或自行宣布交付完成。',
@@ -56,7 +58,7 @@ export const roleDefinitions = {
   test_engineer: {
     description: '设计并编写单元、集成、契约、E2E、迁移或性能测试；不承担最终通过裁决。',
     tools: 'read, grep, find, ls, bash, edit, write',
-    skills: ['viberig-company-context', 'viberig-testing'],
+    skills: ['vb-company-context', 'vb-testing'],
     thinking: 'medium',
     maxTurns: 24,
     prompt: '先形成测试契约，再实现需要的测试资产、fixture 和环境说明。明确测试保真度与缺失环境。',
@@ -65,7 +67,7 @@ export const roleDefinitions = {
   qa_reviewer: {
     description: '独立核对需求合同与测试覆盖，识别缺失的边界、错误路径和可观察行为；只读且不编写测试。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-test-review'],
+    skills: ['vb-company-context', 'vb-test-review'],
     thinking: 'high',
     maxTurns: 14,
     prompt: '逐条把规范性需求映射到测试。优先检查空白值、null、类型边界、异步失败、事务回滚、引用可变性和合法输入等价类。输出不超过 600 tokens 的结构化 test gaps，不修改代码或测试。',
@@ -73,7 +75,7 @@ export const roleDefinitions = {
   reviewer: {
     description: '独立审查正确性、可维护性和架构偏差；只读且不替实现者修复。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-review'],
+    skills: ['vb-company-context', 'vb-review'],
     thinking: 'high',
     maxTurns: 18,
     prompt: '按严重级别报告可复现问题，给出文件和证据。没有问题时也要说明检查范围与残余风险。作为 Council advisor 时输出不超过 600 tokens 的结构化 findings。',
@@ -81,7 +83,7 @@ export const roleDefinitions = {
   security_auditor: {
     description: '独立进行威胁建模和安全审查；只读，不通过修改代码掩盖发现。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-security'],
+    skills: ['vb-company-context', 'vb-security'],
     thinking: 'high',
     maxTurns: 20,
     prompt: '检查信任边界、身份鉴权、注入、秘密、供应链和数据暴露。Blocking 风险必须显式标记。作为 Council advisor 时输出不超过 600 tokens 的结构化 findings。',
@@ -89,7 +91,7 @@ export const roleDefinitions = {
   verifier: {
     description: '独立运行批准的验证矩阵并核对证据；不能修改产品代码。',
     tools: 'read, grep, find, ls, bash',
-    skills: ['viberig-company-context', 'viberig-verification'],
+    skills: ['vb-company-context', 'vb-verification'],
     thinking: 'medium',
     maxTurns: 20,
     prompt: '验证候选 revision，而不是实现意图。记录命令、退出码、环境、保真度和未覆盖项；失败时不修代码。',
@@ -97,7 +99,7 @@ export const roleDefinitions = {
   debugger: {
     description: '复现失败、定位根因和提出最小修复契约；默认不修改产品代码。',
     tools: 'read, grep, find, ls, bash',
-    skills: ['viberig-company-context', 'viberig-debugging'],
+    skills: ['vb-company-context', 'vb-debugging'],
     thinking: 'high',
     maxTurns: 22,
     prompt: '区分症状、假设和已证实根因。输出复现步骤、因果链、影响范围和交给 implementer 的修复契约。',
@@ -105,7 +107,7 @@ export const roleDefinitions = {
   reliability_engineer: {
     description: '审查部署、可观测性、容量、恢复和运行风险；默认只读。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-reliability'],
+    skills: ['vb-company-context', 'vb-reliability'],
     thinking: 'high',
     maxTurns: 18,
     prompt: '关注运行拓扑、故障域、迁移顺序、回滚、SLI/SLO、备份恢复和容量边界。',
@@ -113,7 +115,7 @@ export const roleDefinitions = {
   council_aggregator: {
     description: '聚合独立 reviewer、security、QA 和 architect 的只读意见，去重、反驳并裁决阻断项；不修改代码。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-council-synthesis'],
+    skills: ['vb-company-context', 'vb-council-synthesis'],
     thinking: 'high',
     maxTurns: 12,
     prompt: '只消费任务事实包和独立 advisor findings。验证证据、识别相互冲突或规格外建议，输出 accepted、rejected、blocking 和 residualRisks；不得修改代码或批准自己的实现。',
@@ -121,7 +123,7 @@ export const roleDefinitions = {
   knowledge_curator: {
     description: '在变更被接受后生成 vb-wiki 知识候选与证据账本；不直接写共享知识库或 Plane。',
     tools: 'read, grep, find, ls',
-    skills: ['viberig-company-context', 'viberig-knowledge-curation'],
+    skills: ['vb-company-context', 'vb-insights'],
     thinking: 'medium',
     maxTurns: 16,
     prompt: '只依据已接受的变更判断 novel、conflict 或 zero-atoms，输出带来源、revision、适用边界和失效信号的候选账本。主 delivery lead 才能调用 vb-wiki 写入；Plane 不承载知识库。',
@@ -188,10 +190,7 @@ export const piCompanyConfigSchema = z.object({
     enabled: z.boolean().default(false),
     writes_enabled: z.boolean().default(false),
     allow_headless_writes: z.boolean().default(false),
-    base_url: z.string().url().or(z.literal('')).default(''),
-    workspace_slug: z.string().default(''),
     project_id: z.string().default(''),
-    api_key_env: z.string().regex(/^[A-Z][A-Z0-9_]*$/).default('PLANE_API_KEY'),
   }),
 });
 
@@ -201,11 +200,18 @@ export interface InitPiCompanyOptions {
   cwd: string;
   packageRoot: string;
   packageSource?: string;
+  addPackageToProject?: boolean;
   projectName?: string;
   defaultModel: string;
   implementationModel?: string;
   validationModel?: string;
   knowledgeModel?: string;
+  plane?: {
+    enabled: boolean;
+    projectId?: string;
+    writesEnabled?: boolean;
+    allowHeadlessWrites?: boolean;
+  };
   force?: boolean;
 }
 
@@ -316,10 +322,7 @@ export function createPiCompanyConfig(
       enabled: false,
       writes_enabled: false,
       allow_headless_writes: false,
-      base_url: '',
-      workspace_slug: '',
       project_id: '',
-      api_key_env: 'PLANE_API_KEY',
     },
   });
 }
@@ -362,7 +365,7 @@ export function renderAgent(roleName: RoleName, config: PiCompanyConfig): string
 
 async function mergePiSettings(
   root: string,
-  packageSource: string,
+  packageSource: string | null,
   config: PiCompanyConfig,
   replacedPackagePath?: string,
 ): Promise<void> {
@@ -376,7 +379,7 @@ async function mergePiSettings(
   const packages = Array.isArray(current.packages)
     ? current.packages.filter(item => item !== replacedPackagePath)
     : [];
-  if (!packages.includes(packageSource))
+  if (packageSource && !packages.includes(packageSource))
     packages.push(packageSource);
 
   const enabledModels = Array.isArray(current.enabledModels)
@@ -424,6 +427,20 @@ export async function initPiCompany(options: InitPiCompanyOptions): Promise<PiCo
     await writeFile(configPath, stringify(config, { lineWidth: 0 }), 'utf8');
   }
 
+  if (options.plane) {
+    config = piCompanyConfigSchema.parse({
+      ...config,
+      plane: {
+        ...config.plane,
+        enabled: options.plane.enabled,
+        writes_enabled: options.plane.writesEnabled ?? config.plane.writes_enabled,
+        allow_headless_writes: options.plane.allowHeadlessWrites ?? config.plane.allow_headless_writes,
+        project_id: options.plane.projectId ?? config.plane.project_id,
+      },
+    });
+    await writeFile(configPath, stringify(config, { lineWidth: 0 }), 'utf8');
+  }
+
   for (const roleName of Object.keys(roleDefinitions) as RoleName[]) {
     const agentPath = resolve(root, '.pi/agents', `${roleName}.md`);
     if (!options.force && await pathExists(agentPath))
@@ -431,13 +448,21 @@ export async function initPiCompany(options: InitPiCompanyOptions): Promise<PiCo
     await writeFile(agentPath, renderAgent(roleName, config), 'utf8');
   }
 
-  const bundledSkills = resolve(options.packageRoot, 'pi/skills');
+  const bundledSkills = resolve(options.packageRoot, 'skills');
   if (!await pathExists(bundledSkills))
     throw new Error(`Pi skills not found in package: ${bundledSkills}`);
-  await copy(bundledSkills, resolve(root, '.pi/skills'), {
-    overwrite: options.force ?? false,
-    errorOnExist: false,
-  });
+  const projectSkillNames = new Set(
+    Object.values(roleDefinitions).flatMap(definition => definition.skills),
+  );
+  for (const skillName of projectSkillNames) {
+    const source = resolve(bundledSkills, skillName);
+    if (!await pathExists(source))
+      throw new Error(`Pi role skill not found in package: ${skillName}`);
+    await copy(source, resolve(root, '.pi/skills', skillName), {
+      overwrite: options.force ?? false,
+      errorOnExist: false,
+    });
+  }
 
   const subagentsPath = resolve(root, '.pi/subagents.json');
   if (options.force || !await pathExists(subagentsPath)) {
@@ -453,7 +478,9 @@ export async function initPiCompany(options: InitPiCompanyOptions): Promise<PiCo
 
   await mergePiSettings(
     root,
-    options.packageSource ?? resolve(options.packageRoot),
+    options.addPackageToProject === false
+      ? null
+      : options.packageSource ?? resolve(options.packageRoot),
     config,
     options.packageSource ? resolve(options.packageRoot) : undefined,
   );
@@ -487,15 +514,21 @@ export async function doctorPiCompany(cwd: string): Promise<PiCompanyDoctorResul
         warnings.push(`agent drift detected: ${roleName}; rerun pi init --force after reviewing local changes`);
     }
 
+    const requiredSkills = new Set(
+      Object.values(roleDefinitions).flatMap(definition => definition.skills),
+    );
+    for (const skillName of requiredSkills) {
+      if (!await pathExists(resolve(root, '.pi/skills', skillName)))
+        errors.push(`missing Pi role skill: ${skillName}`);
+    }
+
     if (config.plane.enabled) {
-      if (!config.plane.base_url)
-        errors.push('plane.base_url is required when Plane is enabled');
-      if (!config.plane.workspace_slug)
-        errors.push('plane.workspace_slug is required when Plane is enabled');
       if (!config.plane.project_id)
         errors.push('plane.project_id is required when Plane is enabled');
-      if (!process.env[config.plane.api_key_env])
-        warnings.push(`${config.plane.api_key_env} is not set; Plane calls will fail closed`);
+      for (const envName of PLANE_MCP_ENVIRONMENT_VARIABLES) {
+        if (!process.env[envName])
+          warnings.push(`${envName} is not set; Plane MCP will fail closed`);
+      }
     }
   }
 

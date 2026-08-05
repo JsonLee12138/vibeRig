@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
@@ -10,6 +10,25 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const agentDir = await mkdtemp(join(tmpdir(), 'viberig-pi-agent-dir-'));
 
 try {
+  const manifest = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
+  assert.deepEqual(manifest.pi.skills, [
+    './skills/vb-init',
+    './skills/vb-company',
+    './skills/vb-wiki',
+  ]);
+  assert.ok(
+    !manifest.pi.extensions.some(extension => extension.includes('pi-mcp-adapter')),
+    'pi-mcp-adapter must be owned by the VibeRig company extension, not loaded separately',
+  );
+  const skillDirectories = (await readdir(resolve(root, 'skills'), { withFileTypes: true }))
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name);
+  assert.ok(skillDirectories.length > 0, 'No Pi skills were packaged');
+  assert.ok(
+    skillDirectories.every(name => name.startsWith('vb-')),
+    `Only vb-* skills are allowed on the Pi branch: ${skillDirectories.join(', ')}`,
+  );
+
   const child = spawn('pi', [
     '--mode',
     'rpc',
@@ -74,11 +93,14 @@ try {
   child.kill('SIGTERM');
   assert.equal(response.success, true);
   const names = response.data.commands.map(command => command.name);
-  assert.ok(names.includes('viberig-company'), 'VibeRig extension command was not loaded');
+  assert.ok(names.includes('vb-company'), 'VibeRig extension command was not loaded');
+  assert.ok(names.includes('mcp'), 'pi-mcp-adapter extension command was not loaded');
   assert.ok(names.includes('agents'), 'tintinweb pi-subagents extension was not loaded');
-  assert.ok(names.includes('skill:viberig-company'), 'VibeRig package skills were not loaded');
+  assert.ok(names.includes('skill:vb-company'), 'VibeRig package skills were not loaded');
+  assert.ok(names.includes('skill:vb-init'), 'VibeRig init skill was not loaded');
+  assert.ok(names.includes('skill:vb-wiki'), 'VibeRig wiki skill was not loaded');
   assert.doesNotMatch(stderr, /extension.*error|failed to load/i);
-  console.log('pi package load validation passed (VibeRig extension, tintinweb subagents, package skills)');
+  console.log('pi package load validation passed (VibeRig, Plane MCP adapter, tintinweb subagents, package skills)');
 }
 finally {
   await rm(agentDir, { recursive: true, force: true });

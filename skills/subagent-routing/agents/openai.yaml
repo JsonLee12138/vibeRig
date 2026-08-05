@@ -1,4 +1,0 @@
-interface:
-  display_name: "Subagent Routing"
-  short_description: "Route subagent capability and model efficiently"
-  default_prompt: "Use $subagent-routing to choose capability before model, apply provider-specific accepted evidence and safe exploration rules, prepare a bounded Subagent Brief and route observation, then validate the result without delegating final acceptance or authority."

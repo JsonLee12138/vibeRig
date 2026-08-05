@@ -1,134 +1,219 @@
-# Pi Agent + Plane 私有化接入
+# 在 Pi 中使用 VibeRig + Plane MCP
 
-本文只适用于 VibeRig 的 Pi 分支。Plane 负责项目工作项和流程投影，
-`vb-wiki` 继续负责经过验收的长期项目知识。
+Plane 负责项目工作项和流程投影，`vb-wiki` 继续负责经过验收的长期项目知识。
+用户入口是 Pi package 和 Pi skill，不需要在项目外编排 VibeRig CLI。
 
-## 1. 当前实例结论
-
-2026-07-28 对 `http://47.108.174.41:18090/` 的只读探测结果：
-
-| 项目 | 结果 |
-| --- | --- |
-| 可访问性 | HTTP 可访问 |
-| 部署类型 | self-managed |
-| 版本 | 1.3.1 |
-| Edition | `PLANE_COMMUNITY` |
-| Workspace | 已存在 |
-| API 鉴权 | 尚未提供 API Key、workspace slug、project ID，未完成鉴权 UAT |
-
-Plane 公共 API 使用 `/api/v1/...`，API Key 通过 `X-API-Key` 请求头发送。
-Pi 实现使用 Work Items API，不再使用将在 2026-03-31 结束支持的旧
-`/issues/` API。
-
-## 2. 初始化 Pi 公司
-
-```bash
-viberig pi init \
-  --model openai-codex/gpt-5.6-sol \
-  --implementation-model xiaomi-token-plan-cn/mimo-v2.5 \
-  --validation-model openai-codex/gpt-5.6-sol \
-  --knowledge-model openai-codex/gpt-5.6-sol
-```
-
-该命令生成：
-
-- `.pi/viberig.yaml`：项目级模型、角色、Council、Plane 和知识策略；
-- `.pi/agents/*.md`：高定制化角色及其工具、skill、模型和 worktree 隔离；
-- `.pi/skills/*`：Pi 专用 skills；
-- `.pi/subagents.json`：`@tintinweb/pi-subagents` 并发和模型作用域配置；
-- `.pi/settings.json`：插件包与允许使用的模型。
-
-## 3. 配置 Plane
-
-在目标项目的 `.pi/viberig.yaml` 中填写：
-
-```yaml
-plane:
-  enabled: true
-  writes_enabled: false
-  allow_headless_writes: false
-  base_url: http://47.108.174.41:18090/
-  workspace_slug: <workspace-slug>
-  project_id: <project-uuid-or-api-id>
-  api_key_env: PLANE_API_KEY
-```
-
-然后在运行 Pi 的环境中提供 `PLANE_API_KEY`，先保持
-`writes_enabled: false` 完成只读验收：
-
-```bash
-viberig pi doctor
-viberig pi plane-probe --json
-```
-
-probe 必须验证 project、work_items、states、modules；cycles 是可选能力。
-确认 workspace/project 绑定正确后才将 `writes_enabled` 改为 `true`。
-交互模式中的 Plane 写操作仍需确认；无 UI 模式默认拒绝写入。
-
-## 4. Linear 功能到 Plane 的映射
-
-| 原 Linear 能力 | Pi + Plane 能力 | Pi 工具 |
-| --- | --- | --- |
-| 按条件读 issue | 列出 Work Items | `viberig_plane_list_work_items` |
-| 搜索 issue | 搜索 Work Items | `viberig_plane_search_work_items` |
-| 按内部 ID 读 issue | 按 UUID/API ID 读 Work Item | `viberig_plane_read_work_item` |
-| 按 `ABC-123` 读 issue | 按稳定 identifier 读 Work Item | `viberig_plane_read_work_item_by_identifier` |
-| 读工作流结构 | 读 states/modules/cycles | `viberig_plane_project_structure` |
-| 写进度评论 | 幂等评论 + read-back | `viberig_plane_append_progress` |
-| 更新状态 | 非终态生命周期投影 + read-back | `viberig_plane_transition_work_item` |
-| Linear 文档/知识 | 不迁移到 Plane | `vb-wiki` |
-
-评论使用调用方稳定的 `operationId` 写入 `external_id`，重试时先查重；
-HTML 会转义，写后必须 read-back。生命周期工具不暴露 completed/done 转换，
-技术 Agent 只能投影到待验收或交付前状态，最终验收仍由人决定。
-
-## 5. Plane 与 vb-wiki 的职责边界
+## 1. 工作方式
 
 ```mermaid
 flowchart LR
-  P["Plane Work Item<br/>任务、状态、评论、模块、周期"] --> L["Pi delivery lead"]
-  L --> A["隔离 Agent / Council"]
-  A --> C["候选 revision 与证据"]
-  C --> V["独立 verifier"]
-  V -->|"技术通过"| PP["Plane 非终态投影<br/>technically_ready"]
-  PP --> H["人工验收"]
-  H -->|"接受"| K["Sol knowledge curator<br/>知识候选账本"]
-  K --> W["父级通过 vb-wiki 写入"]
-  H -->|"拒绝"| R["Plane acceptance_rejected<br/>回流修复"]
+  I["pi install VibeRig<br/>一次性注入 package"] --> P["在目标项目启动 Pi"]
+  E["父 shell 环境变量<br/>Plane URL / workspace / API key"] --> P
+  P --> S["/skill:vb-init"]
+  P --> M["package 内置<br/>pi-mcp-adapter + Plane MCP 配置"]
+  S --> T["vb_init_project<br/>项目配置与策略"]
+  T --> C[".pi/viberig.yaml<br/>非敏感 project_id"]
+  M --> O["官方 plane-mcp-server"]
+  O --> R["发现或注册 Plane Project"]
+  R --> B["绑定 project_id<br/>运行时策略立即切换"]
+  B --> X["私有 Plane 项目流程"]
+  P --> W["vb-wiki"]
 ```
 
-Plane Pages 自动化在 Pi 配置中固定关闭。原因不是 Plane 不能展示文档，而是
-当前自托管 Community 实例不应被当作稳定的知识 API；项目知识仍采用
-`vb-wiki` 的检索、冲突检测、证据来源和失效信号流程。
+Pi package 包含：
 
-## 6. 写入权限与失败策略
+- VibeRig company extension；
+- `vb-init` 和公司开发 skills；
+- `@tintinweb/pi-subagents`；
+- `pi-mcp-adapter`；
+- `plane-mcp-server==0.2.9`、Plane MCP 白名单和固定 project 策略。
 
-- workspace 和 project 固定在项目配置中，模型不能临时改目标。
-- API Key 只从命名环境变量读取，URL 中禁止嵌入凭据。
-- 外部 Plane 内容、评论和附件一律作为不可信数据。
-- 429/5xx 和网络失败有限重试；写请求本身不盲目重试。
-- 状态找不到可靠非终态映射时降级为 comment-only，不猜 completed 状态。
-- 子 Agent 不能更新 Plane、写 `vb-wiki` 或宣布验收。
-- `knowledge_curator` 只输出候选账本；父级在人工验收后调用完整 `vb-wiki`。
+## 2. 一次性注入 VibeRig Pi package
 
-## 7. 尚需完成的真实 UAT
+开发分支使用本地 package：
 
-需要提供以下三项后，才能在该实例上执行只读和写入验收：
+```bash
+cd /Users/jsonlee/Projects/vb-plugin
+pnpm install
+pnpm run build
+pi install /Users/jsonlee/Projects/vb-plugin
+pi list
+```
 
-1. `PLANE_API_KEY`；
-2. workspace slug；
-3. 目标 project ID。
+安装是用户级的，之后每个项目不需要重复安装。Pi package 具有完整进程权限，
+只安装已经审阅过的来源。
 
-验收顺序必须是：probe → list/search/read → 测试项目追加评论 → 非终态转换 →
-重复相同 `operationId` 验证幂等。不要在生产 Work Item 上做首次写入试验。
+## 3. 启动 Pi 前配置环境变量
+
+官方 Plane MCP stdio 模式需要且只需要以下三个 Plane 环境变量：
+
+| 环境变量 | 是否秘密 | 示例/用途 |
+| --- | --- | --- |
+| `PLANE_BASE_URL` | 否 | `http://47.108.174.41:18090` |
+| `PLANE_WORKSPACE_SLUG` | 否 | Plane workspace slug |
+| `PLANE_API_KEY` | 是 | Plane API Key，不得写入仓库 |
+
+Plane project UUID/API ID 不是环境变量。`vb-init` 会先查询当前 workspace：
+有唯一匹配就绑定，没有匹配则在人工确认后创建，并把返回 ID 保存到
+`.pi/viberig.yaml`。
+
+在启动 Pi 的父 shell 注入：
+
+```bash
+export PLANE_BASE_URL="http://47.108.174.41:18090"
+export PLANE_WORKSPACE_SLUG="<workspace-slug>"
+read -r -s 'PLANE_API_KEY?Plane API Key: '
+export PLANE_API_KEY
+echo
+```
+
+然后从同一个 shell 启动目标项目：
+
+```bash
+cd /absolute/path/to/project
+pi
+```
+
+不要在 Pi 的 `bash` 子进程中执行 `export`：子进程不能把环境变量反向注入已经
+运行的 Pi。如果变量缺失，退出 Pi、在父 shell 设置后重新启动。
+
+模型认证不由 Plane 配置负责。使用 Pi 自身的 `/login` 或对应 provider 的认证方式。
+
+## 4. 在 Pi 内初始化项目
+
+进入 Pi 后运行：
+
+```text
+/skill:vb-init
+```
+
+也可以直接描述：
+
+```text
+使用 vb-init 初始化当前项目。
+先禁用所有 Plane 写入。
+```
+
+skill 会调用 `vb_init_project`，生成或合并：
+
+- `.pi/viberig.yaml`；
+- `.pi/agents/*.md`；
+- `.pi/skills/*`；
+- `.pi/subagents.json`；
+- `.pi/settings.json`。
+
+Plane MCP 配置由已安装的 VibeRig package 内置并交给 `pi-mcp-adapter`，初始化不会
+创建、读取或修改项目 `.mcp.json`。`.pi/viberig.yaml` 只保存非敏感 Plane
+`project_id` 和写入策略。
+
+初次初始化固定使用：
+
+```text
+planeEnabled: true
+writesEnabled: false
+allowHeadlessWrites: false
+```
+
+skill 不会询问、读取或回显 API Key。它只检查当前 Pi 进程中三个变量是否存在。
+
+## 5. 在 Pi 内注册 Plane Project
+
+package 的 MCP 工具表固定包含经过审计的能力集合；运行时策略会在未绑定阶段只允许
+`list_projects` 和 `create_project`：
+
+1. skill 使用官方 MCP 调用 `list_projects`；
+2. 对项目名称和 identifier 做精确查重；
+3. 唯一匹配时复用已有 Project；
+4. 没有匹配时展示拟创建的名称和 identifier；
+5. 只有人工确认后才调用 `create_project`；
+6. 对返回 Project read-back，并把 ID 写入 `.pi/viberig.yaml`；
+7. 绑定写入 `.pi/viberig.yaml` 后策略立即生效，bootstrap 工具随即被拒绝，不需要
+   `/reload` 或重启。
+
+Project 是常驻容器，不按每个需求重复创建。出现多个或冲突候选时初始化停止，
+由用户选择，不能猜测。
+
+## 6. 在 Pi 内执行只读验收
+
+初始化成功后让 Pi 执行：
+
+```text
+连接 vb-plane，读取固定项目，列出前 10 个 Work Item，
+再读取 states、modules、cycles 和 milestones。不要执行任何写入。
+```
+
+底层调用等价于：
+
+```text
+mcp({ connect: "vb-plane" })
+
+mcp({
+  server: "vb-plane",
+  tool: "vb_plane_retrieve_project",
+  args: {}
+})
+
+mcp({
+  server: "vb-plane",
+  tool: "vb_plane_list_work_items",
+  args: { "per_page": 10 }
+})
+```
+
+调用方无需传 `project_id`。VibeRig 自动注入 `.pi/viberig.yaml` 的固定值；
+显式传入其他 project 会在请求到达 Plane 前被拒绝。
+
+## 7. 在 Pi 内开启写入验收
+
+只读验收通过后，在 Pi 中明确要求：
+
+```text
+重新运行 vb-init，为当前固定 Plane 项目开启 writesEnabled，
+但保持 allowHeadlessWrites=false。
+```
+
+运行时策略立即切换，不需要重新生成 MCP 配置或重启 Pi。随后可在专用测试 Work Item
+上验证评论：
+
+```text
+mcp({
+  server: "vb-plane",
+  tool: "vb_plane_create_work_item_comment",
+  args: {
+    "work_item_id": "<test-work-item-uuid>",
+    "comment_html": "<p>VibeRig Plane MCP UAT</p>",
+    "external_source": "viberig-uat",
+    "external_id": "uat-20260729-001"
+  }
+})
+```
+
+交互 Pi 会显示工具、固定 project 和参数，并要求人工确认。测试后通过
+`vb-init` 恢复 `writesEnabled: false`。
+
+## 8. 工具和权限边界
+
+| 能力 | 默认 |
+| --- | --- |
+| 初始化阶段 `list_projects` | 临时开放 |
+| 初始化阶段 `create_project` | 仅交互人工确认 |
+| 固定项目、Work Item、states、labels、cycles、modules、milestones、评论读取 | 开放 |
+| Work Item、评论和 milestone 写入 | `writesEnabled: true` 后开放 |
+| 交互写入 | 每次人工确认 |
+| Headless 写入 | 默认拒绝 |
+| Workspace 全局搜索、任意项目读取、delete、Pages | 不开放 |
+| 子 Agent 使用 Plane | 不开放，`extensions: false` |
+| 项目知识 | 使用 `vb-wiki` |
+
+## 9. 维护 CLI
+
+`viberig pi init/doctor/plane-probe` 保留给插件开发、CI 和故障诊断，不是正常用户
+工作流。正常使用顺序始终是：`pi install` → 父 shell 注入环境 → 启动 Pi →
+`/skill:vb-init` → 在 Pi 中完成开发、Council、验证和知识沉淀。
 
 ## 参考资料
 
-- [Plane API Introduction](https://developers.plane.so/api-reference/introduction)
-- [Plane Work Items API 与旧 Issues API 退役说明](https://developers.plane.so/api-reference/issue/list-issues)
-- [更新 Work Item](https://developers.plane.so/api-reference/issue/update-issue-detail)
-- [Work Item Comments](https://developers.plane.so/api-reference/issue-comment/add-issue-comment)
-- [States](https://developers.plane.so/api-reference/state/list-states)
-- [Modules](https://developers.plane.so/api-reference/module/list-modules)
-- [Cycles](https://developers.plane.so/api-reference/cycle/list-cycles)
-- [自托管 Pages API 404 的公开问题](https://github.com/makeplane/plane/issues/8986)
+- [Pi Packages](https://github.com/earendil-works/pi-mono/blob/main/packages/coding-agent/docs/packages.md)
+- [Plane 官方 MCP Server](https://github.com/makeplane/plane-mcp-server)
+- [pi-mcp-adapter](https://pi.dev/packages/pi-mcp-adapter)
+- [uv 安装](https://docs.astral.sh/uv/getting-started/installation/)
