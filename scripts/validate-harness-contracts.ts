@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
 import { parse } from 'yaml';
@@ -15,6 +17,7 @@ const schemaPaths = [
   'skills/vb-init/assets/context-routes.schema.json',
   'skills/vb-init/assets/environment-profile.schema.json',
   'skills/vb-init/assets/runbook-index.schema.json',
+  'skills/update-team/assets/team-profile.schema.json',
   'skills/execute/assets/verification-graph.schema.json',
   'skills/pre-development/assets/delivery-plan.schema.json',
   'skills/pre-development/assets/e2e-contract.schema.json',
@@ -79,6 +82,105 @@ assert.equal(environments.profiles.local.credentials.production, 'forbidden');
 const runbooks = parse(runbooksYaml());
 assert.equal(runbooks.policy.require_exercise_evidence, true);
 assert.deepEqual(runbooks.runbooks, []);
+
+const agentSpecTemplate = JSON.parse(readFileSync(resolve(root, 'skills/agent-creator/assets/agent-spec.template.json'), 'utf8'));
+assert.deepEqual(agentSpecTemplate.platform_model_overrides, {});
+const codexAgentTemplate = readFileSync(resolve(root, 'skills/agent-creator/assets/codex-agent-template.toml'), 'utf8');
+assert.match(codexAgentTemplate, /^model = "resolved_model"$/m);
+assert.ok(codexAgentTemplate.indexOf('model = "resolved_model"') < codexAgentTemplate.indexOf('developer_instructions ='));
+
+const teamManifest = JSON.parse(readFileSync(resolve(root, 'skills/built-in-agents/agents.manifest.json'), 'utf8'));
+assert.equal(teamManifest.coreAgents.length, 7);
+assert.deepEqual(new Set(teamManifest.coreAgents), new Set([
+  'researcher',
+  'implementation',
+  'test_engineer',
+  'code_review',
+  'qa',
+  'security_auditor',
+  'integrator',
+]));
+assert.deepEqual(
+  new Set([...teamManifest.coreAgents, ...teamManifest.conditionalAgents.map((agent: { name: string }) => agent.name)]),
+  new Set(teamManifest.agents),
+);
+for (const agent of teamManifest.conditionalAgents)
+  assert.ok(agent.signals.length > 0, `${agent.name} needs positive activation signals`);
+assert.deepEqual(new Set(Object.keys(teamManifest.platformModelDefaults.codex)), new Set(teamManifest.agents));
+const expectedCodexModels: Record<string, string> = {
+  researcher: 'gpt-5.6-luna',
+  implementation: 'gpt-5.6-luna',
+  test_engineer: 'gpt-5.6-luna',
+  code_review: 'gpt-5.6-terra',
+  qa: 'gpt-5.6-terra',
+  integrator: 'gpt-5.6-terra',
+  backend_architect: 'gpt-5.6-terra',
+  frontend_architect: 'gpt-5.6-terra',
+  data_architect: 'gpt-5.6-terra',
+  reliability_engineer: 'gpt-5.6-terra',
+  uiux_design: 'gpt-5.6-terra',
+  backend_e2e_engineer: 'gpt-5.6-sol',
+  security_auditor: 'gpt-5.6-sol',
+  architecture_red_team: 'gpt-5.6-sol',
+};
+assert.deepEqual(teamManifest.platformModelDefaults.codex, expectedCodexModels);
+for (const name of teamManifest.agents) {
+  const spec = JSON.parse(readFileSync(resolve(root, `skills/built-in-agents/assets/${name}.json`), 'utf8'));
+  assert.equal(spec.name, name);
+  assert.equal(spec.model, 'inherit', `${name} must remain provider-portable`);
+  assert.deepEqual(new Set(spec.targets), new Set(['codex', 'claude', 'cursor']));
+}
+
+const renderedAgentsRoot = mkdtempSync('/tmp/viberig-rendered-agent-models-');
+try {
+  for (const platform of ['codex', 'claude', 'cursor'])
+    mkdirSync(resolve(renderedAgentsRoot, `.${platform}/agents`), { recursive: true });
+  for (const name of teamManifest.agents) {
+    writeFileSync(resolve(renderedAgentsRoot, `.codex/agents/${name}.toml`), `name = "${name}"\nmodel = "${expectedCodexModels[name]}"\ndeveloper_instructions = """role"""\n`);
+    writeFileSync(resolve(renderedAgentsRoot, `.claude/agents/${name}.md`), `---\nname: ${name}\nmodel: inherit\n---\n`);
+    writeFileSync(resolve(renderedAgentsRoot, `.cursor/agents/${name}.md`), `---\nname: ${name}\nmodel: inherit\n---\n`);
+  }
+  const modelValidator = resolve(root, 'scripts/validate-rendered-agent-models.mjs');
+  const validatorArgs = [modelValidator, '--root', renderedAgentsRoot, '--agents', teamManifest.agents.join(','), '--platforms', 'codex,claude,cursor'];
+  assert.doesNotThrow(() => execFileSync(process.execPath, validatorArgs, { cwd: root, stdio: 'pipe' }));
+  writeFileSync(resolve(renderedAgentsRoot, '.claude/agents/researcher.md'), '---\nname: researcher\nmodel: gpt-5.6-luna\n---\n');
+  assert.throws(() => execFileSync(process.execPath, validatorArgs, { cwd: root, stdio: 'pipe' }));
+}
+finally {
+  rmSync(renderedAgentsRoot, { recursive: true, force: true });
+}
+const ordinaryTestEngineer = JSON.parse(readFileSync(resolve(root, 'skills/built-in-agents/assets/test_engineer.json'), 'utf8'));
+assert.ok(ordinaryTestEngineer.scope_not_allowed.some((rule: string) => rule.includes('backend E2E')));
+const backendE2EEngineer = JSON.parse(readFileSync(resolve(root, 'skills/built-in-agents/assets/backend_e2e_engineer.json'), 'utf8'));
+assert.ok(backendE2EEngineer.scope_allowed.some((rule: string) => rule.includes('public HTTP')));
+
+const teamProfile = {
+  version: 1,
+  manifestFingerprint: 'sha256:manifest',
+  policyFingerprint: 'sha256:policy',
+  sources: ['go.mod', 'api/openapi.yaml'],
+  coreAgents: ['researcher', 'implementation', 'test_engineer', 'code_review', 'qa', 'security_auditor', 'integrator'],
+  conditionalAgents: { backend_architect: { evidence: ['api/openapi.yaml'], reason: 'public HTTP API' } },
+  preservedAgents: [],
+  platforms: {
+    codex: { status: 'rendered', agents: ['researcher', 'implementation', 'test_engineer', 'code_review', 'qa', 'security_auditor', 'integrator', 'backend_architect'] },
+    claude: { status: 'skipped', agents: [] },
+    cursor: { status: 'skipped', agents: [] },
+  },
+};
+assertSchema('skills/update-team/assets/team-profile.schema.json', teamProfile, true);
+assertSchema('skills/update-team/assets/team-profile.schema.json', {
+  ...teamProfile,
+  coreAgents: [...teamProfile.coreAgents, 'backend_architect'],
+}, false);
+assertSchema('skills/update-team/assets/team-profile.schema.json', {
+  ...teamProfile,
+  conditionalAgents: { frontend_architect: { evidence: [], reason: 'maybe needed' } },
+}, false);
+assertSchema('skills/update-team/assets/team-profile.schema.json', {
+  ...teamProfile,
+  conditionalAgents: { invented_agent: { evidence: ['src/'], reason: 'not in manifest' } },
+}, false);
 
 const deliveryPlan = {
   version: 1,

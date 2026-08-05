@@ -1,0 +1,1253 @@
+{
+  "baseline": {
+    "cwd": "/tmp/viberig-agent-team-live-PlY0MO/paired/baseline",
+    "artifactScore": {
+      "earned": 35,
+      "total": 100,
+      "checks": [
+        {
+          "id": "core-researcher",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-implementation",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-test_engineer",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-code_review",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-qa",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-security_auditor",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-integrator",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "conditional-backend_architect",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-backend_e2e_engineer",
+          "pass": false,
+          "points": 3
+        },
+        {
+          "id": "conditional-data_architect",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-reliability_engineer",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-architecture_red_team",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "absent-frontend_architect",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "absent-uiux_design",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-evidence",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "conditional-names-unique",
+          "pass": false,
+          "points": 2
+        },
+        {
+          "id": "team-fingerprints",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "team-schema-valid",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "exact-agent-set",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "codex-fixed-role-models",
+          "pass": false,
+          "points": 5
+        },
+        {
+          "id": "role-boundaries",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "routing-schema-valid",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "route-risk-explicit",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "route-bounded-implementation-luna",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "route-ordinary-tests-luna",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "route-backend-e2e-sol",
+          "pass": false,
+          "points": 6
+        },
+        {
+          "id": "route-backend-e2e-agent",
+          "pass": false,
+          "points": 4
+        },
+        {
+          "id": "route-review-terra",
+          "pass": false,
+          "points": 3
+        },
+        {
+          "id": "route-integration-terra",
+          "pass": false,
+          "points": 3
+        },
+        {
+          "id": "route-security-sol",
+          "pass": false,
+          "points": 3
+        },
+        {
+          "id": "route-red-team-sol-high",
+          "pass": false,
+          "points": 4
+        }
+      ],
+      "names": [
+        "architecture_red_team",
+        "backend_architect",
+        "code_review",
+        "data_architect",
+        "implementation",
+        "integrator",
+        "qa",
+        "reliability_engineer",
+        "researcher",
+        "security_auditor",
+        "test_engineer"
+      ],
+      "team": {
+        "version": "1",
+        "generatedAt": "2026-08-05T00:00:00Z",
+        "platform": "codex",
+        "fixedModel": "gpt-5.6-terra",
+        "coreAgents": [
+          {
+            "name": "backend_architect",
+            "evidence": "Go HTTP handler/service and public POST contract in internal/httpapi/handler.go and api/openapi.yaml"
+          },
+          {
+            "name": "implementation",
+            "evidence": "AC-1 and AC-2 require a bounded authorization behavior change"
+          },
+          {
+            "name": "test_engineer",
+            "evidence": "Requirement mandates a real handler-driven E2E test"
+          },
+          {
+            "name": "qa",
+            "evidence": "L2 AC requires success, durability, and authorization-denial coverage"
+          },
+          {
+            "name": "code_review",
+            "evidence": "Public HTTP contract and authorization boundary require independent review"
+          },
+          {
+            "name": "security_auditor",
+            "evidence": "AC-2 and the stated L2 authorization boundary"
+          }
+        ],
+        "conditionalAgents": [
+          {
+            "name": "data_architect",
+            "activateWhen": "schema or migration compatibility, persistence durability, or rollback evidence changes",
+            "evidence": "db/migrations/001_invitations.sql and additive/reversible migration requirement"
+          },
+          {
+            "name": "reliability_engineer",
+            "activateWhen": "health endpoint, release, rollback, or operational verification is in scope",
+            "evidence": "AC-3 and .vibeRig/runbooks.yaml"
+          },
+          {
+            "name": "integrator",
+            "activateWhen": "API, service, migration, and E2E changes must be coordinated",
+            "evidence": "single capability spans api/, internal/, db/, and e2e/"
+          },
+          {
+            "name": "architecture_red_team",
+            "activateWhen": "L2 design changes authorization, persistence, or public contract assumptions",
+            "evidence": "requirement declares L2 public HTTP and authorization risk"
+          },
+          {
+            "name": "researcher",
+            "activateWhen": "authoritative Go, HTTP, migration, or dependency behavior is uncertain",
+            "evidence": "evidence gathering is required only for version-sensitive or disputed facts"
+          }
+        ]
+      },
+      "routing": {
+        "version": "1",
+        "generatedAt": "2026-08-05T00:00:00Z",
+        "catalogFingerprint": "sha256:codex-fixed-gpt-5.6-terra",
+        "policyFingerprint": "sha256:subagent-routing-codex-workflow-2026-07-23-v1-fixed-model",
+        "sources": [
+          "bundled-prior:codex-workflow-2026-07-23-v1",
+          "repository:.vibeRig/requirements/invitations.md"
+        ],
+        "routes": [
+          {
+            "platform": "codex",
+            "phase": "overall",
+            "taskFamily": "orchestration",
+            "capability": "backend_architect",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "provisional",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "risk-band:L2",
+              "ambiguous public contract",
+              "cross-domain decision",
+              "L2 authorization risk"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "intake",
+            "taskFamily": "bounded-intake",
+            "capability": "researcher",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "experimental",
+            "sampleCount": 0,
+            "qualityFloor": 0.9,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "risk-band:L2",
+              "conflicting primary sources",
+              "unbounded research question",
+              "authorization ambiguity"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "execute",
+            "taskFamily": "deterministic-execute",
+            "capability": "implementation",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "experimental",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "risk-band:L2",
+              "production scope expands",
+              "failing handler E2E",
+              "migration incompatibility",
+              "security finding"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "execute",
+            "taskFamily": "deterministic-execute",
+            "capability": "test_engineer",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "experimental",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "risk-band:L2",
+              "test needs production change",
+              "SUT is not internal/httpapi.Handler",
+              "test writes outside e2e/"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "accept",
+            "taskFamily": "acceptance-and-delivery",
+            "capability": "qa",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "provisional",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "risk-band:L2",
+              "missing durable-state assertion",
+              "missing 403/no-persistence evidence",
+              "stale validation evidence"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "accept",
+            "taskFamily": "acceptance-and-delivery",
+            "capability": "security_auditor",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "provisional",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "risk-band:L2",
+              "authorization bypass",
+              "untrusted role handling",
+              "security review finding"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "any",
+            "taskFamily": "complex-escalation",
+            "capability": "architecture_red_team",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "risk-band:L2",
+              "irreversible migration",
+              "public contract incompatibility",
+              "adversarial security concern"
+            ]
+          }
+        ]
+      }
+    },
+    "roleScore": {
+      "earned": 40,
+      "total": 43,
+      "checks": [
+        {
+          "id": "test-agent-wrote-go-test",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "test-agent-authorization-oracle",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "test-agent-public-boundary",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "test-agent-no-replacement-handler",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "test-agent-no-listener-socket",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "test-agent-independent-red",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "test-agent-no-persistence-red",
+          "pass": false,
+          "points": 3
+        },
+        {
+          "id": "test-agent-no-production-edit",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "review-agent-request-changes",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "review-agent-finds-auth-bypass",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "review-agent-cites-file-line",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "review-agent-remediation",
+          "pass": true,
+          "points": 3
+        }
+      ],
+      "review": {
+        "verdict": "REQUEST CHANGES",
+        "findings": [
+          {
+            "severity": "Critical",
+            "file": "internal/invitations/service.go",
+            "line": 19,
+            "impact": "AC-2 is violated: every role, including a non-administrator, reaches Store.Create, so the HTTP handler returns 201 and durable invitation state is created instead of returning 403 with no persistence.",
+            "remediation": "Before calling Store.Create, require the administrator role and return ErrForbidden for every other role. Keep the authorization decision in this service boundary so callers cannot bypass it.",
+            "affected_ac": [
+              "AC-2"
+            ],
+            "affected_tc": [
+              "authorization denial"
+            ]
+          },
+          {
+            "severity": "Critical",
+            "file": "e2e/invitations_test.go",
+            "line": 22,
+            "impact": "The required HTTP E2E test is incomplete: it covers only authorization denial and does not cover an administrator success response or durable state. It also currently fails against the supplied service because a member receives 201 and is persisted.",
+            "remediation": "Add an httptest-driven case through internal/httpapi.Handler for an administrator POST that asserts 201 and the recorded invitation, and retain the non-admin case asserting 403 and no recorded invitation. Ensure the suite passes in the target environment.",
+            "affected_ac": [
+              "AC-1",
+              "AC-2"
+            ],
+            "affected_tc": [
+              "success",
+              "durable state",
+              "authorization denial"
+            ]
+          },
+          {
+            "severity": "Critical",
+            "file": "internal/httpapi/handler.go",
+            "line": 17,
+            "impact": "AC-3 is not satisfied: the handler registers only POST /v1/invitations and no health endpoint is exposed. The rollback runbook exists, but it does not compensate for the missing public health contract.",
+            "remediation": "Register and test the required health endpoint using the project's defined path and response contract; retain the existing additive-migration rollback runbook.",
+            "affected_ac": [
+              "AC-3"
+            ],
+            "affected_tc": []
+          }
+        ]
+      },
+      "oracle": {
+        "status": 1,
+        "error": null,
+        "output": "--- FAIL: TestCreateInvitationRejectsNonAdminCaller (<duration>)\n    invitations_test.go:37: status = 201, want 403; body = \"\"\n    invitations_test.go:40: created emails = [invitee@example.com], want none for a non-admin caller\nFAIL\nFAIL\texample.com/teamfixture/e2e\t<duration>\nFAIL\n"
+      },
+      "protectedChanges": []
+    },
+    "mandatoryFailures": [
+      "conditional-backend_e2e_engineer",
+      "conditional-evidence",
+      "conditional-names-unique",
+      "team-schema-valid",
+      "exact-agent-set",
+      "codex-fixed-role-models",
+      "routing-schema-valid",
+      "route-risk-explicit",
+      "route-bounded-implementation-luna",
+      "route-ordinary-tests-luna",
+      "route-backend-e2e-sol",
+      "route-backend-e2e-agent",
+      "route-review-terra",
+      "route-integration-terra",
+      "route-security-sol",
+      "route-red-team-sol-high",
+      "test-agent-no-persistence-red"
+    ],
+    "score": 52.4
+  },
+  "candidate": {
+    "cwd": "/tmp/viberig-agent-team-live-PlY0MO/paired/candidate",
+    "artifactScore": {
+      "earned": 100,
+      "total": 100,
+      "checks": [
+        {
+          "id": "core-researcher",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-implementation",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-test_engineer",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-code_review",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-qa",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-security_auditor",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "core-integrator",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "conditional-backend_architect",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-backend_e2e_engineer",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-data_architect",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-reliability_engineer",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-architecture_red_team",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "absent-frontend_architect",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "absent-uiux_design",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "conditional-evidence",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "conditional-names-unique",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "team-fingerprints",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "team-schema-valid",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "exact-agent-set",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "codex-fixed-role-models",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "role-boundaries",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "routing-schema-valid",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "route-risk-explicit",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "route-bounded-implementation-luna",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "route-ordinary-tests-luna",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "route-backend-e2e-sol",
+          "pass": true,
+          "points": 6
+        },
+        {
+          "id": "route-backend-e2e-agent",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "route-review-terra",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "route-integration-terra",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "route-security-sol",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "route-red-team-sol-high",
+          "pass": true,
+          "points": 4
+        }
+      ],
+      "names": [
+        "architecture_red_team",
+        "backend_architect",
+        "backend_e2e_engineer",
+        "code_review",
+        "data_architect",
+        "implementation",
+        "integrator",
+        "qa",
+        "reliability_engineer",
+        "researcher",
+        "security_auditor",
+        "test_engineer"
+      ],
+      "team": {
+        "version": 1,
+        "manifestFingerprint": "sha256:provided-built-in-agents-manifest-v5",
+        "policyFingerprint": "sha256:provided-team-composition-policy",
+        "sources": [
+          ".vibeRig/requirements/invitations.md: L2 public HTTP contract and authorization boundary; required real HTTP E2E",
+          "internal/httpapi/handler.go: POST /v1/invitations HTTP handler",
+          "internal/invitations/service.go: invitation service and authorization defect comment",
+          "api/openapi.yaml: public invitation endpoint contract",
+          "db/migrations/001_invitations.sql: owned invitation persistence",
+          ".vibeRig/runbooks.yaml: invitation API rollback runbook",
+          "README.md: backend-only Go HTTP service; no browser UI or frontend scope"
+        ],
+        "coreAgents": [
+          "researcher",
+          "implementation",
+          "test_engineer",
+          "code_review",
+          "qa",
+          "security_auditor",
+          "integrator"
+        ],
+        "conditionalAgents": {
+          "backend_architect": {
+            "evidence": [
+              ".vibeRig/requirements/invitations.md requires POST /v1/invitations and a health endpoint.",
+              "internal/httpapi/handler.go implements the HTTP API boundary.",
+              "api/openapi.yaml defines the public invitation API contract."
+            ],
+            "reason": "Concrete HTTP API, handler, and service-boundary evidence requires backend architecture analysis."
+          },
+          "backend_e2e_engineer": {
+            "evidence": [
+              ".vibeRig/requirements/invitations.md explicitly requires a real HTTP E2E test covering success, durable state, and authorization denial.",
+              "AGENTS.md requires E2E tests to drive internal/httpapi.Handler with httptest.NewRequest and httptest.NewRecorder."
+            ],
+            "reason": "An approved real HTTP public-protocol-to-owned-state test contract requires the dedicated backend E2E capability."
+          },
+          "data_architect": {
+            "evidence": [
+              "db/migrations/001_invitations.sql creates the owned invitations table.",
+              ".vibeRig/requirements/invitations.md calls out an additive reversible migration and durable invitation state."
+            ],
+            "reason": "Owned schema migration and durable persistence create a concrete data design and rollback concern."
+          },
+          "reliability_engineer": {
+            "evidence": [
+              ".vibeRig/requirements/invitations.md requires a health endpoint and rollback coverage.",
+              ".vibeRig/runbooks.yaml defines invitation API rollback exercise evidence."
+            ],
+            "reason": "Explicit health and rollback/runbook requirements activate operational and release analysis."
+          },
+          "architecture_red_team": {
+            "evidence": [
+              ".vibeRig/requirements/invitations.md classifies the work as L2 with a public HTTP contract and authorization boundary.",
+              "internal/invitations/service.go documents that the administrator role check is missing."
+            ],
+            "reason": "The L2 public-contract and material authorization-boundary signals meet the adversarial architecture-review threshold."
+          }
+        },
+        "preservedAgents": [],
+        "platforms": {
+          "codex": {
+            "status": "rendered",
+            "agents": [
+              "researcher",
+              "implementation",
+              "test_engineer",
+              "code_review",
+              "qa",
+              "security_auditor",
+              "integrator",
+              "backend_architect",
+              "backend_e2e_engineer",
+              "data_architect",
+              "reliability_engineer",
+              "architecture_red_team"
+            ]
+          },
+          "claude": {
+            "status": "skipped",
+            "agents": []
+          },
+          "cursor": {
+            "status": "skipped",
+            "agents": []
+          }
+        }
+      },
+      "routing": {
+        "version": "codex-workflow-2026-08-05-v3",
+        "generatedAt": "2026-08-05T00:00:00Z",
+        "catalogFingerprint": "sha256:codex-gpt-5.6-luna-terra-sol",
+        "policyFingerprint": "sha256:provided-model-capability-prior-v3-and-team-policy",
+        "sources": [
+          "skills/subagent-routing/assets/model-capability-prior.json: codex-workflow-2026-08-05-v3",
+          ".vibeRig/team-profile.yaml"
+        ],
+        "routes": [
+          {
+            "platform": "codex",
+            "phase": "overall",
+            "taskFamily": "orchestration",
+            "capability": "overall_orchestration",
+            "risk": "L0-L1",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "low"
+            },
+            "confidence": "provisional",
+            "sampleCount": 12,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": false,
+            "escalationSignals": [
+              "cross-module ambiguity",
+              "open-ended high-value work"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "research",
+            "taskFamily": "bounded-research",
+            "capability": "researcher",
+            "risk": "L0-L1",
+            "default": {
+              "model": "gpt-5.6-luna",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "provisional",
+            "sampleCount": 27,
+            "qualityFloor": 1,
+            "explorationRate": 0.1,
+            "blockedForExploration": false,
+            "escalationSignals": [
+              "multi-source contradiction",
+              "cross-domain synthesis"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "execute",
+            "taskFamily": "bounded-implementation",
+            "capability": "implementation",
+            "risk": "L0-L1",
+            "default": {
+              "model": "gpt-5.6-luna",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "experimental",
+            "sampleCount": 22,
+            "qualityFloor": 1,
+            "explorationRate": 0.1,
+            "blockedForExploration": false,
+            "escalationSignals": [
+              "cross-module ambiguity",
+              "repeated strategy failure",
+              "L2 authorization boundary"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "test",
+            "taskFamily": "unit-contract-integration-regression",
+            "capability": "test_engineer",
+            "risk": "L0-L1",
+            "default": {
+              "model": "gpt-5.6-luna",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "experimental",
+            "sampleCount": 22,
+            "qualityFloor": 1,
+            "explorationRate": 0.1,
+            "blockedForExploration": false,
+            "escalationSignals": [
+              "complex fixture boundary",
+              "test requires public HTTP-to-owned-state fidelity"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "test",
+            "taskFamily": "backend-e2e-authoring",
+            "capability": "backend_e2e_engineer",
+            "risk": "L2",
+            "default": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "confidence": "experimental",
+            "sampleCount": 142,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "Sol unavailable",
+              "exact e2e file not collected",
+              "untrustworthy RED",
+              "production change required"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "review",
+            "taskFamily": "independent-code-review",
+            "capability": "code_review",
+            "risk": "L1-L2",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "contradictory evidence",
+              "cross-contract defect",
+              "security boundary"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "qa",
+            "taskFamily": "qa-test-design-review",
+            "capability": "qa",
+            "risk": "L1-L2",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "low"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "protected quality gate",
+              "contradictory test evidence"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "review",
+            "taskFamily": "security-audit",
+            "capability": "security_auditor",
+            "risk": "L2-L3",
+            "default": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "medium"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "high"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "credible high-impact attack path",
+              "authorization boundary",
+              "sensitive-data exposure"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "integration",
+            "taskFamily": "cross-issue-integration",
+            "capability": "integrator",
+            "risk": "L2",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "medium"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "material contract conflict",
+              "stale or contradictory evidence"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "planning",
+            "taskFamily": "domain-architecture",
+            "capability": "backend_architect",
+            "risk": "L2",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "medium"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "irreversible design",
+              "distributed failure mode",
+              "authorization contract conflict"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "planning",
+            "taskFamily": "data-migration-architecture",
+            "capability": "data_architect",
+            "risk": "L2",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "medium"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "data-loss risk",
+              "irreversible migration",
+              "rollback uncertainty"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "planning",
+            "taskFamily": "reliability-release-review",
+            "capability": "reliability_engineer",
+            "risk": "L2",
+            "default": {
+              "model": "gpt-5.6-terra",
+              "reasoningEffort": "medium"
+            },
+            "fallback": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "medium"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "rollback uncertainty",
+              "health evidence gap",
+              "release failure mode"
+            ]
+          },
+          {
+            "platform": "codex",
+            "phase": "planning",
+            "taskFamily": "architecture-red-team",
+            "capability": "architecture_red_team",
+            "risk": "L2-public-contract-security-boundary",
+            "default": {
+              "model": "gpt-5.6-sol",
+              "reasoningEffort": "high"
+            },
+            "confidence": "heuristic",
+            "sampleCount": 0,
+            "qualityFloor": 1,
+            "explorationRate": 0,
+            "blockedForExploration": true,
+            "escalationSignals": [
+              "attack focus changes",
+              "missing architecture evidence",
+              "unsafe verification"
+            ]
+          }
+        ]
+      }
+    },
+    "roleScore": {
+      "earned": 43,
+      "total": 43,
+      "checks": [
+        {
+          "id": "test-agent-wrote-go-test",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "test-agent-authorization-oracle",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "test-agent-public-boundary",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "test-agent-no-replacement-handler",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "test-agent-no-listener-socket",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "test-agent-independent-red",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "test-agent-no-persistence-red",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "test-agent-no-production-edit",
+          "pass": true,
+          "points": 2
+        },
+        {
+          "id": "review-agent-request-changes",
+          "pass": true,
+          "points": 3
+        },
+        {
+          "id": "review-agent-finds-auth-bypass",
+          "pass": true,
+          "points": 5
+        },
+        {
+          "id": "review-agent-cites-file-line",
+          "pass": true,
+          "points": 4
+        },
+        {
+          "id": "review-agent-remediation",
+          "pass": true,
+          "points": 3
+        }
+      ],
+      "review": {
+        "verdict": "REQUEST CHANGES",
+        "findings": [
+          {
+            "severity": "Critical",
+            "file": "internal/invitations/service.go",
+            "line": 19,
+            "impact": "AC-2 is violated: CreateFromRequest ignores its role argument and always calls Store.Create. A non-administrator therefore receives 201 through the HTTP handler and an invitation is persisted, which is an authorization-boundary bypass.",
+            "remediation": "Before calling Store.Create, require role == \"admin\" and return ErrForbidden for every other role. This lets internal/httpapi/handler.go translate the denial to HTTP 403 with no persistence."
+          },
+          {
+            "severity": "Important",
+            "file": "internal/httpapi/handler.go",
+            "line": 16,
+            "impact": "AC-3 is not implemented: the mux only registers POST /v1/invitations and has no health endpoint. No Runbook containing additive-migration rollback guidance exists in the repository, leaving the operational acceptance criterion unfulfilled.",
+            "remediation": "Add the required health route using the project’s HTTP conventions, and add a Runbook that documents rollback of db/migrations/001_invitations.sql while preserving the additive/reversible migration strategy."
+          }
+        ]
+      },
+      "oracle": {
+        "status": 1,
+        "error": null,
+        "output": "--- FAIL: TestInvitationAuthorization (<duration>)\n    invitations_test.go:56: non-administrator response status = 201, want 403\n    invitations_test.go:59: persisted invitations after non-administrator request = [admin-created@example.com member-created@example.com], want only the administrator invitation\nFAIL\nFAIL\texample.com/teamfixture/e2e\t<duration>\nFAIL\n"
+      },
+      "protectedChanges": []
+    },
+    "mandatoryFailures": [],
+    "score": 100,
+    "passed": true
+  }
+}

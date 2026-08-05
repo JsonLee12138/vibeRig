@@ -41,6 +41,7 @@
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
     "eval:backend-e2e-live": "node scripts/run-backend-e2e-live-ab.mjs",
+    "eval:agent-team-live": "node scripts/run-agent-team-live-ab.mjs",
     "test": "pnpm run typecheck && pnpm run test:learning-flow && pnpm run test:model-routing && pnpm run test:workflow-skills && pnpm run test:harness-contracts && pnpm run test:backend-e2e-live-fixture"
   },
   "dependencies": {

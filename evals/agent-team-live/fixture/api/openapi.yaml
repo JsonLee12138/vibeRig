@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info:
+  title: Invitation API
+  version: 1.0.0
+paths:
+  /v1/invitations:
+    post:
+      responses:
+        '201': { description: created }
+        '403': { description: forbidden }
