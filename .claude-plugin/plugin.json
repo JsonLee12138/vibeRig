@@ -1,7 +1,7 @@
 {
   "name": "vibe-rig",
   "displayName": "VibeRig",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Goal-driven software-development harness with confirmed requirements, continuous execution, evidence, and human acceptance.",
   "author": {
     "name": "JsonLee12138"
