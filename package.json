@@ -39,6 +39,7 @@
     "test:harness-contracts": "node --import tsx scripts/validate-harness-contracts.ts",
     "test:backend-e2e-live-fixture": "node scripts/run-backend-e2e-live-ab.mjs --self-test",
     "eval:workflow-ab": "node scripts/run-workflow-ab.mjs",
+    "eval:execute-linear-ab": "node scripts/run-execute-linear-ab.mjs",
     "eval:workflow-models": "node scripts/run-workflow-model-matrix.mjs",
     "eval:backend-e2e-live": "node scripts/run-backend-e2e-live-ab.mjs",
     "eval:agent-team-live": "node scripts/run-agent-team-live-ab.mjs",

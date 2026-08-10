@@ -26,6 +26,7 @@ description: 在需求基线已确认后，以 Goal Loop 持续完成软件开�
 - `.vibeRig/environments.yaml` 的目标环境 profile；
 - 已确认的 `work-item.json`、`intake.md`、`requirement.yaml`；
 - 存在时读取架构、AC、TC、风险、Issue、PR 和历史 Evidence；
+- `tracking.provider`、Work Item 的外部系统 identity 与未确认 outbox；
 - 当前仓库状态、用户未提交改动和项目 Gate。
 
 将输入归一化为 [共享契约](./references/contracts.md) 中的 `WorkItem` 与 `GoalContract`。缺少非关键字段时从代码和现状补全；只有缺失信息会改变产品语义、扩大风险或越过权限时才询问用户。
@@ -62,6 +63,21 @@ description: 在需求基线已确认后，以 Goal Loop 持续完成软件开�
 7. **Deliver**：只执行 `targetMode` 与 authority 允许的动作。
 
 一次失败后定向修复。相同失败第二次出现时必须改变假设、工具、测试层级或实现策略，禁止机械重跑。连续三次没有新增证据或状态进展时，合并成一个 Blocker。
+
+## Linear 生命周期投影
+
+当 `.vibeRig/project.yaml` 的 `tracking.provider: linear` 且 Work Item 已有 Linear identity 时，把生命周期投影视为每轮 Goal Loop 的必需动作，而不是交付末尾的可选记录。读取共享 [vb-linear](../vb-linear/SKILL.md)，只请求语义 transition，由它解析团队真实状态并选择具体能力；本 Skill 不指定工具名或重新定义状态映射。
+
+主 Agent 在以下边界发出 transition：
+
+- 第一次产品实现写入前：`execution_started`；
+- 进入独立 Review 前：`review_started`；
+- blocking finding 触发返修前：`repair_started`；从人工验收拒绝返回时使用 `acceptance_rejected`；
+- Completion Oracle 达到 `verified`、`committed` 或 `pr_ready` 时：`technically_ready`。
+
+每次投影都先追加本地 journal 并持久化 outbox intent，包含稳定 event id、Linear host identity、语义 transition 与 payload fingerprint；再请 `vb-linear` 投影，read-back 目标后才 ack。超时或响应丢失时 search/adopt，禁止盲目重试。状态不匹配时保留当前外部状态并记录 phase；工具不可用时把 outbox 标为 `pending/unavailable`。两种情况都继续所有不依赖 Linear 的本地工作，但不得跳过投影意图、虚报同步成功或声称 read-back 已完成。
+
+只有主 Agent 执行投影。缺少 Linear identity 时记录 `missing_identity` 并继续本地 Goal Loop；`execute` 不因此创建新 Issue。技术完成只进入 `pending_acceptance`，不得发出 `done`；`done` 仅由 `accept-deliver` 在当前人工验收和交付证据同时成立后请求。
 
 ## 不得中断的情况
 
@@ -129,13 +145,13 @@ AND 没有 blocking finding
 AND Evidence、CI、PR 与当前 commit 对齐
 ```
 
-达到 `verified`、`committed` 或 `pr_ready` 后，将 Work Item 置为 `pending_acceptance` 并进入 `accept-deliver`。自动化测试不能代替业务验收。
+达到 `verified`、`committed` 或 `pr_ready` 后，将 Work Item 置为 `pending_acceptance`，完成 `technically_ready` 投影或留下可恢复 outbox，再进入 `accept-deliver`。自动化测试不能代替业务验收。
 
 ## 外部记录
 
 - 用户仅要求分析或 Review 时，不写 Linear、不改代码、不创建 PR；
 - 用户要求记录时，使用 `intake` 形成并确认完整 Work Item，再一次性写入；
-- Linear 暂不可用时保留本地权威记录和待同步动作，不阻塞代码执行；
+- 已配置 Linear 且存在 identity 时，生命周期投影必须尝试并 read-back；暂不可用时保留本地权威记录和待同步动作，不阻塞代码执行；
 - 主 Agent 负责 Linear、PR、Proof Packet 和状态写入；Subagent 不执行这些副作用。
 
 ## 完成检查
@@ -148,6 +164,7 @@ AND Evidence、CI、PR 与当前 commit 对齐
 - [ ] Environment Driver 已证明目标环境健康，或诚实记录更低保真边界。
 - [ ] Verification Graph 的 required 节点闭合，Operational change 的 Runbook 已实际演练。
 - [ ] 主 Agent 已检查 diff、真实输出和当前 commit。
+- [ ] 已配置 Linear 时，生命周期 transition 已由主 Agent 投影并 read-back，或有状态诚实的可恢复 outbox；未把技术完成写成 `done`。
 - [ ] 每次 Subagent 委派记录了 capability、model/reasoning、policy action、实际质量/返工/耗时/token 与 confounders。
 - [ ] Completion Oracle 已满足，或只剩一个真实 Gate。
 - [ ] 需要业务验收时已进入 `accept-deliver`，未自行宣称验收通过。

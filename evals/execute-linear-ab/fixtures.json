@@ -1,0 +1,112 @@
+[
+  {
+    "id": "tracked-pr-with-repair",
+    "prompt": "需求和完整开发方案已确认，tracking.provider 为 linear，Work Item 已绑定 Linear issue VB-42，目标是 pr_ready。主 Agent 即将开始第一次产品实现写入；实现后进入独立 Review，Reviewer 返回一个 blocking finding；主 Agent 修复后测试、Review、CI 和 PR commit 全部对齐，Completion Oracle 满足，但用户尚未人工验收。请给出 execute 的 Linear 生命周期动作轨迹。",
+    "expect": {
+      "transitionIntents": ["execution_started", "review_started", "repair_started", "review_started", "technically_ready"],
+      "writesLinear": true,
+      "resolvesWorkflowStateBeforeWrite": true,
+      "persistsOutboxBeforeWrite": true,
+      "readBackBeforeAck": true,
+      "blindRetryOnTimeout": false,
+      "claimsSyncedWithoutReadBack": false,
+      "createsIssueWhenIdentityMissing": false,
+      "finalWorkItemStatus": "pending_acceptance",
+      "finalOutboxState": "ack",
+      "linearStatusTerminal": false,
+      "linearWriter": "main_agent"
+    },
+    "weights": {
+      "transitionIntents": 18,
+      "writesLinear": 4,
+      "resolvesWorkflowStateBeforeWrite": 5,
+      "persistsOutboxBeforeWrite": 5,
+      "readBackBeforeAck": 5,
+      "blindRetryOnTimeout": 2,
+      "claimsSyncedWithoutReadBack": 2,
+      "createsIssueWhenIdentityMissing": 1,
+      "finalWorkItemStatus": 2,
+      "finalOutboxState": 2,
+      "linearStatusTerminal": 2,
+      "linearWriter": 2
+    }
+  },
+  {
+    "id": "linear-unavailable-during-execution",
+    "prompt": "需求和方案已确认，tracking.provider 为 linear，Work Item 已绑定 VB-77，目标是 verified。第一次产品实现写入前发现 Linear capability 暂时不可用；主 Agent 仍完成本地代码和测试，随后实际进入一次独立 Review，最终 Completion Oracle 满足。请给出 execute 的 Linear intent、恢复和完成行为。",
+    "expect": {
+      "transitionIntents": ["execution_started", "review_started", "technically_ready"],
+      "writesLinear": false,
+      "resolvesWorkflowStateBeforeWrite": true,
+      "persistsOutboxBeforeWrite": true,
+      "readBackBeforeAck": true,
+      "blindRetryOnTimeout": false,
+      "continuesLocalExecutionWhenLinearUnavailable": true,
+      "claimsSyncedWithoutReadBack": false,
+      "createsIssueWhenIdentityMissing": false,
+      "finalWorkItemStatus": "pending_acceptance",
+      "finalOutboxState": "unavailable",
+      "linearStatusTerminal": false,
+      "linearWriter": "none"
+    },
+    "weights": {
+      "transitionIntents": 6,
+      "writesLinear": 1,
+      "resolvesWorkflowStateBeforeWrite": 2,
+      "persistsOutboxBeforeWrite": 3,
+      "readBackBeforeAck": 2,
+      "blindRetryOnTimeout": 3,
+      "continuesLocalExecutionWhenLinearUnavailable": 3,
+      "claimsSyncedWithoutReadBack": 2,
+      "createsIssueWhenIdentityMissing": 1,
+      "finalWorkItemStatus": 1,
+      "finalOutboxState": 2,
+      "linearStatusTerminal": 1,
+      "linearWriter": 1
+    }
+  },
+  {
+    "id": "missing-linear-identity",
+    "prompt": "需求和方案已确认，tracking.provider 为 linear，但 Work Item 没有 Linear id/key，目标是 verified。用户要求继续实现，不要求记录或新建任务；本地实现和验证可以完成。请给出 execute 是否创建 Issue、是否写状态以及最终本地状态。",
+    "expect": {
+      "transitionIntents": [],
+      "writesLinear": false,
+      "claimsSyncedWithoutReadBack": false,
+      "createsIssueWhenIdentityMissing": false,
+      "finalWorkItemStatus": "pending_acceptance",
+      "finalOutboxState": "not_applicable",
+      "linearWriter": "none"
+    },
+    "weights": {
+      "transitionIntents": 3,
+      "writesLinear": 1,
+      "claimsSyncedWithoutReadBack": 1,
+      "createsIssueWhenIdentityMissing": 4,
+      "finalWorkItemStatus": 1,
+      "finalOutboxState": 1,
+      "linearWriter": 1
+    }
+  },
+  {
+    "id": "read-only-review",
+    "prompt": "用户只要求只读 Review 当前改动并说明风险，明确禁止改代码、改 Linear、建 Issue 或评论。项目配置 tracking.provider 为 linear，Work Item 也有 Linear identity。请给出 execute 的外部写入和生命周期行为。",
+    "expect": {
+      "transitionIntents": [],
+      "writesLinear": false,
+      "claimsSyncedWithoutReadBack": false,
+      "createsIssueWhenIdentityMissing": false,
+      "finalWorkItemStatus": "unchanged",
+      "finalOutboxState": "not_applicable",
+      "linearWriter": "none"
+    },
+    "weights": {
+      "transitionIntents": 3,
+      "writesLinear": 2,
+      "claimsSyncedWithoutReadBack": 1,
+      "createsIssueWhenIdentityMissing": 1,
+      "finalWorkItemStatus": 1,
+      "finalOutboxState": 1,
+      "linearWriter": 1
+    }
+  }
+]

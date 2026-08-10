@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cases"],
+  "properties": {
+    "cases": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "caseId",
+          "transitionIntents",
+          "writesLinear",
+          "resolvesWorkflowStateBeforeWrite",
+          "persistsOutboxBeforeWrite",
+          "readBackBeforeAck",
+          "blindRetryOnTimeout",
+          "continuesLocalExecutionWhenLinearUnavailable",
+          "claimsSyncedWithoutReadBack",
+          "createsIssueWhenIdentityMissing",
+          "finalWorkItemStatus",
+          "finalOutboxState",
+          "linearStatusTerminal",
+          "linearWriter",
+          "notes"
+        ],
+        "properties": {
+          "caseId": {
+            "enum": [
+              "tracked-pr-with-repair",
+              "linear-unavailable-during-execution",
+              "missing-linear-identity",
+              "read-only-review"
+            ]
+          },
+          "transitionIntents": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "execution_started",
+                "review_started",
+                "repair_started",
+                "acceptance_rejected",
+                "technically_ready",
+                "done"
+              ]
+            }
+          },
+          "writesLinear": { "type": "boolean" },
+          "resolvesWorkflowStateBeforeWrite": { "type": "boolean" },
+          "persistsOutboxBeforeWrite": { "type": "boolean" },
+          "readBackBeforeAck": { "type": "boolean" },
+          "blindRetryOnTimeout": { "type": "boolean" },
+          "continuesLocalExecutionWhenLinearUnavailable": { "type": "boolean" },
+          "claimsSyncedWithoutReadBack": { "type": "boolean" },
+          "createsIssueWhenIdentityMissing": { "type": "boolean" },
+          "finalWorkItemStatus": {
+            "enum": ["executing", "pending_acceptance", "unchanged", "done"]
+          },
+          "finalOutboxState": {
+            "enum": ["ack", "pending", "unavailable", "conflict", "not_applicable"]
+          },
+          "linearStatusTerminal": { "type": "boolean" },
+          "linearWriter": {
+            "enum": ["main_agent", "subagent", "none"]
+          },
+          "notes": {
+            "type": "array",
+            "maxItems": 5,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

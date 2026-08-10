@@ -7,6 +7,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
 const workflowFixtures = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/fixtures.json'), 'utf8'));
 const workflowOutputSchema = JSON.parse(readFileSync(resolve(root, 'evals/workflow-ab/output.schema.json'), 'utf8'));
+const executeLinearFixtures = JSON.parse(readFileSync(resolve(root, 'evals/execute-linear-ab/fixtures.json'), 'utf8'));
+const executeLinearOutputSchema = JSON.parse(readFileSync(resolve(root, 'evals/execute-linear-ab/output.schema.json'), 'utf8'));
 
 const requiredFiles = [
   'skills/intake/SKILL.md',
@@ -36,6 +38,8 @@ const requiredFiles = [
   'skills/vb-init/assets/context-routes.schema.json',
   'skills/vb-init/assets/environment-profile.schema.json',
   'skills/vb-init/assets/runbook-index.schema.json',
+  'evals/execute-linear-ab/fixtures.json',
+  'evals/execute-linear-ab/output.schema.json',
 ];
 
 for (const path of requiredFiles) {
@@ -54,7 +58,7 @@ for (const path of requiredFiles.filter(path => path.endsWith('.json'))) {
 
 const skillExpectations = {
   'skills/intake/SKILL.md': ['统一 Work Item', '人工 Gate 1', 'work-item.json', '自动交接'],
-  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'Verification Graph', 'Environment Driver', 'accept-deliver'],
+  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'Verification Graph', 'Environment Driver', 'accept-deliver', 'vb-linear', 'execution_started', 'technically_ready', 'read-back'],
   'skills/accept-deliver/SKILL.md': ['人工验收', 'Evidence', '明确授权', 'execute'],
   'skills/record-issue/SKILL.md': ['兼容', 'intake'],
   'skills/bugger/SKILL.md': ['兼容', 'intake', 'execute'],
@@ -149,9 +153,34 @@ for (const field of [
 if (!workflowOutputSchema.properties.backendE2EBlueprint)
   failures.push('workflow A/B output schema missing backendE2EBlueprint');
 
+const executeLinearFixtureIds = executeLinearFixtures.map(fixture => fixture.id);
+if (new Set(executeLinearFixtureIds).size !== executeLinearFixtureIds.length)
+  failures.push('execute Linear A/B fixture ids must be unique');
+const executeLinearWeight = executeLinearFixtures.reduce((total, fixture) =>
+  total + Object.values(fixture.weights).reduce((sum, weight) => sum + weight, 0), 0);
+if (executeLinearWeight !== 100)
+  failures.push(`execute Linear A/B weights must total 100, received ${executeLinearWeight}`);
+for (const fixture of executeLinearFixtures) {
+  for (const field of Object.keys(fixture.weights)) {
+    if (!(field in fixture.expect))
+      failures.push(`execute Linear A/B ${fixture.id} weights missing expectation: ${field}`);
+  }
+}
+const executeLinearCaseIds = executeLinearOutputSchema.properties.cases.items.properties.caseId.enum;
+for (const id of executeLinearFixtureIds) {
+  if (!executeLinearCaseIds.includes(id))
+    failures.push(`execute Linear A/B output schema missing case id: ${id}`);
+}
+
 for (const runner of ['scripts/run-workflow-ab.mjs', 'scripts/run-workflow-model-matrix.mjs']) {
   if (!readFileSync(resolve(root, runner), 'utf8').includes('--baseline-ref'))
     failures.push(`${runner} does not support an explicit baseline ref`);
+}
+
+const executeLinearRunner = readFileSync(resolve(root, 'scripts/run-execute-linear-ab.mjs'), 'utf8');
+for (const phrase of ['--baseline-ref', 'skills/vb-linear/SKILL.md', 'readBackBeforeAck']) {
+  if (!executeLinearRunner.includes(phrase))
+    failures.push(`execute Linear A/B runner missing: ${phrase}`);
 }
 
 if (failures.length > 0) {
