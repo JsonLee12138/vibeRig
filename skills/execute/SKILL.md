@@ -79,6 +79,16 @@ description: 在需求基线已确认后，以 Goal Loop 持续完成软件开�
 
 只有主 Agent 执行投影。缺少 Linear identity 时记录 `missing_identity` 并继续本地 Goal Loop；`execute` 不因此创建新 Issue。技术完成只进入 `pending_acceptance`，不得发出 `done`；`done` 仅由 `accept-deliver` 在当前人工验收和交付证据同时成立后请求。
 
+## Linear 执行内容记录
+
+状态流转不等于内容记录。当已配置 Linear 且 Work Item 有 Linear identity 时，主 Agent 还必须按 [Linear execution records](./references/linear-records.md) 写入可读记录：
+
+- `execution_started`：第一次产品实现写入前，记录目标、scope/non-goals、目标模式、计划/AC/TC 引用、当前分支或工作区、预计验证与已知风险；
+- `review_started` / `repair_started` / `acceptance_rejected`：只在真实进入这些阶段时追加简短 phase record，包含触发证据、影响范围和下一步，不为每轮无变化循环刷评论；
+- `technically_ready`：Completion Oracle 满足后写完整 Proof Packet，至少包含 workspace/branch、完整 commit 或明确的未提交工作区、改动摘要、验证命令与结果、AC/TC 覆盖、Evidence/CI 对齐、残余风险、PR 链接或不适用原因。
+
+Issue identity 的内容写到该 Issue 评论；Milestone/requirement 聚合内容按 `vb-linear` 映射到注册 Project 的 Project Update。每条记录使用稳定 event id、`VibeRig-Event` 与 typed `VibeRig-Record: phase:<event-id>` marker。写入前为内容单独持久化 outbox intent，携带 host identity、payload fingerprint 和记录类型；写后按 marker 与 fingerprint read-back 才 ack。状态 intent 与内容 intent 必须分别完成，不能因为状态已同步就跳过评论或 Proof Packet。Linear 不可用时两类 intent 分别保留并继续本地执行，恢复时 search/adopt，禁止盲目重复评论。
+
 ## 不得中断的情况
 
 以下情况由 Goal Loop 自行处理：
@@ -152,7 +162,7 @@ AND Evidence、CI、PR 与当前 commit 对齐
 - 用户仅要求分析或 Review 时，不写 Linear、不改代码、不创建 PR；
 - 用户要求记录时，使用 `intake` 形成并确认完整 Work Item，再一次性写入；
 - 已配置 Linear 且存在 identity 时，生命周期投影必须尝试并 read-back；暂不可用时保留本地权威记录和待同步动作，不阻塞代码执行；
-- 主 Agent 负责 Linear、PR、Proof Packet 和状态写入；Subagent 不执行这些副作用。
+- 主 Agent 负责 Linear、PR、Proof Packet 和状态写入；Subagent 不执行这些副作用；状态同步成功不能替代执行内容与 Proof Packet 的写入。
 
 ## 完成检查
 
@@ -165,6 +175,7 @@ AND Evidence、CI、PR 与当前 commit 对齐
 - [ ] Verification Graph 的 required 节点闭合，Operational change 的 Runbook 已实际演练。
 - [ ] 主 Agent 已检查 diff、真实输出和当前 commit。
 - [ ] 已配置 Linear 时，生命周期 transition 已由主 Agent 投影并 read-back，或有状态诚实的可恢复 outbox；未把技术完成写成 `done`。
+- [ ] 已配置且有 identity 时，`execution_started` 内容与 `technically_ready` Proof Packet 已写入并 read-back，或各自有 durable outbox；没有只改状态不留可读内容。
 - [ ] 每次 Subagent 委派记录了 capability、model/reasoning、policy action、实际质量/返工/耗时/token 与 confounders。
 - [ ] Completion Oracle 已满足，或只剩一个真实 Gate。
 - [ ] 需要业务验收时已进入 `accept-deliver`，未自行宣称验收通过。

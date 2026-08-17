@@ -30,6 +30,7 @@ Callers ask for a capability; this is what it resolves to.
 | Read prior comments | `list_comments` | Prior analysis, proof packets, acceptance records. |
 | Create or update an issue | `save_issue` | Title, description, status, labels, `parentId`, `project`, `team`, `blockedBy`/`blocks`. |
 | Write a comment | `save_comment` | Analysis, proof packet, acceptance record, plan-sync summary. |
+| Write lifecycle content | Issue comment or Project Update, selected by host type | Execution brief, phase summary, repair note, proof packet, or plan-sync summary. Issue-scoped records use comments; Milestone/requirement aggregate records use the registered Project's Project Updates because Milestones have no comments. |
 | Resolve a team | `list_teams` / `get_team` | Typically during `vb-init`. |
 | Find or create the registered project | `list_projects` / `save_project` | Search before creating. |
 | Find or create the Project Document | `list_documents` / `save_document` | Typically during `vb-init`. |
@@ -41,9 +42,13 @@ Callers ask for a capability; this is what it resolves to.
 VibeRig event records must use one real, searchable host for their entire lifecycle:
 
 - Issue / sub-issue acceptance → that Issue's comments (`list_comments` / `save_comment`).
+- Issue execution brief, progress, repair, and proof → that Issue's comments (`list_comments` / `save_comment`).
+- Milestone execution aggregate, plan publication summary, and proof → the registered Linear Project's Project Updates (`get_status_updates` / `save_status_update`).
 - Milestone acceptance, Milestone delivery, requirement aggregation, and PRD/requirement finalization → the registered Linear Project's Project Updates (`get_status_updates` / `save_status_update`). Milestones do not have a comment capability.
 
 Put `<!-- VibeRig-Event: <event-id> -->` in every event record, plus a typed marker `<!-- VibeRig-Record: <kind>:<event-id> -->`. Use `kind: acceptance` for the single acceptance record, `retrospective` for the single insights record, `delivery-intent` for the pre-merge write-ahead record, `delivery` for the canonical pending delivery record, and `phase` for append-only state overlays. For acceptance, retrospective, delivery-intent, or delivery, zero exact typed-marker matches permits one write, one structurally valid match is adopted, and multiple/malformed/conflicting matches fail closed; never append a second canonical record. Retrospective adoption ignores other legitimate kinds; phase recovery selects the newest structurally valid typed phase record while preserving earlier references. Search/write only within the mapped host and registered project. Never write acceptance or delivery intent to one host and later search another. Callers refer to the result generically as a `linear_record`; an Issue result may additionally expose `comment_id`, while a Project Update exposes `status_update_id`.
+
+Lifecycle status and lifecycle content are separate projections. A successful status change never proves that the execution brief, plan summary, or Proof Packet was recorded. Callers that require both must persist two intents, write/read back both projections, and ack them independently. Content read-back matches the exact typed marker and payload fingerprint, not merely the target's current status.
 
 ## Lifecycle Projection
 

@@ -38,7 +38,7 @@ description: 将已确认 Work Item 按可验收用户价值拆成里程碑，�
 4. 描述仅放 Document 链接、本地契约路径、用户价值、AC IDs、`plan_fingerprint` 和稳定标记 `VibeRig-Plan-Draft`，不粘贴全文；
 5. 回填 `linear_id`，本地状态改为 `pending_plan_confirmation`，更新 `linear.yaml`；
 6. `requirement.status = plan_draft_sync`，`planning.plan_approval = pending`；
-7. 再调用 `split-issues` Publish Draft；Milestone 和 Issue 都可见后才进入人工确认。
+7. 再调用 `split-issues` Publish Proposal；Milestone 和 Issue 都可见后才进入人工确认。
 
 Linear 暂不可用时，将稳定 id、目标 host、payload fingerprint 和预期动作写入 outbox。不得跳过可视化直接请求计划批准；同步恢复后再展示 Linear 链接。
 

@@ -14,7 +14,7 @@ description: 把已确认 Work Item 的里程碑拆成可验证垂直 Issue。�
 - L2/L3 工作有 `verification-graph.json` 或等价的 AC → TC → stage/fidelity 映射；
 - 目标里程碑有 AC IDs 和清晰用户价值。
 
-## 两种模式
+## 三种模式
 
 ### Draft 模式
 
@@ -26,14 +26,24 @@ description: 把已确认 Work Item 的里程碑拆成可验证垂直 Issue。�
 4. 依赖采用 `blocks` / `blockedBy` 语义；不选择实现人员或 subagent；
 5. 随 CTO 汇总包一次审批，不单独询问老板。
 
+### Publish Proposal 模式
+
+在需求基线确认、DoR 成立且人工计划确认之前执行：
+
+1. 请 `vb-linear` 按稳定 id、Milestone 与标题查重，复用或更新已存在 Issue；
+2. 把所有 Milestone 的 Issue 草案写入 Linear，让用户能看到完整范围；远期 Issue 可保持 `indicative`，但不得省略；
+3. 描述写目标、范围/非目标、AC/TC/风险 IDs、依赖、验证摘要、契约路径、`plan_fingerprint` 和 `VibeRig-Plan-Draft`，不粘贴本地全文；
+4. 不指派人员，不进入 In Progress，不把 Proposal 当成已批准任务；
+5. 回填 Linear identity、更新 `linear.yaml`，逐项 read-back 后写计划同步摘要。写入失败时保留 durable outbox，不能跳过该对象后请求计划确认。
+
 ### Materialize 模式
 
-仅在老板批准、Milestone 已 materialize 后执行：
+仅在老板批准当前 `plan_fingerprint`、Milestone 已 materialize 后执行：
 
 1. 按 Rolling Wave 选择最靠前的 `not_started` Milestone；
 2. 重新核对代码现状和草案漂移，保持在批准范围内细化；
-3. 请 `vb-linear` 按 Milestone 查重，复用或更新已存在 Issue；
-4. 创建 Issue、依赖与 `req:{requirement-id}` label；描述明确列出 AC-ID、TC-ID、风险和契约引用，但不粘贴文档全文；
+3. 复用 Publish Proposal 已创建的 Issue；缺失时请 `vb-linear` 查重后补建，不重复创建；
+4. 更新近期 Issue 的依赖与 `req:{requirement-id}` label，移除不可执行草案语义；描述继续保留 AC-ID、TC-ID、风险和契约引用；
 5. 将 `traceability.json` 中本地 `issueIds` 补充或替换为 Linear key，更新 `linear.yaml` 并写计划同步摘要。
 
 后续 Milestone 到启动前再 materialize。若必须改变老板批准的范围、验收或关键风险，退回 `pre-development` 做定向变更评审。
@@ -63,7 +73,7 @@ Issue 中的 TC 只表达责任范围，不保存运行结果。`manual`、`owne
 
 ## 红线
 
-- 审批前建 Linear Issue，或 Materialize 多个未来里程碑。
+- 审批前把 Linear Issue 标成可执行，或 Materialize 多个未来里程碑。Publish Proposal 可以在审批前创建不可执行草案。
 - Issue 没有 AC、测试用例或可执行验证。
 - 把 subagent/assignee 选择固化在规划阶段；执行路由属于 `execute`。
 - 为了技术分层创建无法独立验证的壳任务。
@@ -78,7 +88,7 @@ Issue 中的 TC 只表达责任范围，不保存运行结果。`manual`、`owne
 - [ ] `traceability.json` 可从 Outcome/AC/TC 定位到本地或 Linear Issue；跨 Issue 与老板验收 TC 留在 Milestone。
 - [ ] `delivery-plan.json` schema-valid，机器字段与人读草案一致；超过 8 个 Issue 有独立验收理由。
 - [ ] L2/L3 Issue 继承验证图节点及其 stage/fidelity，没有把 Milestone E2E 降级为单 Issue 模拟测试。
-- [ ] 审批前无 Linear 副作用。
+- [ ] 审批前只存在带 `VibeRig-Plan-Draft` 与当前 fingerprint 的不可执行 Proposal，全部对象已 read-back。
 - [ ] Materialize 只处理下一个 Milestone，已查重且未指派。
 - [ ] 计划漂移未越过批准范围；越界时已退回定向评审。
 - [ ] 人读内容使用 `output.language`。

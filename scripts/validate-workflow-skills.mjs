@@ -21,6 +21,7 @@ const requiredFiles = [
   'skills/execute/references/verification-graph.md',
   'skills/execute/references/runbook-contract.md',
   'skills/execute/references/e2e-test-contract.md',
+  'skills/execute/references/linear-records.md',
   'skills/execute/assets/work-item.schema.json',
   'skills/execute/assets/goal-contract.schema.json',
   'skills/execute/assets/evidence-packet.schema.json',
@@ -58,12 +59,13 @@ for (const path of requiredFiles.filter(path => path.endsWith('.json'))) {
 
 const skillExpectations = {
   'skills/intake/SKILL.md': ['统一 Work Item', '人工 Gate 1', 'work-item.json', '自动交接'],
-  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'Verification Graph', 'Environment Driver', 'accept-deliver', 'vb-linear', 'execution_started', 'technically_ready', 'read-back'],
+  'skills/execute/SKILL.md': ['Goal Loop', 'Completion Oracle', 'test-environment-broker.md', 'Verification Graph', 'Environment Driver', 'accept-deliver', 'vb-linear', 'execution_started', 'technically_ready', 'Proof Packet', '内容 intent', 'read-back'],
+  'skills/pre-development/SKILL.md': ['Publish Draft', 'Publish Proposal', 'plan_fingerprint', '计划同步摘要', 'linear_draft_visible', 'read-back'],
   'skills/accept-deliver/SKILL.md': ['人工验收', 'Evidence', '明确授权', 'execute'],
   'skills/record-issue/SKILL.md': ['兼容', 'intake'],
   'skills/bugger/SKILL.md': ['兼容', 'intake', 'execute'],
   'skills/quick/SKILL.md': ['兼容', 'execute'],
-  'skills/task-runner/SKILL.md': ['兼容', 'execute'],
+  'skills/task-runner/SKILL.md': ['兼容', 'execute', 'Proof Packet', '不能只更新状态'],
   'skills/blocker-resume/SKILL.md': ['兼容', 'execute'],
   'skills/accept-issue/SKILL.md': ['兼容', 'accept-deliver'],
   'skills/accept-milestone/SKILL.md': ['兼容', 'accept-deliver'],

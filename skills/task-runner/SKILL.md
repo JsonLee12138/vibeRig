@@ -30,6 +30,7 @@ description: 兼容旧的 Linear Issue 或 Milestone 执行调用。用户显式
 `execute` 达到 Completion Oracle 后：
 
 - 更新 Proof/Evidence；
+- 由 `execute` 把 `technically_ready` Proof Packet 写入对应 Linear Issue 评论或注册 Project Update，并按 marker/fingerprint read-back；不能只更新状态；
 - 将 Goal Loop 置为 `target_reached`，执行轴置为 `technically_ready`；
 - 请 `vb-linear` 写入最接近 In Review / Ready for Milestone / Pending Acceptance 的实际非终态，或保留 outbox；
 - 进入 `accept-deliver`；
@@ -42,5 +43,6 @@ description: 兼容旧的 Linear Issue 或 Milestone 执行调用。用户显式
 - [ ] 执行未因旧 Skill 边界暂停。
 - [ ] Evidence、CI 与当前 commit 对齐。
 - [ ] 执行开始与技术就绪已同步 Linear 或存在 durable outbox。
+- [ ] Linear 可读的执行摘要与 Proof Packet 已同步或分别存在 durable outbox，未把状态变更当成内容记录。
 - [ ] 草案计划未获批准时没有启动执行。
 - [ ] 人工验收交给 `accept-deliver`。
